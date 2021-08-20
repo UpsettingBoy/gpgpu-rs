@@ -7,6 +7,7 @@ pub mod utils;
 
 pub type GpuResult<T> = Result<T, Box<dyn std::error::Error>>;
 
+#[allow(dead_code)]
 pub struct Framework {
     instance: wgpu::Instance,
     device: wgpu::Device,
@@ -20,6 +21,7 @@ pub struct GpuBuffer<T: bytemuck::Pod> {
     _marker: PhantomData<T>,
 }
 
+#[allow(dead_code)]
 pub struct Kernel<'res> {
     shader: Arc<wgpu::ShaderModule>,
     name: String,
@@ -28,6 +30,7 @@ pub struct Kernel<'res> {
     descriptors: Vec<DescriptorSet<'res>>,
 }
 
+#[allow(dead_code)]
 pub(crate) struct DescriptorSet<'res> {
     pub(crate) set: wgpu::BindGroup,
     pub(crate) layout: wgpu::BindGroupLayout,
