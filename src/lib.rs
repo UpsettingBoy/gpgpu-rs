@@ -1,5 +1,6 @@
 use std::{marker::PhantomData, sync::Arc};
 
+pub mod alloc;
 pub mod framework;
 pub mod kernel;
 pub mod utils;
