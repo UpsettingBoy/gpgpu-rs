@@ -1,14 +1,14 @@
 [package]
-authors = ["Jerónimo Sánchez <jeronimosg@hotmail.es>"]
-edition = "2018"
-name    = "gpgpu_rs"
-version = "0.0.0"
+authors  = ["Jerónimo Sánchez <jeronimosg@hotmail.es>"]
+edition  = "2018"
+name     = "gpgpu_rs"
+resolver = "2"
+version  = "0.0.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 bytemuck = "1.7"
-wgpu     = "0.9"
-
-[dev-dependencies]
-pollster = "0.2"
+futures  = { version = "0.3", default-features = false, features = ["executor"] }
+log      = "0.4"
+wgpu     = { version = "0.10", features = ["spirv"] }
