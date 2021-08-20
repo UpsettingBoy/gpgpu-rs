@@ -1,6 +1,7 @@
 use std::{marker::PhantomData, sync::Arc};
 
 pub mod framework;
+pub mod utils;
 
 pub type GpuResult<T> = Result<T, Box<dyn std::error::Error>>;
 
