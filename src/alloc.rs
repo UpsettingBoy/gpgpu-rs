@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::{Framework, GpuBuffer, GpuResult};
 
 impl<T> GpuBuffer<T>
@@ -19,7 +17,7 @@ where
         self.storage.as_entire_binding()
     }
 
-    pub async fn read_async(&self, fw: Arc<Framework>) -> GpuResult<Vec<T>> {
+    pub async fn read_async(&self, fw: &Framework) -> GpuResult<Vec<T>> {
         let staging = fw.create_staging_buffer(self.size);
 
         let mut encoder = fw
@@ -45,7 +43,7 @@ where
         Ok(result)
     }
 
-    pub fn read(&self, fw: Arc<Framework>) -> GpuResult<Vec<T>> {
+    pub fn read(&self, fw: &Framework) -> GpuResult<Vec<T>> {
         let staging = fw.create_staging_buffer(self.size);
 
         let mut encoder = fw
