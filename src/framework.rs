@@ -1,8 +1,8 @@
-use std::{marker::PhantomData, sync::Arc};
+use std::marker::PhantomData;
 
 use wgpu::util::DeviceExt;
 
-use crate::{Framework, GpuBuffer, Kernel};
+use crate::{Framework, GpuBuffer};
 
 impl Default for Framework {
     fn default() -> Self {
@@ -46,30 +46,8 @@ impl Framework {
         }
     }
 
-    pub fn create_kernel(
-        &self,
-        shader: Arc<wgpu::ShaderModule>,
-        entry_point: impl Into<String>,
-    ) -> Kernel {
-        let entry_point: String = entry_point.into();
-        let name = format!("{:?}::{}", shader, &entry_point);
-
-        let pipeline = self
-            .device
-            .create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-                label: Some(&name),
-                entry_point: &entry_point,
-                layout: None,
-                module: &shader,
-            });
-
-        Kernel {
-            shader,
-            name,
-            entry_point,
-            pipeline,
-            descriptors: Vec::new(),
-        }
+    pub fn create_kernel(&self) {
+        todo!()
     }
 
     pub fn create_buffer<T>(&self, len: usize) -> GpuBuffer<T>

@@ -1,4 +1,4 @@
-use std::{marker::PhantomData, sync::Arc};
+use std::{marker::PhantomData, rc::Rc};
 
 pub mod alloc;
 pub mod framework;
@@ -21,18 +21,27 @@ pub struct GpuBuffer<T: bytemuck::Pod> {
     _marker: PhantomData<T>,
 }
 
-#[allow(dead_code)]
-pub struct Kernel<'res> {
-    shader: Arc<wgpu::ShaderModule>,
-    name: String,
-    entry_point: String,
-    pipeline: wgpu::ComputePipeline,
-    descriptors: Vec<DescriptorSet<'res>>,
+pub struct DescriptorSet<'res> {
+    set_layout: Vec<wgpu::BindGroupLayoutEntry>,
+    binds: Vec<wgpu::BindGroupEntry<'res>>,
 }
 
-#[allow(dead_code)]
-pub(crate) struct DescriptorSet<'res> {
-    pub(crate) set: wgpu::BindGroup,
-    pub(crate) layout: wgpu::BindGroupLayout,
-    pub(crate) bindings: Vec<wgpu::BindGroupEntry<'res>>,
+pub struct KernelBuilder<'fw, 'res, 'sha> {
+    fw: &'fw Framework,
+    layouts: Vec<wgpu::BindGroupLayout>,
+    descriptors: Vec<DescriptorSet<'res>>,
+    sets: Vec<wgpu::BindGroup>,
+    shader: &'sha wgpu::ShaderModule,
+    entry_point: String,
+}
+
+pub struct Kernel<'fw, 'res, 'sha> {
+    fw: &'fw Framework,
+    layouts: Vec<wgpu::BindGroupLayout>,
+    pipeline_layout: wgpu::PipelineLayout,
+    pipeline: wgpu::ComputePipeline,
+    descriptors: Vec<DescriptorSet<'res>>,
+    sets: Vec<wgpu::BindGroup>,
+    shader: &'sha wgpu::ShaderModule,
+    entry_point: String,
 }
