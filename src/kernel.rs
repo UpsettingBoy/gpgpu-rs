@@ -1,4 +1,6 @@
-use crate::{DescriptorSet, GpuBuffer, Kernel, KernelBuilder};
+use wgpu::ShaderModule;
+
+use crate::{DescriptorSet, Framework, GpuBuffer, Kernel, KernelBuilder};
 
 impl<'res> DescriptorSet<'res> {
     pub fn bind_uniform_buffer(self) -> Self {
@@ -39,6 +41,21 @@ impl<'res> DescriptorSet<'res> {
 }
 
 impl<'fw, 'res, 'sha> KernelBuilder<'fw, 'res, 'sha> {
+    pub fn new(
+        fw: &'fw Framework,
+        shader: &'sha ShaderModule,
+        entry_point: impl Into<String>,
+    ) -> Self {
+        Self {
+            fw,
+            layouts: Vec::new(),
+            descriptors: Vec::new(),
+            sets: Vec::new(),
+            shader,
+            entry_point: entry_point.into(),
+        }
+    }
+
     pub fn create_set(mut self, desc: DescriptorSet<'res>) -> Self {
         let set_layout =
             self.fw
