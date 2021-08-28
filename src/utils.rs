@@ -1,11 +1,11 @@
 pub mod shader {
-    use std::{path::Path, sync::Arc};
+    use std::path::Path;
 
     use wgpu::ShaderModule;
 
     use crate::{Framework, GpuResult};
 
-    pub fn from_spirv_file(fw: Arc<Framework>, path: impl AsRef<Path>) -> GpuResult<ShaderModule> {
+    pub fn from_spirv_file(fw: &Framework, path: impl AsRef<Path>) -> GpuResult<ShaderModule> {
         let bytes = std::fs::read(&path)?;
         let shader_name = path.as_ref().to_str();
 
@@ -13,7 +13,7 @@ pub mod shader {
     }
 
     pub fn from_spirv_bytes(
-        fw: Arc<Framework>,
+        fw: &Framework,
         bytes: &[u8],
         shader_name: Option<&str>,
     ) -> ShaderModule {
