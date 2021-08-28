@@ -111,7 +111,7 @@ impl Framework {
         self.device.poll(wgpu::Maintain::Poll);
     }
 
-    pub fn poll_wait(&self) {
+    pub fn blocking_poll(&self) {
         self.device.poll(wgpu::Maintain::Wait);
     }
 }
