@@ -21,6 +21,7 @@ pub struct GpuBuffer<T: bytemuck::Pod> {
     _marker: PhantomData<T>,
 }
 
+#[derive(Default)]
 pub struct DescriptorSet<'res> {
     set_layout: Vec<wgpu::BindGroupLayoutEntry>,
     binds: Vec<wgpu::BindGroupEntry<'res>>,
