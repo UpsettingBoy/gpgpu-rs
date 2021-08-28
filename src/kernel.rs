@@ -41,21 +41,6 @@ impl<'res> DescriptorSet<'res> {
 }
 
 impl<'fw, 'res, 'sha> KernelBuilder<'fw, 'res, 'sha> {
-    pub fn new(
-        fw: &'fw Framework,
-        shader: &'sha ShaderModule,
-        entry_point: impl Into<String>,
-    ) -> Self {
-        Self {
-            fw,
-            layouts: Vec::new(),
-            descriptors: Vec::new(),
-            sets: Vec::new(),
-            shader,
-            entry_point: entry_point.into(),
-        }
-    }
-
     pub fn create_set(mut self, desc: DescriptorSet<'res>) -> Self {
         let set_layout =
             self.fw
@@ -81,7 +66,8 @@ impl<'fw, 'res, 'sha> KernelBuilder<'fw, 'res, 'sha> {
         self
     }
 
-    pub fn build(self) -> Kernel<'fw, 'res, 'sha> {
+    // pub fn build(self) -> Kernel<'fw, 'res, 'sha> {
+    pub fn build(self) -> Kernel<'fw> {
         let sets = self.layouts.iter().collect::<Vec<_>>();
 
         let pipeline_layout =
@@ -105,18 +91,19 @@ impl<'fw, 'res, 'sha> KernelBuilder<'fw, 'res, 'sha> {
 
         Kernel {
             fw: self.fw,
-            layouts: self.layouts,
-            pipeline_layout,
+            // layouts: self.layouts,
+            // pipeline_layout,
             pipeline,
-            descriptors: self.descriptors,
+            // descriptors: self.descriptors,
             sets: self.sets,
-            shader: self.shader,
+            // shader: self.shader,
             entry_point: self.entry_point,
         }
     }
 }
 
-impl<'fw, 'res, 'sha> Kernel<'fw, 'res, 'sha> {
+// impl<'fw, 'res, 'sha> Kernel<'fw, 'res, 'sha> {
+impl<'fw> Kernel<'fw> {
     pub fn enqueue(&self, x: u32, y: u32, z: u32) {
         let mut encoder = self
             .fw

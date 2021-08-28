@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use wgpu::util::DeviceExt;
 
-use crate::{Framework, GpuBuffer};
+use crate::{Framework, GpuBuffer, KernelBuilder};
 
 impl Default for Framework {
     fn default() -> Self {
@@ -46,8 +46,19 @@ impl Framework {
         }
     }
 
-    pub fn create_kernel(&self) {
-        todo!()
+    pub fn create_kernel_builder<'sha>(
+        &self,
+        shader: &'sha wgpu::ShaderModule,
+        entry_point: impl Into<String>,
+    ) -> KernelBuilder<'_, '_, 'sha> {
+        KernelBuilder {
+            fw: self,
+            layouts: Vec::new(),
+            descriptors: Vec::new(),
+            sets: Vec::new(),
+            shader,
+            entry_point: entry_point.into(),
+        }
     }
 
     pub fn create_buffer<T>(&self, len: usize) -> GpuBuffer<T>

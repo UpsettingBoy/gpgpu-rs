@@ -37,13 +37,14 @@ pub struct KernelBuilder<'fw, 'res, 'sha> {
     entry_point: String,
 }
 
-pub struct Kernel<'fw, 'res, 'sha> {
+// pub struct Kernel<'fw, 'res, 'sha> {
+pub struct Kernel<'fw> {
     fw: &'fw Framework,
-    layouts: Vec<wgpu::BindGroupLayout>,
-    pipeline_layout: wgpu::PipelineLayout,
+    // layouts: Vec<wgpu::BindGroupLayout>,
+    // pipeline_layout: wgpu::PipelineLayout,
     pipeline: wgpu::ComputePipeline,
-    descriptors: Vec<DescriptorSet<'res>>,
+    // descriptors: Vec<DescriptorSet<'res>>,
     sets: Vec<wgpu::BindGroup>,
-    shader: &'sha wgpu::ShaderModule,
+    // shader: &'sha wgpu::ShaderModule,
     entry_point: String,
 }
