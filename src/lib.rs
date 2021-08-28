@@ -14,7 +14,8 @@ pub struct Framework {
     queue: wgpu::Queue,
 }
 
-pub struct GpuBuffer<T: bytemuck::Pod> {
+pub struct GpuBuffer<'fw, T: bytemuck::Pod> {
+    fw: &'fw Framework,
     storage: wgpu::Buffer,
     size: usize,
 

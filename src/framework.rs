@@ -66,6 +66,7 @@ impl Framework {
         });
 
         GpuBuffer {
+            fw: self,
             storage,
             size,
             _marker: PhantomData,
@@ -89,6 +90,7 @@ impl Framework {
             });
 
         GpuBuffer {
+            fw: self,
             storage,
             size,
             _marker: PhantomData,

@@ -1,6 +1,6 @@
-use crate::{Framework, GpuBuffer, GpuResult};
+use crate::{GpuBuffer, GpuResult};
 
-impl<T> GpuBuffer<T>
+impl<'fw, T> GpuBuffer<'fw, T>
 where
     T: bytemuck::Pod,
 {
@@ -17,17 +17,18 @@ where
         self.storage.as_entire_binding()
     }
 
-    pub async fn read_async(&self, fw: &Framework) -> GpuResult<Vec<T>> {
-        let staging = fw.create_staging_buffer(self.size);
+    pub async fn read_async(&self) -> GpuResult<Vec<T>> {
+        let staging = self.fw.create_staging_buffer(self.size);
 
-        let mut encoder = fw
+        let mut encoder = self
+            .fw
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("Buffer copy"),
             });
         encoder.copy_buffer_to_buffer(&self.storage, 0, &staging, 0, self.size as u64);
 
-        fw.queue.submit(Some(encoder.finish()));
+        self.fw.queue.submit(Some(encoder.finish()));
 
         let buff_slice = staging.slice(..);
         let buf_future = buff_slice.map_async(wgpu::MapMode::Read);
@@ -43,22 +44,23 @@ where
         Ok(result)
     }
 
-    pub fn read(&self, fw: &Framework) -> GpuResult<Vec<T>> {
-        let staging = fw.create_staging_buffer(self.size);
+    pub fn read(&self) -> GpuResult<Vec<T>> {
+        let staging = self.fw.create_staging_buffer(self.size);
 
-        let mut encoder = fw
+        let mut encoder = self
+            .fw
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("Buffer copy"),
             });
         encoder.copy_buffer_to_buffer(&self.storage, 0, &staging, 0, self.size as u64);
 
-        fw.queue.submit(Some(encoder.finish()));
+        self.fw.queue.submit(Some(encoder.finish()));
 
         let buff_slice = staging.slice(..);
         let buf_future = buff_slice.map_async(wgpu::MapMode::Read);
 
-        fw.poll_wait();
+        self.fw.poll_wait();
 
         futures::executor::block_on(buf_future)?;
 
