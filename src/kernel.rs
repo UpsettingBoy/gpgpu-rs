@@ -1,6 +1,4 @@
-use wgpu::ShaderModule;
-
-use crate::{DescriptorSet, Framework, GpuBuffer, Kernel, KernelBuilder};
+use crate::{DescriptorSet, GpuBuffer, Kernel, KernelBuilder};
 
 impl<'res> DescriptorSet<'res> {
     pub fn bind_uniform_buffer<T>(mut self, uniform_buf: &'res GpuBuffer<T>) -> Self
