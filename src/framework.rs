@@ -38,6 +38,13 @@ impl Default for Framework {
 }
 
 impl Framework {
+    /// Creates a new [`Framework`] instance from `wgpu` objects.
+    ///
+    /// This is mainly used when you want to use wgpu alongside of `gpgpu_rs`
+    /// or you need special requiremients (device, features, ...).
+    ///
+    /// If you only want a [`Framework`] using a HighPerformance GPU with
+    /// the minimal features to run on the web (WebGPU), use [`Framework::default()`](Framework::default).
     pub fn new(instance: wgpu::Instance, device: wgpu::Device, queue: wgpu::Queue) -> Self {
         Self {
             instance,
@@ -46,6 +53,12 @@ impl Framework {
         }
     }
 
+    /// Creates a [`KernelBuilder`] from a `wgpu` [`ShaderModule`](wgpu::ShaderModule)
+    ///
+    /// A `ShaderModule` can be created using the `utils::shader` methods,
+    /// [`utils::shader::from_spirv_file()`](utils::shader::from_spirv_file) and
+    /// [`utils::shader::from_spirv_bytes()`](utils::shader::from_spirv_bytes); or
+    /// using `wgpu`.
     pub fn create_kernel_builder<'sha>(
         &self,
         shader: &'sha wgpu::ShaderModule,
@@ -61,6 +74,7 @@ impl Framework {
         }
     }
 
+    /// Creates an empty [`GpuBuffer`] of the desired `len`gth.
     pub fn create_buffer<T>(&self, len: usize) -> GpuBuffer<T>
     where
         T: bytemuck::Pod,
@@ -84,6 +98,7 @@ impl Framework {
         }
     }
 
+    /// Creates a [`GpuBuffer`] from a `data` slice.
     pub fn create_buffer_from_slice<T>(&self, data: &[T]) -> GpuBuffer<T>
     where
         T: bytemuck::Pod,
@@ -108,7 +123,8 @@ impl Framework {
         }
     }
 
-    // TODO: Reuse staging buffers from pool instead of creating-destroying for every read
+    // TODO: Reuse staging buffers from pool instead of creating-destroying for every read.
+    // Could be even selected typing it in Framework as Framework<Cache = Recreate> or Framework<Cache = Pool>, etc
     pub(crate) fn create_staging_buffer(&self, size: usize) -> wgpu::Buffer {
         self.device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
@@ -118,6 +134,7 @@ impl Framework {
         })
     }
 
+    /// Creates an empty [`GpuImage`] with the desired `width`, `height` and [`TextureFormat`](wgpu::TextureFormat).
     pub fn create_image(&self, width: u32, height: u32, format: wgpu::TextureFormat) -> GpuImage {
         let size = wgpu::Extent3d {
             width,
@@ -149,10 +166,12 @@ impl Framework {
         }
     }
 
+    /// Non-blocking GPU poll.
     pub fn poll(&self) {
         self.device.poll(wgpu::Maintain::Poll);
     }
 
+    /// Blocking GPU poll.
     pub fn blocking_poll(&self) {
         self.device.poll(wgpu::Maintain::Wait);
     }
