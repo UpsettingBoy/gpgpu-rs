@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use wgpu::util::DeviceExt;
 
-use crate::{Framework, GpuBuffer, KernelBuilder};
+use crate::{Framework, GpuBuffer, GpuImage, KernelBuilder};
 
 impl Default for Framework {
     fn default() -> Self {
@@ -116,6 +116,37 @@ impl Framework {
             usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         })
+    }
+
+    pub fn create_image(&self, width: u32, height: u32, format: wgpu::TextureFormat) -> GpuImage {
+        let size = wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        };
+
+        let texture = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: None,
+            size,
+            dimension: wgpu::TextureDimension::D2,
+            mip_level_count: 1,
+            sample_count: 1,
+            format,
+            usage: wgpu::TextureUsages::STORAGE_BINDING
+                | wgpu::TextureUsages::COPY_SRC
+                | wgpu::TextureUsages::COPY_DST
+                | wgpu::TextureUsages::TEXTURE_BINDING,
+        });
+
+        let full_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+        GpuImage {
+            fw: self,
+            texture,
+            format,
+            size,
+            full_view,
+        }
     }
 
     pub fn poll(&self) {

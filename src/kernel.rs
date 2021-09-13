@@ -1,4 +1,4 @@
-use crate::{DescriptorSet, GpuBuffer, Kernel, KernelBuilder};
+use crate::{DescriptorSet, GpuBuffer, GpuImage, Kernel, KernelBuilder};
 
 impl<'res> DescriptorSet<'res> {
     pub fn bind_uniform_buffer<T>(mut self, uniform_buf: &'res GpuBuffer<T>) -> Self
@@ -53,6 +53,60 @@ impl<'res> DescriptorSet<'res> {
         let bind = wgpu::BindGroupEntry {
             binding: bind_id,
             resource: storage_buf.as_binding_resource(),
+        };
+
+        self.set_layout.push(bind_entry);
+        self.binds.push(bind);
+
+        self
+    }
+
+    pub fn bind_storage_image(
+        mut self,
+        img: &'res GpuImage,
+        access: wgpu::StorageTextureAccess,
+    ) -> Self {
+        let bind_id = self.set_layout.len() as u32;
+
+        let bind_entry = wgpu::BindGroupLayoutEntry {
+            binding: bind_id,
+            visibility: wgpu::ShaderStages::COMPUTE,
+            ty: wgpu::BindingType::StorageTexture {
+                access,
+                format: img.format,
+                view_dimension: wgpu::TextureViewDimension::D2,
+            },
+            count: None,
+        };
+
+        let bind = wgpu::BindGroupEntry {
+            binding: bind_id,
+            resource: img.as_binding_resource(),
+        };
+
+        self.set_layout.push(bind_entry);
+        self.binds.push(bind);
+
+        self
+    }
+
+    pub fn bind_image(mut self, img: &'res GpuImage, sample_type: wgpu::TextureSampleType) -> Self {
+        let bind_id = self.set_layout.len() as u32;
+
+        let bind_entry = wgpu::BindGroupLayoutEntry {
+            binding: bind_id,
+            visibility: wgpu::ShaderStages::COMPUTE,
+            ty: wgpu::BindingType::Texture {
+                sample_type,
+                multisampled: false,
+                view_dimension: wgpu::TextureViewDimension::D2,
+            },
+            count: None,
+        };
+
+        let bind = wgpu::BindGroupEntry {
+            binding: bind_id,
+            resource: img.as_binding_resource(),
         };
 
         self.set_layout.push(bind_entry);

@@ -1,5 +1,7 @@
 use std::marker::PhantomData;
 
+pub use wgpu;
+
 pub mod alloc;
 pub mod framework;
 pub mod kernel;
@@ -20,6 +22,14 @@ pub struct GpuBuffer<'fw, T: bytemuck::Pod> {
     size: usize,
 
     _marker: PhantomData<T>,
+}
+
+pub struct GpuImage<'fw> {
+    fw: &'fw Framework,
+    texture: wgpu::Texture,
+    format: wgpu::TextureFormat,
+    size: wgpu::Extent3d,
+    full_view: wgpu::TextureView,
 }
 
 #[derive(Default)]
