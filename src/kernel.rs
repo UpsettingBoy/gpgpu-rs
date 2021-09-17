@@ -1,33 +1,33 @@
 use crate::{DescriptorSet, GpuBuffer, GpuImage, Kernel, KernelBuilder};
 
 impl<'res> DescriptorSet<'res> {
-    pub fn bind_uniform_buffer<T>(mut self, uniform_buf: &'res GpuBuffer<T>) -> Self
-    where
-        T: bytemuck::Pod,
-    {
-        let bind_id = self.set_layout.len() as u32;
+    // pub fn bind_uniform_buffer<T>(mut self, uniform_buf: &'res GpuBuffer<T>) -> Self
+    // where
+    //     T: bytemuck::Pod,
+    // {
+    //     let bind_id = self.set_layout.len() as u32;
 
-        let bind_entry = wgpu::BindGroupLayoutEntry {
-            binding: bind_id,
-            visibility: wgpu::ShaderStages::COMPUTE,
-            ty: wgpu::BindingType::Buffer {
-                has_dynamic_offset: false,
-                min_binding_size: None,
-                ty: wgpu::BufferBindingType::Uniform,
-            },
-            count: None,
-        };
+    //     let bind_entry = wgpu::BindGroupLayoutEntry {
+    //         binding: bind_id,
+    //         visibility: wgpu::ShaderStages::COMPUTE,
+    //         ty: wgpu::BindingType::Buffer {
+    //             has_dynamic_offset: false,
+    //             min_binding_size: None,
+    //             ty: wgpu::BufferBindingType::Uniform,
+    //         },
+    //         count: None,
+    //     };
 
-        let bind = wgpu::BindGroupEntry {
-            binding: bind_id,
-            resource: uniform_buf.as_binding_resource(),
-        };
+    //     let bind = wgpu::BindGroupEntry {
+    //         binding: bind_id,
+    //         resource: uniform_buf.as_binding_resource(),
+    //     };
 
-        self.set_layout.push(bind_entry);
-        self.binds.push(bind);
+    //     self.set_layout.push(bind_entry);
+    //     self.binds.push(bind);
 
-        self
-    }
+    //     self
+    // }
 
     pub fn bind_storage_buffer<T>(
         mut self,
