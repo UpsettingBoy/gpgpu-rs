@@ -117,7 +117,7 @@ impl<'res> DescriptorSet<'res> {
 }
 
 impl<'fw, 'res, 'sha> KernelBuilder<'fw, 'res, 'sha> {
-    pub fn create_set(mut self, desc: DescriptorSet<'res>) -> Self {
+    pub fn add_descriptor_set(mut self, desc: DescriptorSet<'res>) -> Self {
         let set_layout =
             self.fw
                 .device
