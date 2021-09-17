@@ -4,19 +4,27 @@ impl<'fw, T> GpuBuffer<'fw, T>
 where
     T: bytemuck::Pod,
 {
+    /// Obtains the number of elements (or capacity if created using [`Framework::create_buffer`])
+    /// of the [`GpuBuffer`].
     #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.size / std::mem::size_of::<T>()
     }
 
+    /// Obtains the size in bytes of this [`GpuBuffer`].
     pub fn size(&self) -> usize {
         self.size
     }
 
+    /// Creates a complete [`BindingResource`](wgpu::BindingResource) of the [`GpuBuffer`].
     pub fn as_binding_resource(&self) -> wgpu::BindingResource {
         self.storage.as_entire_binding()
     }
 
+    /// Asyncronously reads the contents of the [`GpuBuffer`] into a [`Vec`].
+    ///
+    /// In order for this future to resolve, [`Framework::poll`] or [`Framework::blocking_poll`]
+    /// must be invoked.
     pub async fn read_async(&self) -> GpuResult<Vec<T>> {
         let staging = self.fw.create_staging_buffer(self.size);
 
@@ -44,6 +52,7 @@ where
         Ok(result)
     }
 
+    /// Blocking read of the content of the [`GpuBuffer`] into a [`Vec`].
     pub fn read(&self) -> GpuResult<Vec<T>> {
         let staging = self.fw.create_staging_buffer(self.size);
 
@@ -75,10 +84,13 @@ where
 }
 
 impl<'fw> GpuImage<'fw> {
+    /// Creates a complete [`BindingResource`](wgpu::BindingResource) of the [`GpuImage`].
     pub fn as_binding_resource(&self) -> wgpu::BindingResource {
         wgpu::BindingResource::TextureView(&self.full_view)
     }
 
+    /// Writes the `img_bytes` bytes into the [`GpuImage`] in the
+    /// format specified at its creation.
     pub fn write(&mut self, img_bytes: &[u8]) {
         use std::num::NonZeroU32;
 
@@ -92,13 +104,14 @@ impl<'fw> GpuImage<'fw> {
             img_bytes,
             wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: NonZeroU32::new(4 * self.size.width),
+                bytes_per_row: NonZeroU32::new(4 * self.size.width), // TODO: change 4 for img format pixel byte size
                 rows_per_image: NonZeroU32::new(self.size.height),
             },
             self.size,
         );
     }
 
+    /// Blocking read of the content of the [`GpuImage`] into a [`Vec`].
     pub fn read(&self) -> GpuResult<Vec<u8>> {
         use std::num::NonZeroU32;
 
