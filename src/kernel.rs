@@ -29,6 +29,25 @@ impl<'res> DescriptorSet<'res> {
     //     self
     // }
 
+    /// Binds a [`GpuBuffer`] as a storage buffer in the shader.
+    ///
+    /// ### Example WGSL syntax:
+    /// ```ignore
+    /// [[block]]
+    /// struct StorageStruct {
+    ///     data: [[stride(4)]] array<i32>;
+    /// };
+    ///
+    /// [[group(0), binding(0)]]
+    /// var<storage, read_write> myStorageBuffer: StorageStruct;
+    /// ```
+    ///
+    /// ### Example GLSL syntax:
+    /// ```glsl
+    /// layout (set=0, binding=0) buffer myStorageBuffer {
+    ///     int data[];
+    /// };
+    /// ```
     pub fn bind_storage_buffer<T>(
         mut self,
         storage_buf: &'res GpuBuffer<T>,
@@ -61,6 +80,18 @@ impl<'res> DescriptorSet<'res> {
         self
     }
 
+    /// Binds a [`GpuImage`] as a storage image in the shader.
+    ///
+    /// ### Example WGSL syntax:
+    /// ```ignore
+    /// [[group(0), binding(0)]]
+    /// var myStorageImg: texture_storage_2d<rgba8uint, write>;
+    /// ```
+    ///
+    /// ### Example GLSL syntax:
+    /// ```glsl
+    /// layout (set=0, binding=0, rgba8uint) uimage2D myStorageImg;
+    /// ```
     pub fn bind_storage_image(
         mut self,
         img: &'res GpuImage,
@@ -90,6 +121,18 @@ impl<'res> DescriptorSet<'res> {
         self
     }
 
+    /// Binds a [`GpuImage`] as a texture in the shader.
+    ///
+    /// ### Example WGSL syntax:
+    /// ```ignore
+    /// [[group(0), binding(0)]]
+    /// var myTexture: texture_2d<u32>;
+    /// ```
+    ///
+    /// ### Example GLSL syntax:
+    /// ```glsl
+    /// layout (set=0, binding=0) texture2D myTexture;
+    /// ```
     pub fn bind_image(mut self, img: &'res GpuImage, sample_type: wgpu::TextureSampleType) -> Self {
         let bind_id = self.set_layout.len() as u32;
 
@@ -117,6 +160,7 @@ impl<'res> DescriptorSet<'res> {
 }
 
 impl<'fw, 'res, 'sha> KernelBuilder<'fw, 'res, 'sha> {
+    /// Adds a [`DescriptorSet`] into the [`Kernel`] internal layout.
     pub fn add_descriptor_set(mut self, desc: DescriptorSet<'res>) -> Self {
         let set_layout =
             self.fw
@@ -142,6 +186,7 @@ impl<'fw, 'res, 'sha> KernelBuilder<'fw, 'res, 'sha> {
         self
     }
 
+    /// Builds a [`Kernel`] from the layout stored in [`KernelBuilder`].
     // pub fn build(self) -> Kernel<'fw, 'res, 'sha> {
     pub fn build(self) -> Kernel<'fw> {
         let sets = self.layouts.iter().collect::<Vec<_>>();
@@ -180,6 +225,9 @@ impl<'fw, 'res, 'sha> KernelBuilder<'fw, 'res, 'sha> {
 
 // impl<'fw, 'res, 'sha> Kernel<'fw, 'res, 'sha> {
 impl<'fw> Kernel<'fw> {
+    /// Enqueues the execution of this [`Kernel`] to the GPU.
+    ///
+    /// [`Kernel`] will dispatch `x`, `y` and `z` work groups per dimension.
     pub fn enqueue(&self, x: u32, y: u32, z: u32) {
         let mut encoder = self
             .fw
