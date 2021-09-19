@@ -6,8 +6,6 @@ name     = "gpgpu"
 resolver = "2"
 version  = "0.0.0"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 bytemuck = "1.7"
 futures  = { version = "0.3", default-features = false, features = ["executor"] }

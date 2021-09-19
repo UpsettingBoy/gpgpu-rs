@@ -1,2 +1,6 @@
-/target
+target/
 Cargo.lock
+
+# Editor config files
+.vscode
+.idea
