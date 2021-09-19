@@ -1,19 +1,19 @@
 //! A simple GPU compute library based on [`wgpu`](https://github.com/gfx-rs/wgpu).
 //! It is meant to be used alongside `wgpu` if desired.
 //!
-//! Right now `gpgpu_rs` uses some of `wgpu`'s type on its public API.
+//! Right now `gpgpu` uses some of `wgpu`'s type on its public API.
 //! It may be removed in the future.
 //!
-//! To start using `gpgpu_rs`, just create a [`Framework`](crate::Framework) instance
+//! To start using `gpgpu`, just create a [`Framework`](crate::Framework) instance
 //! and follow the examples in the main repository.
 //!
 //! # Example
-//! Small program that multiplies 2 matrixes A and B; and stores the
-//! result in another matrix C.
+//! Small program that multiplies 2 vectors A and B; and stores the
+//! result in another vector C.
 //! ## Rust program
 //! ```no_run
-//!  use gpgpu_rs::*;
-//!  use gpgpu_rs::wgpu;
+//!  use gpgpu::*;
+//!  use gpgpu::wgpu;
 //!
 //!  fn main() -> GpuResult<()> {
 //!     let fw = Framework::default();
@@ -30,7 +30,7 @@
 //!     let shader_module = utils::shader::from_spirv_file(&fw, "<shader path>")?;
 //!
 //!     // Descriptor set creation
-//!     let desc_set = gpgpu_rs::DescriptorSet::default()
+//!     let desc_set = DescriptorSet::default()
 //!         .bind_storage_buffer(&buf_a, true)      // Read-only
 //!         .bind_storage_buffer(&buf_b, true)      // Read-only
 //!         .bind_storage_buffer(&buf_c, false);    // Read-write
@@ -55,14 +55,14 @@
 //! ```ignore
 //! // Matrix type definition. Used for both input and output
 //! [[block]]
-//! struct Matrix {
+//! struct Vector {
 //!     data: [[stride(4)]] array<u32>;
 //! };
 //!
-//! // A, B and C matrixes
-//! [[group(0), binding(0)]] var<storage, read>  a: Matrix;
-//! [[group(0), binding(1)]] var<storage, read>  b: Matrix;
-//! [[group(0), binding(2)]] var<storage, write> c: Matrix:
+//! // A, B and C vectors
+//! [[group(0), binding(0)]] var<storage, read>  a: Vector;
+//! [[group(0), binding(1)]] var<storage, read>  b: Vector;
+//! [[group(0), binding(2)]] var<storage, read_write> c: Vector;
 //!
 //! [[stage(compute), workgroup_size(1)]]
 //! fn main([[builtin(global_invocation_id)]] global_id: vec3<u32>) {
