@@ -2,7 +2,7 @@
 authors  = ["Jerónimo Sánchez <jeronimosg@hotmail.es>"]
 edition  = "2018"
 license  = "MIT"
-name     = "gpgpu_rs"
+name     = "gpgpu"
 resolver = "2"
 version  = "0.0.0"
 
