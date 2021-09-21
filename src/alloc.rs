@@ -135,7 +135,8 @@ impl<'fw> GpuImage<'fw> {
             layout: wgpu::ImageDataLayout {
                 offset: 0,
                 bytes_per_row: NonZeroU32::new(4 * self.size.width),
-                rows_per_image: NonZeroU32::new(self.size.height),
+                // rows_per_image: NonZeroU32::new(self.size.height),
+                rows_per_image: None,
             },
         };
 
@@ -184,7 +185,8 @@ impl<'fw> GpuImage<'fw> {
             layout: wgpu::ImageDataLayout {
                 offset: 0,
                 bytes_per_row: NonZeroU32::new(4 * self.size.width),
-                rows_per_image: NonZeroU32::new(self.size.height),
+                // rows_per_image: NonZeroU32::new(self.size.height),
+                rows_per_image: None,
             },
         };
 
@@ -214,17 +216,12 @@ impl<'fw> GpuImage<'fw> {
         use std::num::NonZeroU32;
 
         self.fw.queue.write_texture(
-            wgpu::ImageCopyTexture {
-                texture: &self.texture,
-                mip_level: 0,
-                origin: wgpu::Origin3d::ZERO,
-                aspect: wgpu::TextureAspect::All,
-            },
+            self.texture.as_image_copy(),
             img_bytes,
             wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: NonZeroU32::new(4 * self.size.width), // TODO: change 4 for img format pixel byte size
-                rows_per_image: NonZeroU32::new(self.size.height),
+                bytes_per_row: Some(NonZeroU32::new(4 * self.size.width).unwrap()), // TODO: change 4 for img format pixel byte size
+                rows_per_image: None,
             },
             self.size,
         );
