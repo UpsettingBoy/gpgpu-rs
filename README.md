@@ -57,7 +57,7 @@ result in another vector C.
 ## Shader program
 The shader is writen in [WGSL](https://gpuweb.github.io/gpuweb/wgsl/)
 ```rust
-// Matrix type definition. Used for both input and output
+// Vector type definition. Used for both input and output
 [[block]]
 struct Vector {
     data: [[stride(4)]] array<u32>;
