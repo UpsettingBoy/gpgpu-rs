@@ -13,9 +13,15 @@ impl<'fw> GpuImage<'fw> {
     pub async fn read_async(&self) -> GpuResult<Vec<u8>> {
         use std::num::NonZeroU32;
 
+        let bytes_per_pixel = 4;
+        let unpadded_bytes_per_row = self.size.width * bytes_per_pixel;
+        let align = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
+        let padded_bytes_per_row_padding = (align - unpadded_bytes_per_row % align) % align;
+        let padded_bytes_per_row = unpadded_bytes_per_row + padded_bytes_per_row_padding;
+
         let staging = self
             .fw
-            .create_staging_buffer((4 * self.size.width * self.size.height) as usize);
+            .create_staging_buffer((padded_bytes_per_row * self.size.height) as usize);
 
         let mut encoder = self
             .fw
@@ -35,8 +41,7 @@ impl<'fw> GpuImage<'fw> {
             buffer: &staging,
             layout: wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: NonZeroU32::new(4 * self.size.width),
-                // rows_per_image: NonZeroU32::new(self.size.height),
+                bytes_per_row: NonZeroU32::new(padded_bytes_per_row),
                 rows_per_image: None,
             },
         };
@@ -51,7 +56,11 @@ impl<'fw> GpuImage<'fw> {
         buf_future.await?;
 
         let data = buff_slice.get_mapped_range();
-        let result = bytemuck::cast_slice(&data).to_vec();
+        let result = data
+            .chunks(padded_bytes_per_row as usize)
+            .flat_map(|row| &row[0..unpadded_bytes_per_row as usize])
+            .copied()
+            .collect::<Vec<_>>();
 
         drop(data);
         staging.unmap();
@@ -63,30 +72,30 @@ impl<'fw> GpuImage<'fw> {
     pub fn read(&self) -> GpuResult<Vec<u8>> {
         use std::num::NonZeroU32;
 
+        let bytes_per_pixel = 4;
+        let unpadded_bytes_per_row = self.size.width * bytes_per_pixel;
+        let align = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
+        let padded_bytes_per_row_padding = (align - unpadded_bytes_per_row % align) % align;
+        let padded_bytes_per_row = unpadded_bytes_per_row + padded_bytes_per_row_padding;
+
         let staging = self
             .fw
-            .create_staging_buffer((4 * self.size.width * self.size.height) as usize);
+            .create_staging_buffer((padded_bytes_per_row * self.size.height) as usize);
 
         let mut encoder = self
             .fw
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Image copy"),
+                label: Some("GpuImage::read"),
             });
 
-        let copy_texture = wgpu::ImageCopyTexture {
-            aspect: wgpu::TextureAspect::All,
-            mip_level: 0,
-            origin: wgpu::Origin3d::ZERO,
-            texture: &self.texture,
-        };
+        let copy_texture = self.texture.as_image_copy();
 
         let copy_buffer = wgpu::ImageCopyBuffer {
             buffer: &staging,
             layout: wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: NonZeroU32::new(4 * self.size.width),
-                // rows_per_image: NonZeroU32::new(self.size.height),
+                bytes_per_row: NonZeroU32::new(padded_bytes_per_row),
                 rows_per_image: None,
             },
         };
@@ -103,7 +112,11 @@ impl<'fw> GpuImage<'fw> {
         futures::executor::block_on(buf_future)?;
 
         let data = buff_slice.get_mapped_range();
-        let result = bytemuck::cast_slice(&data).to_vec();
+        let result = data
+            .chunks(padded_bytes_per_row as usize)
+            .flat_map(|row| &row[0..unpadded_bytes_per_row as usize])
+            .copied()
+            .collect::<Vec<_>>();
 
         drop(data);
         staging.unmap();
