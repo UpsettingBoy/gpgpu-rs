@@ -86,6 +86,37 @@ where
         Ok(result)
     }
 
+    /// Asyncronously writes the contents of `data` into the [`GpuBuffer`].
+    ///
+    /// In order for this future to resolve, [`Framework::poll`] or [`Framework::blocking_poll`]
+    /// must be invoked.
+    pub async fn write_async(&mut self, data: &[T]) -> GpuResult<()> {
+        let staging = self.fw.create_staging_buffer(data.len());
+
+        let mut encoder = self
+            .fw
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("Buffer copy"),
+            });
+        encoder.copy_buffer_to_buffer(&staging, 0, &self.storage, 0, self.size as u64);
+
+        self.fw.queue.submit(Some(encoder.finish()));
+
+        let buff_slice = self.storage.slice(..);
+        let buf_future = buff_slice.map_async(wgpu::MapMode::Write);
+
+        buf_future.await?;
+
+        let mut write_view = buff_slice.get_mapped_range_mut();
+        write_view.copy_from_slice(bytemuck::cast_slice(data));
+
+        drop(write_view);
+        self.storage.unmap();
+
+        Ok(())
+    }
+
     /// Writes the `data` information into the [`GpuBuffer`] immediately.
     pub fn write(&mut self, data: &[T]) {
         self.fw
