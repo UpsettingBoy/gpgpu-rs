@@ -149,4 +149,65 @@ impl<'fw> GpuImage<'fw> {
 
         self.fw.queue.submit(Some(encoder.finish()));
     }
+
+    /// Asyncronously writes `img_bytes` into the [`GpuImage`].
+    ///
+    /// In order for this future to resolve, [`Framework::poll`](crate::Framework::poll) or [`Framework::blocking_poll`](crate::Framework::blocking_poll)
+    /// must be invoked.
+    pub async fn write_async(&mut self, img_bytes: &[u8]) -> GpuResult<()> {
+        use std::num::NonZeroU32;
+
+        let bytes_per_pixel = 4;
+        let unpadded_bytes_per_row = self.size.width * bytes_per_pixel;
+        let align = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
+        let padded_bytes_per_row_padding = (align - unpadded_bytes_per_row % align) % align;
+        let padded_bytes_per_row = unpadded_bytes_per_row + padded_bytes_per_row_padding;
+
+        let staging = self
+            .fw
+            .create_staging_buffer((padded_bytes_per_row * self.size.height) as usize);
+
+        let mut encoder = self
+            .fw
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("GpuImage::write_async"),
+            });
+
+        let staging_view = staging.slice(..);
+        staging_view.map_async(wgpu::MapMode::Write).await?;
+
+        let mut staging_map = staging_view.get_mapped_range_mut();
+        staging_map
+            .chunks_mut(padded_bytes_per_row as usize)
+            .enumerate()
+            .for_each(|(chunk_id, padded_row)| {
+                let start = chunk_id * unpadded_bytes_per_row as usize;
+                let end = start + unpadded_bytes_per_row as usize;
+
+                padded_row[0..unpadded_bytes_per_row as usize]
+                    .copy_from_slice(&img_bytes[start..end]);
+            });
+
+        drop(staging_map);
+        staging.unmap();
+
+        let copy_texture = self.texture.as_image_copy();
+
+        let copy_buffer = wgpu::ImageCopyBuffer {
+            buffer: &staging,
+            layout: wgpu::ImageDataLayout {
+                offset: 0,
+                bytes_per_row: NonZeroU32::new(padded_bytes_per_row),
+                rows_per_image: None,
+            },
+        };
+
+        encoder.copy_buffer_to_texture(copy_buffer, copy_texture, self.size);
+
+        self.fw.queue.submit(Some(encoder.finish()));
+        self.fw.poll();
+
+        Ok(())
+    }
 }
