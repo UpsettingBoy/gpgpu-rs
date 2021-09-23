@@ -56,8 +56,8 @@ impl Framework {
     /// Creates a [`KernelBuilder`] from a `wgpu` [`ShaderModule`](wgpu::ShaderModule)
     ///
     /// A `ShaderModule` can be created using the `utils::shader` methods,
-    /// [`utils::shader::from_spirv_file()`](utils::shader::from_spirv_file) and
-    /// [`utils::shader::from_spirv_bytes()`](utils::shader::from_spirv_bytes); or
+    /// [`utils::shader::from_spirv_file()`](crate::utils::shader::from_spirv_file) and
+    /// [`utils::shader::from_spirv_bytes()`](crate::utils::shader::from_spirv_bytes); or
     /// using `wgpu`.
     pub fn create_kernel_builder<'sha>(
         &self,

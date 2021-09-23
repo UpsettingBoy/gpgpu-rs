@@ -9,7 +9,7 @@ where
         self.storage.as_entire_binding()
     }
 
-    /// Obtains the number of elements (or capacity if created using [`Framework::create_buffer`])
+    /// Obtains the number of elements (or capacity if created using [`Framework::create_buffer`](crate::Framework::create_buffer))
     /// of the [`GpuBuffer`].
     pub fn len(&self) -> usize {
         self.size / std::mem::size_of::<T>()
@@ -27,7 +27,7 @@ where
 
     /// Asyncronously reads the contents of the [`GpuBuffer`] into a [`Vec`].
     ///
-    /// In order for this future to resolve, [`Framework::poll`] or [`Framework::blocking_poll`]
+    /// In order for this future to resolve, [`Framework::poll`](crate::Framework::poll) or [`Framework::blocking_poll`](crate::Framework::poll)
     /// must be invoked.
     pub async fn read_async(&self) -> GpuResult<Vec<T>> {
         let staging = self.fw.create_staging_buffer(self.size);
@@ -88,7 +88,7 @@ where
 
     /// Asyncronously writes the contents of `data` into the [`GpuBuffer`].
     ///
-    /// In order for this future to resolve, [`Framework::poll`] or [`Framework::blocking_poll`]
+    /// In order for this future to resolve, [`Framework::poll`](crate::Framework::poll) or [`Framework::blocking_poll`](crate::Framework::blocking_poll)
     /// must be invoked.
     pub async fn write_async(&mut self, data: &[T]) -> GpuResult<()> {
         let staging = self.fw.create_staging_buffer(data.len());

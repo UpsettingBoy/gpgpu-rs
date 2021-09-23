@@ -8,7 +8,7 @@ impl<'fw> GpuImage<'fw> {
 
     /// Asyncronously reads the contents of the [`GpuImage`] into a [`Vec`].
     ///
-    /// In order for this future to resolve, [`Framework::poll`] or [`Framework::blocking_poll`]
+    /// In order for this future to resolve, [`Framework::poll`](crate::Framework::poll) or [`Framework::blocking_poll`](crate::Framework::blocking_poll)
     /// must be invoked.
     pub async fn read_async(&self) -> GpuResult<Vec<u8>> {
         use std::num::NonZeroU32;

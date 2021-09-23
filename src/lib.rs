@@ -4,7 +4,7 @@
 //! Right now `gpgpu` uses some of `wgpu`'s type on its public API.
 //! It may be removed in the future.
 //!
-//! To start using `gpgpu`, just create a [`Framework`](crate::Framework) instance
+//! To start using `gpgpu`, just create a [`Framework`] instance
 //! and follow the examples in the main repository.
 //!
 //! # Example
@@ -83,7 +83,7 @@ pub mod utils;
 /// Lazy error handling :)
 pub type GpuResult<T> = Result<T, Box<dyn std::error::Error>>;
 
-/// Allows the creation of [`GpuBuffer`](crate::GpuBuffer), [`GpuImage`](crate::GpuImage) and [`Kernel`](crate::Kernel).
+/// Allows the creation of [`GpuBuffer`], [`GpuImage`] and [`Kernel`].
 #[allow(dead_code)]
 pub struct Framework {
     instance: wgpu::Instance,
@@ -92,7 +92,7 @@ pub struct Framework {
 }
 
 /// Vector of contiguous homogeneous elements on GPU memory.
-/// This elements must implement [`bytemuck::Pod`].
+/// This elements must implement [`bytemuck::Pod`](bytemuck::Pod).
 ///
 /// Equivalent to OpenCL's Buffer objects.
 pub struct GpuBuffer<'fw, T: bytemuck::Pod> {
@@ -121,7 +121,7 @@ pub struct DescriptorSet<'res> {
     binds: Vec<wgpu::BindGroupEntry<'res>>,
 }
 
-/// Creates a [`Kernel`](crate::Kernel) instance with the bindings
+/// Creates a [`Kernel`] instance with the bindings
 /// used during the configuration of this structure.
 pub struct KernelBuilder<'fw, 'res, 'sha> {
     fw: &'fw Framework,
@@ -134,7 +134,7 @@ pub struct KernelBuilder<'fw, 'res, 'sha> {
 
 /// Used to enqueue the execution of a shader with the bidings provided.
 ///
-/// Can only be created from [`KernelBuilder`](crate::KernelBuilder).
+/// Can only be created from [`KernelBuilder`].
 /// Equivalent to OpenCL's Kernel.
 // pub struct Kernel<'fw, 'res, 'sha> {
 pub struct Kernel<'fw> {
