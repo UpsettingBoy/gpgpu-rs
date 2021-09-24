@@ -9,7 +9,7 @@ Right now `gpgpu` uses some of `wgpu`'s type on its public API.
 It may be removed in the future.
 
 To start using `gpgpu`, just create a [`Framework`](https://docs.rs/gpgpu/latest/gpgpu/struct.Framework.html) instance
-and follow the examples in the main repository.
+and follow the [examples](https://github.com/UpsettingBoy/gpgpu-rs) in the main repository.
 
 # Example
 Small program that multiplies 2 vectors A and B; and stores the
