@@ -27,7 +27,7 @@ impl<'fw> GpuImage<'fw> {
             .fw
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Image copy"),
+                label: Some("GpuImage::read_async"),
             });
 
         let copy_texture = wgpu::ImageCopyTexture {
@@ -144,7 +144,7 @@ impl<'fw> GpuImage<'fw> {
             .fw
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Buffer write"),
+                label: Some("GpuImage::write"),
             });
 
         self.fw.queue.submit(Some(encoder.finish()));
@@ -206,7 +206,6 @@ impl<'fw> GpuImage<'fw> {
         encoder.copy_buffer_to_texture(copy_buffer, copy_texture, self.size);
 
         self.fw.queue.submit(Some(encoder.finish()));
-        self.fw.poll();
 
         Ok(())
     }

@@ -36,7 +36,7 @@ where
             .fw
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Buffer copy"),
+                label: Some("GpuBuffer::read_async"),
             });
         encoder.copy_buffer_to_buffer(&self.storage, 0, &staging, 0, self.size as u64);
 
@@ -64,7 +64,7 @@ where
             .fw
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Buffer copy"),
+                label: Some("GpuBuffer::read"),
             });
         encoder.copy_buffer_to_buffer(&self.storage, 0, &staging, 0, self.size as u64);
 
@@ -97,7 +97,7 @@ where
             .fw
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Buffer copy"),
+                label: Some("GpuBuffer::write_async"),
             });
         encoder.copy_buffer_to_buffer(&staging, 0, &self.storage, 0, self.size as u64);
 
@@ -127,7 +127,7 @@ where
             .fw
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Buffer write"),
+                label: Some("GpuBuffer::write"),
             });
 
         self.fw.queue.submit(Some(encoder.finish()));
