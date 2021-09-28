@@ -73,6 +73,7 @@
 
 use std::marker::PhantomData;
 
+use alloc::PixelInfo;
 pub use wgpu;
 
 pub mod alloc;
@@ -106,12 +107,16 @@ pub struct GpuBuffer<'fw, T: bytemuck::Pod> {
 /// 2D-image of homogeneous pixels.
 ///
 /// Equivalent to OpenCL's Image objects.
-pub struct GpuImage<'fw> {
+pub struct GpuImage<'fw, P>
+where
+    P: PixelInfo,
+{
     fw: &'fw Framework,
     texture: wgpu::Texture,
     format: wgpu::TextureFormat,
     size: wgpu::Extent3d,
     full_view: wgpu::TextureView,
+    _pixel: PhantomData<P>,
 }
 
 /// Contains a binding group of resources.

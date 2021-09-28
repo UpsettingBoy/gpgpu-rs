@@ -1,4 +1,4 @@
-use crate::{DescriptorSet, GpuBuffer, GpuImage, Kernel, KernelBuilder};
+use crate::{alloc::PixelInfo, DescriptorSet, GpuBuffer, GpuImage, Kernel, KernelBuilder};
 
 impl<'res> DescriptorSet<'res> {
     // pub fn bind_uniform_buffer<T>(mut self, uniform_buf: &'res GpuBuffer<T>) -> Self
@@ -92,9 +92,9 @@ impl<'res> DescriptorSet<'res> {
     /// ```glsl
     /// layout (set=0, binding=0, rgba8uint) uimage2D myStorageImg;
     /// ```
-    pub fn bind_storage_image(
+    pub fn bind_storage_image<P: PixelInfo>(
         mut self,
-        img: &'res GpuImage,
+        img: &'res GpuImage<P>,
         access: wgpu::StorageTextureAccess,
     ) -> Self {
         let bind_id = self.set_layout.len() as u32;
@@ -133,7 +133,14 @@ impl<'res> DescriptorSet<'res> {
     /// ```glsl
     /// layout (set=0, binding=0) texture2D myTexture;
     /// ```
-    pub fn bind_image(mut self, img: &'res GpuImage, sample_type: wgpu::TextureSampleType) -> Self {
+    pub fn bind_image<P>(
+        mut self,
+        img: &'res GpuImage<P>,
+        sample_type: wgpu::TextureSampleType,
+    ) -> Self
+    where
+        P: PixelInfo,
+    {
         let bind_id = self.set_layout.len() as u32;
 
         let bind_entry = wgpu::BindGroupLayoutEntry {

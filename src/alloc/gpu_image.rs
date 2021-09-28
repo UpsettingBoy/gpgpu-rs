@@ -1,6 +1,11 @@
 use crate::{GpuImage, GpuResult};
 
-impl<'fw> GpuImage<'fw> {
+use super::PixelInfo;
+
+impl<'fw, P> GpuImage<'fw, P>
+where
+    P: PixelInfo,
+{
     /// Creates a complete [`BindingResource`](wgpu::BindingResource) of the [`GpuImage`].
     pub fn as_binding_resource(&self) -> wgpu::BindingResource {
         wgpu::BindingResource::TextureView(&self.full_view)

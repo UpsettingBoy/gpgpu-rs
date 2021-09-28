@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use wgpu::util::DeviceExt;
 
-use crate::{Framework, GpuBuffer, GpuImage, KernelBuilder};
+use crate::{alloc::PixelInfo, Framework, GpuBuffer, GpuImage, KernelBuilder};
 
 impl Default for Framework {
     fn default() -> Self {
@@ -138,12 +138,17 @@ impl Framework {
     }
 
     /// Creates an empty [`GpuImage`] with the desired `width`, `height` and [`TextureFormat`](wgpu::TextureFormat).
-    pub fn create_image(&self, width: u32, height: u32, format: wgpu::TextureFormat) -> GpuImage {
+    pub fn create_image<P>(&self, width: u32, height: u32) -> GpuImage<P>
+    where
+        P: PixelInfo,
+    {
         let size = wgpu::Extent3d {
             width,
             height,
             depth_or_array_layers: 1,
         };
+
+        let format = P::wgpu_format();
 
         let texture = self.device.create_texture(&wgpu::TextureDescriptor {
             label: None,
@@ -166,6 +171,7 @@ impl Framework {
             format,
             size,
             full_view,
+            _pixel: PhantomData,
         }
     }
 
