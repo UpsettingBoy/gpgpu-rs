@@ -14,5 +14,10 @@ version     = "0.0.0"
 [dependencies]
 bytemuck = "1.7"
 futures  = { version = "0.3", default-features = false, features = ["executor"] }
-log      = "0.4"
-wgpu     = { version = "0.10", features = ["spirv"] }
+wgpu     = { version = "0.10.2", features = ["spirv"] }
+
+[dev-dependencies]
+image = { version = "0.23.14", default-features = false, features = [
+    "jpeg",
+    "png",
+] }

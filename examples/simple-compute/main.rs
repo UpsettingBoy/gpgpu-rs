@@ -2,7 +2,8 @@
 fn main() {
     let fw = gpgpu::Framework::default(); // Framework initialization.
 
-    let shader_mod = gpgpu::utils::shader::from_wgsl_file(&fw, "src/mult.wgsl").unwrap(); // Shader loading.
+    let shader_mod =
+        gpgpu::utils::shader::from_wgsl_file(&fw, "examples/simple-compute/mult.wgsl").unwrap(); // Shader loading.
 
     let size = 10000; // Size of the vectors
 
