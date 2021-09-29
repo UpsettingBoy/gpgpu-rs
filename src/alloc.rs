@@ -1,5 +1,17 @@
+use crate::AccessMode;
+
 pub mod buffer;
 pub mod image;
+
+impl AccessMode {
+    pub(crate) fn to_wgpu_storage_texture_access(&self) -> wgpu::StorageTextureAccess {
+        match self {
+            AccessMode::ReadOnly => wgpu::StorageTextureAccess::ReadOnly,
+            AccessMode::WriteOnly => wgpu::StorageTextureAccess::WriteOnly,
+            AccessMode::ReadWrite => wgpu::StorageTextureAccess::ReadWrite,
+        }
+    }
+}
 
 pub trait PixelInfo {
     fn byte_size() -> usize;

@@ -92,6 +92,29 @@ pub struct Framework {
     queue: wgpu::Queue,
 }
 
+/// Access mode of a `gpgpu` object.
+#[derive(PartialEq, Eq)]
+pub enum AccessMode {
+    /// Read-only object.
+    /// ### Example WGSL syntax:
+    /// ```ignore
+    /// [[group(0), binding(0)]] var<storage, read> input: Vector;
+    /// ```
+    ReadOnly,
+    /// Write-only object.
+    /// ### Example WGSL syntax:
+    /// ```ignore
+    /// [[group(0), binding(1)]] var output: texture_storage_2d<rgba8uint, write>;
+    /// ```
+    WriteOnly,
+    /// Read-write object.
+    /// ### Example WGSL syntax:
+    /// ```ignore
+    /// [[group(0), binding(0)]] var<storage, read_write> input: Vector;
+    /// ```
+    ReadWrite,
+}
+
 /// Vector of contiguous homogeneous elements on GPU memory.
 /// This elements must implement [`bytemuck::Pod`](bytemuck::Pod).
 ///

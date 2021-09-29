@@ -1,4 +1,6 @@
-use crate::{alloc::PixelInfo, DescriptorSet, GpuBuffer, GpuImage, Kernel, KernelBuilder};
+use crate::{
+    alloc::PixelInfo, AccessMode, DescriptorSet, GpuBuffer, GpuImage, Kernel, KernelBuilder,
+};
 
 impl<'res> DescriptorSet<'res> {
     // pub fn bind_uniform_buffer<T>(mut self, uniform_buf: &'res GpuBuffer<T>) -> Self
@@ -31,6 +33,8 @@ impl<'res> DescriptorSet<'res> {
 
     /// Binds a [`GpuBuffer`] as a storage buffer in the shader.
     ///
+    /// The `access` mode must be either [`AccessMode::ReadOnly`] or [`AccessMode::ReadWrite`].
+    ///
     /// ### Example WGSL syntax:
     /// ```ignore
     /// [[block]]
@@ -51,7 +55,7 @@ impl<'res> DescriptorSet<'res> {
     pub fn bind_storage_buffer<T>(
         mut self,
         storage_buf: &'res GpuBuffer<T>,
-        read_only: bool,
+        access: AccessMode,
     ) -> Self
     where
         T: bytemuck::Pod,
@@ -64,7 +68,9 @@ impl<'res> DescriptorSet<'res> {
             ty: wgpu::BindingType::Buffer {
                 has_dynamic_offset: false,
                 min_binding_size: None,
-                ty: wgpu::BufferBindingType::Storage { read_only },
+                ty: wgpu::BufferBindingType::Storage {
+                    read_only: access == AccessMode::ReadOnly,
+                },
             },
             count: None,
         };
@@ -82,6 +88,8 @@ impl<'res> DescriptorSet<'res> {
 
     /// Binds a [`GpuImage`] as a storage image in the shader.
     ///
+    /// The `access` mode must be either [`AccessMode::WriteOnly`] or [`AccessMode::ReadWrite`].
+    ///
     /// ### Example WGSL syntax:
     /// ```ignore
     /// [[group(0), binding(0)]]
@@ -95,7 +103,7 @@ impl<'res> DescriptorSet<'res> {
     pub fn bind_storage_image<P: PixelInfo>(
         mut self,
         img: &'res GpuImage<P>,
-        access: wgpu::StorageTextureAccess,
+        access: AccessMode,
     ) -> Self {
         let bind_id = self.set_layout.len() as u32;
 
@@ -103,7 +111,7 @@ impl<'res> DescriptorSet<'res> {
             binding: bind_id,
             visibility: wgpu::ShaderStages::COMPUTE,
             ty: wgpu::BindingType::StorageTexture {
-                access,
+                access: access.to_wgpu_storage_texture_access(),
                 format: img.format,
                 view_dimension: wgpu::TextureViewDimension::D2,
             },
