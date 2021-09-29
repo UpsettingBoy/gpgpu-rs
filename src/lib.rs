@@ -119,6 +119,13 @@ where
     _pixel: PhantomData<P>,
 }
 
+pixel_impl! {
+    Rgba8Uint, 4, wgpu::TextureFormat::Rgba8Uint, #[doc = "Red, green, blue, and alpha channels. 8 bit integer per channel. Unsigned in shader."];
+    Rgba8UintNorm, 4, wgpu::TextureFormat::Rgba8Unorm, #[doc = "Red, green, blue, and alpha channels. 8 bit integer per channel. 0, 255 converted to/from float 0, 1 in shader."];
+    Rgba8Sint, 4, wgpu::TextureFormat::Rgba8Sint, #[doc = "Red, green, blue, and alpha channels. 8 bit integer per channel. Signed in shader."];
+    Rgba8SintNorm, 4, wgpu::TextureFormat::Rgba8Snorm, #[doc = "Red, green, blue, and alpha channels. 8 bit integer per channel. -127, 127 converted to/from float -1, 1 in shader."]
+}
+
 /// Contains a binding group of resources.
 #[derive(Default)]
 pub struct DescriptorSet<'res> {
