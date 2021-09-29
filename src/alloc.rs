@@ -1,5 +1,5 @@
-pub mod gpu_buffer;
-pub mod gpu_image;
+pub mod buffer;
+pub mod image;
 
 pub trait PixelInfo {
     fn byte_size() -> usize;
