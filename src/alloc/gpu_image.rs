@@ -18,7 +18,7 @@ where
     pub async fn read_async(&self) -> GpuResult<Vec<u8>> {
         use std::num::NonZeroU32;
 
-        let bytes_per_pixel = 4;
+        let bytes_per_pixel = P::byte_size() as u32;
         let unpadded_bytes_per_row = self.size.width * bytes_per_pixel;
         let align = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
         let padded_bytes_per_row_padding = (align - unpadded_bytes_per_row % align) % align;
@@ -77,7 +77,7 @@ where
     pub fn read(&self) -> GpuResult<Vec<u8>> {
         use std::num::NonZeroU32;
 
-        let bytes_per_pixel = 4;
+        let bytes_per_pixel = P::byte_size() as u32;
         let unpadded_bytes_per_row = self.size.width * bytes_per_pixel;
         let align = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
         let padded_bytes_per_row_padding = (align - unpadded_bytes_per_row % align) % align;
@@ -139,7 +139,9 @@ where
             img_bytes,
             wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: Some(NonZeroU32::new(4 * self.size.width).unwrap()), // TODO: change 4 for img format pixel byte size
+                bytes_per_row: Some(
+                    NonZeroU32::new(P::byte_size() as u32 * self.size.width).unwrap(),
+                ),
                 rows_per_image: None,
             },
             self.size,
@@ -162,7 +164,7 @@ where
     pub async fn write_async(&mut self, img_bytes: &[u8]) -> GpuResult<()> {
         use std::num::NonZeroU32;
 
-        let bytes_per_pixel = 4;
+        let bytes_per_pixel = P::byte_size() as u32;
         let unpadded_bytes_per_row = self.size.width * bytes_per_pixel;
         let align = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
         let padded_bytes_per_row_padding = (align - unpadded_bytes_per_row % align) % align;
