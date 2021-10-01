@@ -19,10 +19,11 @@ impl AccessMode {
 pub trait PixelInfo {
     fn byte_size() -> usize;
     fn wgpu_format() -> wgpu::TextureFormat;
+    fn wgpu_texture_sample() -> wgpu::TextureSampleType;
 }
 
 macro_rules! pixel_impl {
-    ($($name:ident, $size:expr, $wgpu:expr, #[$doc:meta]);+) => {
+    ($($name:ident, $size:expr, $format:expr, $sample:expr, #[$doc:meta]);+) => {
         use crate::alloc::PixelInfo;
 
         $(
@@ -35,7 +36,11 @@ macro_rules! pixel_impl {
                 }
 
                 fn wgpu_format() -> wgpu::TextureFormat {
-                    $wgpu
+                    $format
+                }
+
+                fn wgpu_texture_sample() -> wgpu::TextureSampleType {
+                    $sample
                 }
             }
         )+

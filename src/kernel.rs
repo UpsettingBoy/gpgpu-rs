@@ -139,13 +139,9 @@ impl<'res> DescriptorSet<'res> {
     ///
     /// ### Example GLSL syntax:
     /// ```glsl
-    /// layout (set=0, binding=0) texture2D myTexture;
+    /// layout (set=0, binding=0) utexture2D myTexture;
     /// ```
-    pub fn bind_image<P>(
-        mut self,
-        img: &'res GpuImage<P>,
-        sample_type: wgpu::TextureSampleType,
-    ) -> Self
+    pub fn bind_image<P>(mut self, img: &'res GpuImage<P>) -> Self
     where
         P: PixelInfo,
     {
@@ -155,7 +151,7 @@ impl<'res> DescriptorSet<'res> {
             binding: bind_id,
             visibility: wgpu::ShaderStages::COMPUTE,
             ty: wgpu::BindingType::Texture {
-                sample_type,
+                sample_type: P::wgpu_texture_sample(),
                 multisampled: false,
                 view_dimension: wgpu::TextureViewDimension::D2,
             },
