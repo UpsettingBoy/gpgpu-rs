@@ -17,7 +17,6 @@ result in another vector C.
 ## Rust program
 ```rust
  use gpgpu::*;
- use gpgpu::wgpu;
 
  fn main() -> GpuResult<()> {
     let fw = Framework::default();
@@ -35,9 +34,9 @@ result in another vector C.
 
     // Descriptor set creation
     let desc_set = DescriptorSet::default()
-        .bind_storage_buffer(&buf_a, true)      // Read-only
-        .bind_storage_buffer(&buf_b, true)      // Read-only
-        .bind_storage_buffer(&buf_c, false);    // Read-write
+        .bind_storage_buffer(&buf_a, AccessMode::ReadOnly)
+        .bind_storage_buffer(&buf_b, AccessMode::ReadOnly)
+        .bind_storage_buffer(&buf_c, AccessMode::ReadWrite);
     
     // Kernel creation and enqueuing
     fw.create_kernel_builder(&shader_module, "main")   // Entry point
