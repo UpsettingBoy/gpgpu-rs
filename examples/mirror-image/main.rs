@@ -1,4 +1,4 @@
-use gpgpu::Rgba8Uint;
+use gpgpu::formats::Rgba8Uint;
 
 // This example simply mirrors an image.
 

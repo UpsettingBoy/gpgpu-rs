@@ -1,3 +1,5 @@
+#![macro_use]
+
 use crate::AccessMode;
 
 pub mod buffer;
@@ -13,14 +15,16 @@ impl AccessMode {
     }
 }
 
+/// Gives some information about the pixel format.
 pub trait PixelInfo {
     fn byte_size() -> usize;
     fn wgpu_format() -> wgpu::TextureFormat;
 }
 
-#[macro_export]
 macro_rules! pixel_impl {
     ($($name:ident, $size:expr, $wgpu:expr, #[$doc:meta]);+) => {
+        use crate::alloc::PixelInfo;
+
         $(
             #[$doc]
             pub struct $name;
