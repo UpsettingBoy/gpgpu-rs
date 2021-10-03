@@ -87,8 +87,8 @@ pub type GpuResult<T> = Result<T, Box<dyn std::error::Error>>;
 #[allow(dead_code)]
 pub struct Framework {
     instance: wgpu::Instance,
-    device: wgpu::Device,
-    queue: wgpu::Queue,
+    pub device: wgpu::Device,
+    pub queue: wgpu::Queue,
 }
 
 /// Access mode of a `gpgpu` object.
@@ -120,7 +120,7 @@ pub enum AccessMode {
 /// Equivalent to OpenCL's Buffer objects.
 pub struct GpuBuffer<'fw, T: bytemuck::Pod> {
     fw: &'fw Framework,
-    storage: wgpu::Buffer,
+    pub storage: wgpu::Buffer,
     size: usize,
 
     _marker: PhantomData<T>,
@@ -134,9 +134,9 @@ where
     P: PixelInfo,
 {
     fw: &'fw Framework,
-    texture: wgpu::Texture,
-    format: wgpu::TextureFormat,
-    size: wgpu::Extent3d,
+    pub texture: wgpu::Texture,
+    pub format: wgpu::TextureFormat,
+    pub size: wgpu::Extent3d,
     full_view: wgpu::TextureView,
     _pixel: PhantomData<P>,
 }
