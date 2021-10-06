@@ -53,3 +53,29 @@ pub mod pixels {
         Rgba8SintNorm, 4, wgpu::TextureFormat::Rgba8Snorm, wgpu::TextureSampleType::Float { filterable: false }, #[doc = "Red, green, blue, and alpha channels. 8 bit integer per channel. -127, 127 converted to/from float -1, 1 in shader."]
     }
 }
+
+cfg_if::cfg_if! {
+    if #[cfg(feature = "integrate-image")] {
+
+        pub trait GpgpuPixelIntegration {
+            type GpgpuPixel: PixelInfo;
+            type NormGpgpuPixel: PixelInfo;
+        }
+
+        macro_rules! pixel_integration_impl {
+            ($($primitive:ty, $pixel:ty, $norm:ty);+) => {
+                $(
+                    impl GpgpuPixelIntegration for ::image::Rgba<$primitive> {
+                        type GpgpuPixel = $pixel;
+                        type NormGpgpuPixel = $norm;
+                    }
+                )+
+            }
+        }
+
+        pixel_integration_impl! {
+            u8, pixels::Rgba8Uint, pixels::Rgba8UintNorm;
+            i8, pixels::Rgba8Sint, pixels::Rgba8SintNorm
+        }
+    }
+}

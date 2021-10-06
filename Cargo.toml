@@ -13,7 +13,9 @@ version     = "0.0.0"
 
 [dependencies]
 bytemuck = "1.7"
+cfg-if   = { version = "1.0", optional = true }
 futures  = { version = "0.3", default-features = false, features = ["executor"] }
+image    = { version = "0.23", default-features = false, optional = true }
 wgpu     = { version = "0.10.2", features = ["spirv"] }
 
 [dev-dependencies]
@@ -21,3 +23,7 @@ image = { version = "0.23.14", default-features = false, features = [
     "jpeg",
     "png",
 ] }
+
+[features]
+default         = ["integrate-image"]
+integrate-image = ["image", "cfg-if"]
