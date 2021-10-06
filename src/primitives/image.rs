@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use crate::{GpuImage, GpuResult};
 
 use super::PixelInfo;
@@ -6,6 +8,40 @@ impl<'fw, P> GpuImage<'fw, P>
 where
     P: PixelInfo,
 {
+    pub(crate) fn new(fw: &'fw crate::Framework, width: u32, height: u32) -> Self {
+        let size = wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        };
+
+        let format = P::wgpu_format();
+
+        let texture = fw.device.create_texture(&wgpu::TextureDescriptor {
+            label: None,
+            size,
+            dimension: wgpu::TextureDimension::D2,
+            mip_level_count: 1,
+            sample_count: 1,
+            format,
+            usage: wgpu::TextureUsages::STORAGE_BINDING
+                | wgpu::TextureUsages::COPY_SRC
+                | wgpu::TextureUsages::COPY_DST
+                | wgpu::TextureUsages::TEXTURE_BINDING,
+        });
+
+        let full_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+        GpuImage {
+            fw,
+            texture,
+            format,
+            size,
+            full_view,
+            _pixel: PhantomData,
+        }
+    }
+
     /// Creates a complete [`BindingResource`](wgpu::BindingResource) of the [`GpuImage`].
     pub fn as_binding_resource(&self) -> wgpu::BindingResource {
         wgpu::BindingResource::TextureView(&self.full_view)

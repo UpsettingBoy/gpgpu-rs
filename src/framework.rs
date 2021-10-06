@@ -1,5 +1,6 @@
 use std::marker::PhantomData;
 
+use image::ImageBuffer;
 use wgpu::util::DeviceExt;
 
 use crate::{primitives::PixelInfo, Framework, GpuBuffer, GpuImage, KernelBuilder};
@@ -142,37 +143,41 @@ impl Framework {
     where
         P: PixelInfo,
     {
-        let size = wgpu::Extent3d {
-            width,
-            height,
-            depth_or_array_layers: 1,
-        };
+        GpuImage::new(self, width, height)
+    }
 
-        let format = P::wgpu_format();
+    pub fn create_image_from_image_crate<Pixel, Container>(
+        &self,
+        img: ImageBuffer<Pixel, Container>,
+    ) -> GpuImage<Pixel::GpgpuPixel>
+    where
+        Pixel: image::Pixel + crate::primitives::GpgpuPixelIntegration + 'static,
+        Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
+    {
+        let (width, height) = img.dimensions();
+        let mut output_image = GpuImage::new(self, width, height);
 
-        let texture = self.device.create_texture(&wgpu::TextureDescriptor {
-            label: None,
-            size,
-            dimension: wgpu::TextureDimension::D2,
-            mip_level_count: 1,
-            sample_count: 1,
-            format,
-            usage: wgpu::TextureUsages::STORAGE_BINDING
-                | wgpu::TextureUsages::COPY_SRC
-                | wgpu::TextureUsages::COPY_DST
-                | wgpu::TextureUsages::TEXTURE_BINDING,
-        });
+        let bytes = crate::utils::primitive_slice_to_bytes(&img);
+        output_image.write(bytes);
 
-        let full_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        output_image
+    }
 
-        GpuImage {
-            fw: self,
-            texture,
-            format,
-            size,
-            full_view,
-            _pixel: PhantomData,
-        }
+    pub fn create_image_from_image_crate_normalised<Pixel, Container>(
+        &self,
+        img: ImageBuffer<Pixel, Container>,
+    ) -> GpuImage<Pixel::NormGpgpuPixel>
+    where
+        Pixel: image::Pixel + crate::primitives::GpgpuPixelIntegration + 'static,
+        Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
+    {
+        let (width, height) = img.dimensions();
+        let mut output_image = GpuImage::new(self, width, height);
+
+        let bytes = crate::utils::primitive_slice_to_bytes(&img);
+        output_image.write(bytes);
+
+        output_image
     }
 
     /// Non-blocking GPU poll.
