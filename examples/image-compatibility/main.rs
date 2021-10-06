@@ -4,9 +4,10 @@ use gpgpu::primitives::pixels::Rgba8Uint;
 fn main() {
     let fw = gpgpu::Framework::default();
     let shader_mod =
-        gpgpu::utils::shader::from_wgsl_file(&fw, "examples/mirror-image/mirror.wgsl").unwrap();
+        gpgpu::utils::shader::from_wgsl_file(&fw, "examples/image-compatibility/mirror.wgsl")
+            .unwrap();
 
-    let dynamic_img = image::open("examples/mirror-image/monke.jpg").unwrap(); // RGB8 image ...
+    let dynamic_img = image::open("examples/image-compatibility/monke.jpg").unwrap(); // RGB8 image ...
     let rgba = dynamic_img.into_rgba8(); // ... converted to RGBA8
 
     let (width, height) = rgba.dimensions();
@@ -27,7 +28,7 @@ fn main() {
     let output_bytes = output_img.read().unwrap();
 
     image::save_buffer(
-        "examples/mirror-image/mirror-monke.png",
+        "examples/image-compatibility/mirror-monke.png",
         &output_bytes,
         width,
         height,
