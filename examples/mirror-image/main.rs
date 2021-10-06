@@ -1,7 +1,6 @@
-use gpgpu::formats::Rgba8Uint;
+use gpgpu::primitives::pixels::Rgba8Uint;
 
 // This example simply mirrors an image.
-
 fn main() {
     let fw = gpgpu::Framework::default();
     let shader_mod =

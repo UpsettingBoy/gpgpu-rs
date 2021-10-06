@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use wgpu::util::DeviceExt;
 
-use crate::{alloc::PixelInfo, Framework, GpuBuffer, GpuImage, KernelBuilder};
+use crate::{primitives::PixelInfo, Framework, GpuBuffer, GpuImage, KernelBuilder};
 
 impl Default for Framework {
     fn default() -> Self {

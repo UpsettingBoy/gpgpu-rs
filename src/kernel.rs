@@ -1,5 +1,5 @@
 use crate::{
-    alloc::PixelInfo, AccessMode, DescriptorSet, GpuBuffer, GpuImage, Kernel, KernelBuilder,
+    primitives::PixelInfo, AccessMode, DescriptorSet, GpuBuffer, GpuImage, Kernel, KernelBuilder,
 };
 
 impl<'res> DescriptorSet<'res> {
