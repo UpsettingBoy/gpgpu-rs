@@ -72,7 +72,6 @@
 
 use std::marker::PhantomData;
 
-use primitives::PixelInfo;
 pub use wgpu;
 
 pub mod framework;
@@ -129,10 +128,7 @@ pub struct GpuBuffer<'fw, T: bytemuck::Pod> {
 /// 2D-image of homogeneous pixels.
 ///
 /// Equivalent to OpenCL's Image objects.
-pub struct GpuImage<'fw, P>
-where
-    P: PixelInfo,
-{
+pub struct GpuImage<'fw, P> {
     fw: &'fw Framework,
     pub texture: wgpu::Texture,
     pub format: wgpu::TextureFormat,

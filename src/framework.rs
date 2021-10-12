@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use image::ImageBuffer;
+use image::{ImageBuffer, Pixel};
 use wgpu::util::DeviceExt;
 
 use crate::{primitives::PixelInfo, Framework, GpuBuffer, GpuImage, KernelBuilder};

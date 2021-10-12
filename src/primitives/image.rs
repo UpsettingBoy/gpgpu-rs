@@ -6,6 +6,15 @@ use super::PixelInfo;
 
 impl<'fw, P> GpuImage<'fw, P>
 where
+    P: PixelInfo + super::GpgpuImageToImageBuffer,
+{
+    pub fn read_to_image(&self) -> ::image::ImageBuffer<P::ImgPixel, Vec<P::ImgPrimitive>> {
+        todo!()
+    }
+}
+
+impl<'fw, P> GpuImage<'fw, P>
+where
     P: PixelInfo,
 {
     pub(crate) fn new(fw: &'fw crate::Framework, width: u32, height: u32) -> Self {

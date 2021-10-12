@@ -58,8 +58,13 @@ cfg_if::cfg_if! {
     if #[cfg(feature = "integrate-image")] {
 
         pub trait GpgpuPixelIntegration {
-            type GpgpuPixel: PixelInfo;
-            type NormGpgpuPixel: PixelInfo;
+            type GpgpuPixel: PixelInfo + GpgpuImageToImageBuffer;
+            type NormGpgpuPixel: PixelInfo + GpgpuImageToImageBuffer;
+        }
+
+        pub trait GpgpuImageToImageBuffer {
+            type ImgPixel: ::image::Pixel;
+            type ImgPrimitive: ::image::Primitive;
         }
 
         macro_rules! pixel_integration_impl {
@@ -71,6 +76,23 @@ cfg_if::cfg_if! {
                     }
                 )+
             }
+        }
+
+        macro_rules! pixel_conversion_integration_impl {
+            ($($pixel:ty, $($gpgpu_pixel:ty),+);+) => {
+                $(
+                    $(
+                        impl GpgpuImageToImageBuffer for $gpgpu_pixel {
+                            type ImgPixel =  $pixel;
+                            type ImgPrimitive = <$pixel as ::image::Pixel>::Subpixel;
+                        }
+                    )+
+                )+
+            }
+        }
+
+        pixel_conversion_integration_impl! {
+            ::image::Rgba<u8>, pixels::Rgba8Uint, pixels::Rgba8UintNorm, pixels::Rgba8Sint, pixels::Rgba8SintNorm
         }
 
         pixel_integration_impl! {
