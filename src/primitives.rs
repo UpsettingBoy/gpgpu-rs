@@ -20,7 +20,7 @@ pub trait PixelInfo {
     fn wgpu_texture_sample() -> wgpu::TextureSampleType;
 }
 
-macro_rules! pixel_impl {
+macro_rules! pixel_info_impl {
     ($($name:ident, $size:expr, $format:expr, $sample:expr, #[$doc:meta]);+) => {
         use crate::primitives::PixelInfo;
 
@@ -46,7 +46,7 @@ macro_rules! pixel_impl {
 }
 
 pub mod pixels {
-    pixel_impl! {
+    pixel_info_impl! {
         Rgba8Uint, 4, wgpu::TextureFormat::Rgba8Uint, wgpu::TextureSampleType::Uint, #[doc = "Red, green, blue, and alpha channels. 8 bit integer per channel. Unsigned in shader."];
         Rgba8UintNorm, 4, wgpu::TextureFormat::Rgba8Unorm, wgpu::TextureSampleType::Float { filterable: false }, #[doc = "Red, green, blue, and alpha channels. 8 bit integer per channel. 0, 255 converted to/from float 0, 1 in shader."];
         Rgba8Sint, 4, wgpu::TextureFormat::Rgba8Sint, wgpu::TextureSampleType::Sint, #[doc = "Red, green, blue, and alpha channels. 8 bit integer per channel. Signed in shader."];
@@ -57,20 +57,20 @@ pub mod pixels {
 cfg_if::cfg_if! {
     if #[cfg(feature = "integrate-image")] {
 
-        pub trait GpgpuPixelIntegration {
-            type GpgpuPixel: PixelInfo + GpgpuImageToImageBuffer;
-            type NormGpgpuPixel: PixelInfo + GpgpuImageToImageBuffer;
+        pub trait ImageToGpgpu {
+            type GpgpuPixel: PixelInfo + GpgpuToImage;
+            type NormGpgpuPixel: PixelInfo + GpgpuToImage;
         }
 
-        pub trait GpgpuImageToImageBuffer {
+        pub trait GpgpuToImage {
             type ImgPixel: ::image::Pixel;
             type ImgPrimitive: ::image::Primitive;
         }
 
-        macro_rules! pixel_integration_impl {
-            ($($primitive:ty, $pixel:ty, $norm:ty);+) => {
+        macro_rules! image_to_gpgpu_impl {
+            ($($img_pixel:ty, $pixel:ty, $norm:ty);+) => {
                 $(
-                    impl GpgpuPixelIntegration for ::image::Rgba<$primitive> {
+                    impl ImageToGpgpu for $img_pixel {
                         type GpgpuPixel = $pixel;
                         type NormGpgpuPixel = $norm;
                     }
@@ -78,11 +78,11 @@ cfg_if::cfg_if! {
             }
         }
 
-        macro_rules! pixel_conversion_integration_impl {
+        macro_rules! gpgpu_to_image_impl {
             ($($pixel:ty, $($gpgpu_pixel:ty),+);+) => {
                 $(
                     $(
-                        impl GpgpuImageToImageBuffer for $gpgpu_pixel {
+                        impl GpgpuToImage for $gpgpu_pixel {
                             type ImgPixel =  $pixel;
                             type ImgPrimitive = <$pixel as ::image::Pixel>::Subpixel;
                         }
@@ -91,13 +91,13 @@ cfg_if::cfg_if! {
             }
         }
 
-        pixel_conversion_integration_impl! {
+        gpgpu_to_image_impl! {
             ::image::Rgba<u8>, pixels::Rgba8Uint, pixels::Rgba8UintNorm, pixels::Rgba8Sint, pixels::Rgba8SintNorm
         }
 
-        pixel_integration_impl! {
-            u8, pixels::Rgba8Uint, pixels::Rgba8UintNorm;
-            i8, pixels::Rgba8Sint, pixels::Rgba8SintNorm
+        image_to_gpgpu_impl! {
+            ::image::Rgba<u8>, pixels::Rgba8Uint, pixels::Rgba8UintNorm;
+            ::image::Rgba<i8>, pixels::Rgba8Sint, pixels::Rgba8SintNorm
         }
     }
 }

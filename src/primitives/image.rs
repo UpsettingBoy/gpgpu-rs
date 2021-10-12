@@ -4,12 +4,28 @@ use crate::{GpuImage, GpuResult};
 
 use super::PixelInfo;
 
-impl<'fw, P> GpuImage<'fw, P>
-where
-    P: PixelInfo + super::GpgpuImageToImageBuffer,
-{
-    pub fn read_to_image(&self) -> ::image::ImageBuffer<P::ImgPixel, Vec<P::ImgPrimitive>> {
-        todo!()
+cfg_if::cfg_if! {
+    if #[cfg(feature = "integrate-image")] {
+        impl<'fw, P> GpuImage<'fw, P>
+        where
+            P: PixelInfo + super::GpgpuToImage,
+        {
+            pub fn read_to_image(&self) -> GpuResult<::image::ImageBuffer<P::ImgPixel, Vec<P::ImgPrimitive>>> {
+                todo!()
+            }
+
+            pub async fn read_to_image_async(&self) -> GpuResult<::image::ImageBuffer<P::ImgPixel, Vec<P::ImgPrimitive>>> {
+                todo!()
+            }
+
+            pub fn write_from_image(&self, img: &::image::ImageBuffer<P::ImgPixel, Vec<P::ImgPrimitive>>)  {
+                todo!()
+            }
+
+            pub async fn write_from_image_async(&self, img: &::image::ImageBuffer<P::ImgPixel, Vec<P::ImgPrimitive>>)  {
+                todo!()
+            }
+        }
     }
 }
 

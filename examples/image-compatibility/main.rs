@@ -13,7 +13,7 @@ fn main() {
     let (width, height) = rgba.dimensions();
 
     // GPU image creation
-    let input_img = fw.create_image_from_image_crate(rgba); // Input
+    let input_img = fw.create_image_from_image_crate(&rgba); // Input
     let output_img = fw.create_image::<Rgba8Uint>(width, height); // Output
 
     let binds = gpgpu::DescriptorSet::default()
@@ -25,6 +25,8 @@ fn main() {
         .build()
         .enqueue(width / 32, height / 32, 1); // Since the kernel workgroup size is (32,32,1) dims are divided
 
-    let output = output_img.read_to_image();
-    output.save("examples/image-compatibility/mirror-monke.png");
+    let output = output_img.read_to_image().unwrap();
+    output
+        .save("examples/image-compatibility/mirror-monke.png")
+        .unwrap();
 }
