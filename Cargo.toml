@@ -1,22 +1,22 @@
 [package]
-authors     = ["Jerónimo Sánchez <jeronimosg@hotmail.es>"]
-categories  = ["concurrency", "science"]
+authors = ["Jerónimo Sánchez <jeronimosg@hotmail.es>"]
+categories = ["concurrency", "science"]
 description = "Simple WIP GPGPU framework built on top of wgpu"
-edition     = "2018"
-exclude     = ["examples"]
-keywords    = ["gpgpu", "compute", "opencl", "cuda"]
-license     = "MIT"
-name        = "gpgpu"
-repository  = "https://www.github.com/UpsettingBoy/gpgpu-rs"
-resolver    = "2"
-version     = "0.0.0"
+edition = "2018"
+exclude = ["examples"]
+keywords = ["gpgpu", "compute", "opencl", "cuda"]
+license = "MIT"
+name = "gpgpu"
+repository = "https://www.github.com/UpsettingBoy/gpgpu-rs"
+resolver = "2"
+version = "0.0.0"
 
 [dependencies]
 bytemuck = "1.7"
-cfg-if   = "1.0"
-futures  = { version = "0.3", default-features = false, features = ["executor"] }
-image    = { version = "0.23", default-features = false, optional = true }
-wgpu     = { version = "0.11", features = ["spirv"] }
+cfg-if = "1.0"
+futures = { version = "0.3", default-features = false, features = ["executor"] }
+image = { version = "0.23", default-features = false, optional = true }
+wgpu = { version = "0.11", features = ["spirv"] }
 
 [dev-dependencies]
 image = { version = "0.23.14", default-features = false, features = [
@@ -25,5 +25,14 @@ image = { version = "0.23.14", default-features = false, features = [
 ] }
 
 [features]
-default         = ["integrate-image"]
 integrate-image = ["image"]
+
+[[example]]
+name = "simple-compute"
+
+[[example]]
+name = "mirror-image"
+
+[[example]]
+name = "image-compatibility"
+required-features = ["integrate-image"]
