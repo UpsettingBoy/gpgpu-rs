@@ -90,29 +90,63 @@ where
 {
     pub fn read_to_image(
         &self,
-    ) -> GpuResult<::image::ImageBuffer<P::ImgPixel, Vec<P::ImgPrimitive>>> {
-        todo!()
+    ) -> GpuResult<
+        ::image::ImageBuffer<
+            P::ImgPixel,
+            Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
+        >,
+    > {
+        let bytes = self.read()?;
+        let container = bytes_to_primitive_vec::<P::ImgPixel>(bytes);
+
+        let img: Result<ImageBuffer<P::ImgPixel, Vec<_>>, Box<dyn std::error::Error>> =
+            image::ImageBuffer::from_vec(self.size.width, self.size.height, container)
+                .ok_or("Buffer is too small!".into());
+
+        img
     }
 
     pub async fn read_to_image_async(
         &self,
-    ) -> GpuResult<::image::ImageBuffer<P::ImgPixel, Vec<P::ImgPrimitive>>> {
-        todo!()
+    ) -> GpuResult<
+        ::image::ImageBuffer<
+            P::ImgPixel,
+            Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
+        >,
+    > {
+        let bytes = self.read_async().await?;
+        let container = bytes_to_primitive_vec::<P::ImgPixel>(bytes);
+
+        let img: Result<ImageBuffer<P::ImgPixel, Vec<_>>, Box<dyn std::error::Error>> =
+            image::ImageBuffer::from_vec(self.size.width, self.size.height, container)
+                .ok_or("Buffer is too small!".into());
+
+        img
     }
 
-    pub fn write_from_image(&self, img: &::image::ImageBuffer<P::ImgPixel, Vec<P::ImgPrimitive>>) {
-        todo!()
+    pub fn write_from_image(
+        &mut self,
+        img: &::image::ImageBuffer<
+            P::ImgPixel,
+            Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
+        >,
+    ) {
+        let bytes = primitive_slice_to_bytes(img);
+        self.write(bytes);
     }
 
     pub async fn write_from_image_async(
-        &self,
-        img: &::image::ImageBuffer<P::ImgPixel, Vec<P::ImgPrimitive>>,
-    ) {
-        todo!()
+        &mut self,
+        img: &::image::ImageBuffer<
+            P::ImgPixel,
+            Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
+        >,
+    ) -> GpuResult<()> {
+        let bytes = primitive_slice_to_bytes(img);
+        self.write_async(bytes).await
     }
 }
 
-// TODO: CHECK CHECK CHECK
 pub(crate) fn primitive_slice_to_bytes<P>(primitive: &[P]) -> &[u8]
 where
     P: image::Primitive,
@@ -120,6 +154,7 @@ where
     let times = std::mem::size_of::<P>() / std::mem::size_of::<u8>();
 
     unsafe {
+        // Pointer transmutation (as I would do in C 🤣)
         let input_ptr = primitive.as_ptr();
         let new_ptr: *const u8 = std::mem::transmute(input_ptr);
 
@@ -127,18 +162,23 @@ where
     }
 }
 
-// Since Vec::shrink_to_fit cannot assure that the inner vector memory is
-// exactly equals to its current lenght means :(
-pub(crate) fn bytes_to_primitive_vec<P>(mut bytes: Vec<u8>) -> Vec<P>
+pub(crate) fn bytes_to_primitive_vec<P>(mut bytes: Vec<u8>) -> Vec<P::Subpixel>
 where
-    P: image::Primitive,
+    P: image::Pixel,
 {
+    // Fit vector to min possible size
+    // Since Vec::shrink_to_fit cannot assure that the inner vector memory is
+    // exactly its theorical min possible size, UB? 😢
     bytes.shrink_to_fit();
-    let len = bytes.len() / std::mem::size_of::<P>();
+    let len = bytes.len() / std::mem::size_of::<P::Subpixel>(); // Get num of primitives
 
     unsafe {
+        // Pointer transmutation (as I would do in C 🤣)
         let input_ptr = bytes.as_mut_ptr();
-        let new_ptr: *mut P = std::mem::transmute(input_ptr);
+        let new_ptr: *mut P::Subpixel = std::mem::transmute(input_ptr);
+
+        // `bytes` cannot be dropped or a copy of the vector will be required
+        std::mem::forget(bytes);
 
         Vec::from_raw_parts(new_ptr, len, len)
     }
