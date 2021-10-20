@@ -7,7 +7,9 @@ use crate::{primitives::PixelInfo, Framework, GpuBuffer, GpuImage, KernelBuilder
 
 impl Default for Framework {
     fn default() -> Self {
-        let instance = wgpu::Instance::new(wgpu::Backends::PRIMARY);
+        let backend = wgpu::util::backend_bits_from_env().unwrap_or(wgpu::Backends::PRIMARY);
+
+        let instance = wgpu::Instance::new(backend);
         let (device, queue) = futures::executor::block_on(async {
             let adapter = instance
                 .request_adapter(&wgpu::RequestAdapterOptions {
@@ -22,7 +24,7 @@ impl Default for Framework {
                     &wgpu::DeviceDescriptor {
                         label: None,
                         features: wgpu::Features::empty(),
-                        limits: wgpu::Limits::downlevel_defaults(),
+                        limits: wgpu::Limits::downlevel_webgl2_defaults(),
                     },
                     None,
                 )
