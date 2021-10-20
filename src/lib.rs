@@ -74,6 +74,7 @@ use std::marker::PhantomData;
 
 pub use wgpu;
 
+pub mod features;
 pub mod framework;
 pub mod kernel;
 pub mod primitives;

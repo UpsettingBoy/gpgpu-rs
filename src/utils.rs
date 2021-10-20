@@ -43,18 +43,3 @@ pub mod shader {
             }))
     }
 }
-
-// TODO: CHECK CHECK CHECK
-pub(crate) fn primitive_slice_to_bytes<P>(primitive: &[P]) -> &[u8]
-where
-    P: image::Primitive,
-{
-    let times = std::mem::size_of::<P>() / std::mem::size_of::<u8>();
-
-    unsafe {
-        let input_ptr = primitive.as_ptr();
-        let new_ptr: *const u8 = std::mem::transmute(input_ptr);
-
-        std::slice::from_raw_parts(new_ptr, primitive.len() * times)
-    }
-}

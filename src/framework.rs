@@ -1,6 +1,5 @@
 use std::marker::PhantomData;
 
-use image::ImageBuffer;
 use wgpu::util::DeviceExt;
 
 use crate::{primitives::PixelInfo, Framework, GpuBuffer, GpuImage, KernelBuilder};
@@ -146,40 +145,6 @@ impl Framework {
         P: PixelInfo,
     {
         GpuImage::new(self, width, height)
-    }
-
-    pub fn create_image_from_image_crate<Pixel, Container>(
-        &self,
-        img: &ImageBuffer<Pixel, Container>,
-    ) -> GpuImage<Pixel::GpgpuPixel>
-    where
-        Pixel: image::Pixel + crate::primitives::ImageToGpgpu + 'static,
-        Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
-    {
-        let (width, height) = img.dimensions();
-        let mut output_image = GpuImage::new(self, width, height);
-
-        let bytes = crate::utils::primitive_slice_to_bytes(img);
-        output_image.write(bytes);
-
-        output_image
-    }
-
-    pub fn create_image_from_image_crate_normalised<Pixel, Container>(
-        &self,
-        img: &ImageBuffer<Pixel, Container>,
-    ) -> GpuImage<Pixel::NormGpgpuPixel>
-    where
-        Pixel: image::Pixel + crate::primitives::ImageToGpgpu + 'static,
-        Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
-    {
-        let (width, height) = img.dimensions();
-        let mut output_image = GpuImage::new(self, width, height);
-
-        let bytes = crate::utils::primitive_slice_to_bytes(img);
-        output_image.write(bytes);
-
-        output_image
     }
 
     /// Non-blocking GPU poll.
