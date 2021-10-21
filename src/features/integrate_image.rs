@@ -12,7 +12,7 @@ pub trait ImageToGpgpu {
 
 pub trait GpgpuToImage {
     type ImgPixel: ::image::Pixel + 'static;
-    type ImgPrimitive: ::image::Primitive;
+    // type ImgPrimitive: ::image::Primitive;
 }
 
 macro_rules! image_to_gpgpu_impl {
@@ -32,7 +32,7 @@ macro_rules! gpgpu_to_image_impl {
             $(
                 impl GpgpuToImage for $gpgpu_pixel {
                     type ImgPixel =  $pixel;
-                    type ImgPrimitive = <$pixel as ::image::Pixel>::Subpixel;
+                    // type ImgPrimitive = <$pixel as ::image::Pixel>::Subpixel;
                 }
             )+
         )+
@@ -40,7 +40,8 @@ macro_rules! gpgpu_to_image_impl {
 }
 
 gpgpu_to_image_impl! {
-    ::image::Rgba<u8>, pixels::Rgba8Uint, pixels::Rgba8UintNorm, pixels::Rgba8Sint, pixels::Rgba8SintNorm
+    ::image::Rgba<u8>, pixels::Rgba8Uint, pixels::Rgba8UintNorm;
+    ::image::Rgba<i8>, pixels::Rgba8Sint, pixels::Rgba8SintNorm
 }
 
 image_to_gpgpu_impl! {
