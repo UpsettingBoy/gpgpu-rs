@@ -61,7 +61,7 @@ where
 
         let staging = self
             .fw
-            .create_staging_buffer((padded_bytes_per_row * self.size.height) as usize);
+            .create_download_staging_buffer((padded_bytes_per_row * self.size.height) as usize);
 
         let mut encoder = self
             .fw
@@ -120,7 +120,7 @@ where
 
         let staging = self
             .fw
-            .create_staging_buffer((padded_bytes_per_row * self.size.height) as usize);
+            .create_download_staging_buffer((padded_bytes_per_row * self.size.height) as usize);
 
         let mut encoder = self
             .fw
@@ -207,7 +207,7 @@ where
 
         let staging = self
             .fw
-            .create_staging_buffer((padded_bytes_per_row * self.size.height) as usize);
+            .create_upload_staging_buffer((padded_bytes_per_row * self.size.height) as usize);
 
         let mut encoder = self
             .fw

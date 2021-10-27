@@ -125,16 +125,20 @@ impl Framework {
         }
     }
 
-    // TODO: Reuse staging buffers from pool instead of creating-destroying for every read.
-    // Could be even selected typing it in Framework as Framework<Cache = Recreate> or Framework<Cache = Pool>, etc
-    pub(crate) fn create_staging_buffer(&self, size: usize) -> wgpu::Buffer {
+    pub(crate) fn create_download_staging_buffer(&self, size: usize) -> wgpu::Buffer {
         self.device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
             size: size as u64,
-            usage: wgpu::BufferUsages::MAP_READ
-                | wgpu::BufferUsages::MAP_WRITE
-                | wgpu::BufferUsages::COPY_DST
-                | wgpu::BufferUsages::COPY_SRC,
+            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        })
+    }
+
+    pub(crate) fn create_upload_staging_buffer(&self, size: usize) -> wgpu::Buffer {
+        self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: None,
+            size: size as u64,
+            usage: wgpu::BufferUsages::MAP_WRITE | wgpu::BufferUsages::COPY_SRC,
             mapped_at_creation: false,
         })
     }

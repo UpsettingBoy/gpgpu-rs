@@ -30,7 +30,7 @@ where
     /// In order for this future to resolve, [`Framework::poll`](crate::Framework::poll) or [`Framework::blocking_poll`](crate::Framework::poll)
     /// must be invoked.
     pub async fn read_async(&self) -> GpuResult<Vec<T>> {
-        let staging = self.fw.create_staging_buffer(self.size);
+        let staging = self.fw.create_download_staging_buffer(self.size);
 
         let mut encoder = self
             .fw
@@ -58,7 +58,7 @@ where
 
     /// Blocking read of the content of the [`GpuBuffer`] into a [`Vec`].
     pub fn read(&self) -> GpuResult<Vec<T>> {
-        let staging = self.fw.create_staging_buffer(self.size);
+        let staging = self.fw.create_download_staging_buffer(self.size);
 
         let mut encoder = self
             .fw
@@ -91,7 +91,7 @@ where
     /// In order for this future to resolve, [`Framework::poll`](crate::Framework::poll) or [`Framework::blocking_poll`](crate::Framework::blocking_poll)
     /// must be invoked.
     pub async fn write_async(&mut self, data: &[T]) -> GpuResult<()> {
-        let staging = self.fw.create_staging_buffer(data.len());
+        let staging = self.fw.create_upload_staging_buffer(self.size);
 
         let mut encoder = self
             .fw
