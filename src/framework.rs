@@ -1,8 +1,4 @@
-use std::marker::PhantomData;
-
-use wgpu::util::DeviceExt;
-
-use crate::{primitives::PixelInfo, Framework, GpuBuffer, GpuImage, KernelBuilder};
+use crate::{primitives::PixelInfo, Framework, GpuImage, KernelBuilder};
 
 impl Default for Framework {
     fn default() -> Self {
@@ -73,55 +69,6 @@ impl Framework {
             sets: Vec::new(),
             shader,
             entry_point: entry_point.into(),
-        }
-    }
-
-    /// Creates an empty [`GpuBuffer`] of the desired `len`gth.
-    pub fn create_buffer<T>(&self, len: usize) -> GpuBuffer<T>
-    where
-        T: bytemuck::Pod,
-    {
-        let size = len * std::mem::size_of::<T>();
-
-        let storage = self.device.create_buffer(&wgpu::BufferDescriptor {
-            label: None,
-            size: size as u64,
-            usage: wgpu::BufferUsages::STORAGE
-                | wgpu::BufferUsages::COPY_SRC
-                | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-
-        GpuBuffer {
-            fw: self,
-            storage,
-            size,
-            _marker: PhantomData,
-        }
-    }
-
-    /// Creates a [`GpuBuffer`] from a `data` slice.
-    pub fn create_buffer_from_slice<T>(&self, data: &[T]) -> GpuBuffer<T>
-    where
-        T: bytemuck::Pod,
-    {
-        let size = data.len() * std::mem::size_of::<T>();
-
-        let storage = self
-            .device
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: None,
-                contents: bytemuck::cast_slice(data),
-                usage: wgpu::BufferUsages::STORAGE
-                    | wgpu::BufferUsages::COPY_SRC
-                    | wgpu::BufferUsages::COPY_DST,
-            });
-
-        GpuBuffer {
-            fw: self,
-            storage,
-            size,
-            _marker: PhantomData,
         }
     }
 

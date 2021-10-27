@@ -1,3 +1,7 @@
+use std::marker::PhantomData;
+
+use wgpu::util::DeviceExt;
+
 use crate::{GpuBuffer, GpuResult};
 
 impl<'fw, T> GpuBuffer<'fw, T>
@@ -23,6 +27,55 @@ where
     /// Obtains the size in bytes of this [`GpuBuffer`].
     pub fn size(&self) -> usize {
         self.size
+    }
+
+    /// Creates an empty [`GpuBuffer`] of the desired `len`gth.
+    pub fn new(fw: &'fw crate::Framework, len: usize) -> Self
+    where
+        T: bytemuck::Pod,
+    {
+        let size = len * std::mem::size_of::<T>();
+
+        let storage = fw.device.create_buffer(&wgpu::BufferDescriptor {
+            label: None,
+            size: size as u64,
+            usage: wgpu::BufferUsages::STORAGE
+                | wgpu::BufferUsages::COPY_SRC
+                | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+
+        GpuBuffer {
+            fw,
+            storage,
+            size,
+            _marker: PhantomData,
+        }
+    }
+
+    /// Creates a [`GpuBuffer`] from a `data` slice.
+    pub fn from_slice(fw: &'fw crate::Framework, data: &[T]) -> Self
+    where
+        T: bytemuck::Pod,
+    {
+        let size = data.len() * std::mem::size_of::<T>();
+
+        let storage = fw
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: None,
+                contents: bytemuck::cast_slice(data),
+                usage: wgpu::BufferUsages::STORAGE
+                    | wgpu::BufferUsages::COPY_SRC
+                    | wgpu::BufferUsages::COPY_DST,
+            });
+
+        GpuBuffer {
+            fw,
+            storage,
+            size,
+            _marker: PhantomData,
+        }
     }
 
     /// Asyncronously reads the contents of the [`GpuBuffer`] into a [`Vec`].

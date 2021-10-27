@@ -11,9 +11,9 @@ fn main() {
     let data_b = (0..size).into_iter().rev().collect::<Vec<u32>>(); // Vector B data. 9999 (size - 1), 9998, ..., 0.
 
     // Allocation of new vectors on the GPU
-    let gpu_vec_a = fw.create_buffer_from_slice(&data_a); // Input vector A.
-    let gpu_vec_b = fw.create_buffer_from_slice(&data_b); // Input vector B.
-    let gpu_vec_c = fw.create_buffer::<u32>(size as usize); // Output vector C. Empty.
+    let gpu_vec_a = gpgpu::GpuBuffer::from_slice(&fw, &data_a); // Input vector A.
+    let gpu_vec_b = gpgpu::GpuBuffer::from_slice(&fw, &data_b); // Input vector B.
+    let gpu_vec_c = gpgpu::GpuBuffer::new(&fw, size as usize); // Output vector C. Empty.
 
     // We have to tell the GPU how the data is sent. Take a look at the shader (mult.wgsl).
     // The boolean indicates wether the vector is read-only or not.
