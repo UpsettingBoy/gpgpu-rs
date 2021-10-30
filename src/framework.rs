@@ -1,4 +1,4 @@
-use crate::{primitives::PixelInfo, Framework, GpuImage, KernelBuilder};
+use crate::{Framework, KernelBuilder};
 
 impl Default for Framework {
     fn default() -> Self {
@@ -90,14 +90,6 @@ impl Framework {
             usage: wgpu::BufferUsages::MAP_WRITE | wgpu::BufferUsages::COPY_SRC,
             mapped_at_creation: false,
         })
-    }
-
-    /// Creates an empty [`GpuImage`] with the desired `width`, `height` and [`TextureFormat`](wgpu::TextureFormat).
-    pub fn create_image<P>(&self, width: u32, height: u32) -> GpuImage<P>
-    where
-        P: PixelInfo,
-    {
-        GpuImage::new(self, width, height)
     }
 
     /// Non-blocking GPU poll.

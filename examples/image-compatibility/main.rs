@@ -13,8 +13,8 @@ fn main() {
     let (width, height) = rgba.dimensions();
 
     // GPU image creation
-    let input_img = fw.create_image_from_image_crate(&rgba); // Input
-    let output_img = fw.create_image::<Rgba8Uint>(width, height); // Output
+    let input_img = gpgpu::GpuImage::from_image_crate(&fw, &rgba); // Input
+    let output_img = gpgpu::GpuImage::<Rgba8Uint>::new(&fw, width, height); // Output
 
     let binds = gpgpu::DescriptorSet::default()
         .bind_image(&input_img)

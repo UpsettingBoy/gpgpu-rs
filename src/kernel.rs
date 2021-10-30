@@ -112,7 +112,7 @@ impl<'res> DescriptorSet<'res> {
             visibility: wgpu::ShaderStages::COMPUTE,
             ty: wgpu::BindingType::StorageTexture {
                 access: access.to_wgpu_storage_texture_access(),
-                format: img.format,
+                format: P::wgpu_format(),
                 view_dimension: wgpu::TextureViewDimension::D2,
             },
             count: None,

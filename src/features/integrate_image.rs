@@ -12,7 +12,6 @@ pub trait ImageToGpgpu {
 
 pub trait GpgpuToImage {
     type ImgPixel: ::image::Pixel + 'static;
-    // type ImgPrimitive: ::image::Primitive;
 }
 
 macro_rules! image_to_gpgpu_impl {
@@ -32,7 +31,6 @@ macro_rules! gpgpu_to_image_impl {
             $(
                 impl GpgpuToImage for $gpgpu_pixel {
                     type ImgPixel =  $pixel;
-                    // type ImgPrimitive = <$pixel as ::image::Pixel>::Subpixel;
                 }
             )+
         )+
@@ -51,17 +49,19 @@ image_to_gpgpu_impl! {
     ::image::Luma<u8>, pixels::Luma8, pixels::Luma8Norm
 }
 
-impl crate::Framework {
-    pub fn create_image_from_image_crate<Pixel, Container>(
-        &self,
+impl<'fw, Pixel> crate::GpuImage<'fw, Pixel>
+where
+    Pixel: image::Pixel + ImageToGpgpu + 'static,
+{
+    pub fn from_image_crate<Container>(
+        fw: &'fw crate::Framework,
         img: &ImageBuffer<Pixel, Container>,
-    ) -> GpuImage<Pixel::GpgpuPixel>
+    ) -> GpuImage<'fw, Pixel::GpgpuPixel>
     where
-        Pixel: image::Pixel + ImageToGpgpu + 'static,
         Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
     {
         let (width, height) = img.dimensions();
-        let mut output_image = GpuImage::new(self, width, height);
+        let mut output_image = GpuImage::new(fw, width, height);
 
         let bytes = primitive_slice_to_bytes(img);
         output_image.write(bytes);
@@ -69,16 +69,15 @@ impl crate::Framework {
         output_image
     }
 
-    pub fn create_image_from_image_crate_normalised<Pixel, Container>(
-        &self,
+    pub fn from_image_crate_normalised<Container>(
+        fw: &'fw crate::Framework,
         img: &ImageBuffer<Pixel, Container>,
-    ) -> GpuImage<Pixel::NormGpgpuPixel>
+    ) -> GpuImage<'fw, Pixel::NormGpgpuPixel>
     where
-        Pixel: image::Pixel + ImageToGpgpu + 'static,
         Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
     {
         let (width, height) = img.dimensions();
-        let mut output_image = GpuImage::new(self, width, height);
+        let mut output_image = GpuImage::new(fw, width, height);
 
         let bytes = primitive_slice_to_bytes(img);
         output_image.write(bytes);

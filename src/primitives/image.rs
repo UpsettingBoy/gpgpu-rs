@@ -1,5 +1,7 @@
 use std::marker::PhantomData;
 
+use wgpu::util::DeviceExt;
+
 use super::PixelInfo;
 use crate::{GpuImage, GpuResult};
 
@@ -7,7 +9,8 @@ impl<'fw, P> GpuImage<'fw, P>
 where
     P: PixelInfo,
 {
-    pub(crate) fn new(fw: &'fw crate::Framework, width: u32, height: u32) -> Self {
+    /// Creates an empty [`GpuImage`] with the desired `width`, `height` and [`TextureFormat`](wgpu::TextureFormat).
+    pub fn new(fw: &'fw crate::Framework, width: u32, height: u32) -> Self {
         let size = wgpu::Extent3d {
             width,
             height,
@@ -34,7 +37,45 @@ where
         GpuImage {
             fw,
             texture,
-            format,
+            size,
+            full_view,
+            _pixel: PhantomData,
+        }
+    }
+
+    pub fn from_slice(fw: &'fw crate::Framework, width: u32, data: &[u8]) -> Self {
+        let height = (data.len() / P::byte_size()) as u32 / width;
+
+        let size = wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        };
+
+        let format = P::wgpu_format();
+
+        let texture = fw.device.create_texture_with_data(
+            &fw.queue,
+            &wgpu::TextureDescriptor {
+                label: None,
+                size,
+                dimension: wgpu::TextureDimension::D2,
+                mip_level_count: 1,
+                sample_count: 1,
+                format,
+                usage: wgpu::TextureUsages::STORAGE_BINDING
+                    | wgpu::TextureUsages::COPY_SRC
+                    | wgpu::TextureUsages::COPY_DST
+                    | wgpu::TextureUsages::TEXTURE_BINDING,
+            },
+            data,
+        );
+
+        let full_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+        GpuImage {
+            fw,
+            texture,
             size,
             full_view,
             _pixel: PhantomData,

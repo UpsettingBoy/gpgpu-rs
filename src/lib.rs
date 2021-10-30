@@ -141,7 +141,6 @@ pub struct GpuUniformBuffer<'fw, T: bytemuck::Pod> {
 pub struct GpuImage<'fw, P> {
     fw: &'fw Framework,
     pub texture: wgpu::Texture,
-    pub format: wgpu::TextureFormat,
     pub size: wgpu::Extent3d,
     full_view: wgpu::TextureView,
     _pixel: PhantomData<P>,
