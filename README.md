@@ -25,12 +25,14 @@ result in another vector C.
     let cpu_data = (0..10000).into_iter().collect::<Vec<u32>>();
 
     // GPU buffer creation
-    let buf_a = fw.create_buffer_from_slice(&cpu_data);     // Input
-    let buf_b = fw.create_buffer_from_slice(&cpu_data);     // Input
-    let buf_c = fw.create_buffer::<u32>(cpu_data.len());    // Output
+    let buf_a = GpuBuffer::from_slice(&fw, &cpu_data);       // Input
+    let buf_b = GpuBuffer::from_slice(&fw, &cpu_data);       // Input
+    let buf_c = GpuBuffer::<u32>::new(&fw, cpu_data.len());  // Output
 
-    // Shader load from SPIR-V file
-    let shader_module = utils::shader::from_spirv_file(&fw, "<shader path>")?;
+    // Shader load from SPIR-V binary file
+    let shader_module = utils::shader::from_spirv_file(&fw, "<SPIR-V shader path>")?;
+    //  or from a WGSL source file
+    let shader_module = utils::shader::from_wgsl_file(&fw, "<WGSL shader path>")?;    
 
     // Descriptor set creation
     let desc_set = DescriptorSet::default()

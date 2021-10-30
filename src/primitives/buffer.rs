@@ -191,6 +191,30 @@ impl<'fw, T> GpuUniformBuffer<'fw, T>
 where
     T: bytemuck::Pod,
 {
+    /// Creates a complete [`BindingResource`](wgpu::BindingResource) of the [`GpuUniformBuffer`].
+    pub fn as_binding_resource(&self) -> wgpu::BindingResource {
+        self.storage.as_entire_binding()
+    }
+
+    /// Obtains the number of elements (or capacity if created using [`Framework::create_buffer`](crate::Framework::create_buffer))
+    /// of the [`GpuUniformBuffer`].
+    pub fn len(&self) -> usize {
+        self.size / std::mem::size_of::<T>()
+    }
+
+    /// Checks if the [`GpuUniformBuffer`] is empty.
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    /// Obtains the size in bytes of this [`GpuUniformBuffer`].
+    pub fn size(&self) -> usize {
+        self.size
+    }
+
+    /// Creates an empty [`GpuUniformBuffer`] of the desired `len`gth.
+    ///
+    /// Fails if `sizeof::<T>() * len` is bigger than GPU's max uniform buffer size.
     pub fn new(fw: &'fw Framework, len: usize) -> GpuResult<Self> {
         let size = len * std::mem::size_of::<T>();
 
@@ -216,6 +240,9 @@ where
         })
     }
 
+    /// Creates a [`GpuUniformBuffer`] from a `data` slice.
+    ///
+    /// Fails if `data` byte size is bigger than GPU's max uniform buffer size.
     pub fn from_slice(fw: &'fw crate::Framework, data: &[T]) -> GpuResult<Self>
     where
         T: bytemuck::Pod,
@@ -243,27 +270,6 @@ where
             size,
             _marker: PhantomData,
         })
-    }
-
-    /// Creates a complete [`BindingResource`](wgpu::BindingResource) of the [`GpuUniformBuffer`].
-    pub fn as_binding_resource(&self) -> wgpu::BindingResource {
-        self.storage.as_entire_binding()
-    }
-
-    /// Obtains the number of elements (or capacity if created using [`Framework::create_buffer`](crate::Framework::create_buffer))
-    /// of the [`GpuUniformBuffer`].
-    pub fn len(&self) -> usize {
-        self.size / std::mem::size_of::<T>()
-    }
-
-    /// Checks if the [`GpuUniformBuffer`] is empty.
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
-    /// Obtains the size in bytes of this [`GpuUniformBuffer`].
-    pub fn size(&self) -> usize {
-        self.size
     }
 
     /// Asyncronously writes the contents of `data` into the [`GpuUniformBuffer`].

@@ -4,6 +4,30 @@ use crate::{
 };
 
 impl<'res> DescriptorSet<'res> {
+    /// Binds a [`GpuUniformBuffer`] as a uniform buffer in the shader.
+    ///
+    /// ### Example WGSL syntax:
+    /// ```ignore
+    /// [[block]]
+    /// struct UniformStruct {
+    ///     a: vec3<u32>;
+    ///     b: vec3<u32>;
+    ///     c: vec3<u32>;
+    /// };
+    ///
+    /// [[group(0), binding(0)]]
+    /// var<uniform> myUniformBuffer: UniformStruct;
+    /// ```
+    ///
+    /// ### Example GLSL syntax:
+    /// ```glsl
+    /// layout(std140, binding = 0)
+    /// uniform UniformStruct {
+    ///     uvec3 a;
+    ///     uvec3 b;
+    ///     uvec3 c;
+    /// };
+    /// ```
     pub fn bind_uniform_buffer<T>(mut self, uniform_buf: &'res GpuUniformBuffer<T>) -> Self
     where
         T: bytemuck::Pod,
@@ -199,7 +223,6 @@ impl<'fw, 'res, 'sha> KernelBuilder<'fw, 'res, 'sha> {
     }
 
     /// Builds a [`Kernel`] from the layout stored in [`KernelBuilder`].
-    // pub fn build(self) -> Kernel<'fw, 'res, 'sha> {
     pub fn build(self) -> Kernel<'fw> {
         let sets = self.layouts.iter().collect::<Vec<_>>();
 
@@ -224,18 +247,13 @@ impl<'fw, 'res, 'sha> KernelBuilder<'fw, 'res, 'sha> {
 
         Kernel {
             fw: self.fw,
-            // layouts: self.layouts,
-            // pipeline_layout,
             pipeline,
-            // descriptors: self.descriptors,
             sets: self.sets,
-            // shader: self.shader,
             entry_point: self.entry_point,
         }
     }
 }
 
-// impl<'fw, 'res, 'sha> Kernel<'fw, 'res, 'sha> {
 impl<'fw> Kernel<'fw> {
     /// Enqueues the execution of this [`Kernel`] to the GPU.
     ///

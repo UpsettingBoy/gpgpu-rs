@@ -1,6 +1,6 @@
 use gpgpu::primitives::pixels::Rgba8Uint;
 
-// This example simply mirrors an image.
+// This example simply mirrors an image using the image crate compatibility feature.
 fn main() {
     let fw = gpgpu::Framework::default();
     let shader_mod =
@@ -25,7 +25,7 @@ fn main() {
         .build()
         .enqueue(width / 32, height / 32, 1); // Since the kernel workgroup size is (32,32,1) dims are divided
 
-    let output = output_img.read_to_image().unwrap();
+    let output = output_img.read_to_image_buffer().unwrap();
     output
         .save("examples/image-compatibility/mirror-monke.png")
         .unwrap();

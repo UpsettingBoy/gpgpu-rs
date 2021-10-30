@@ -5,11 +5,13 @@ use crate::{
 
 use image::ImageBuffer;
 
+/// Contains information about the `image::ImageBuffer` -> `gpgpu-rs::GpuImage` images conversion.
 pub trait ImageToGpgpu {
     type GpgpuPixel: PixelInfo + GpgpuToImage;
     type NormGpgpuPixel: PixelInfo + GpgpuToImage;
 }
 
+/// Contains information about the `gpgpu-rs::GpuImage` -> `image::ImageBuffer` images conversion.
 pub trait GpgpuToImage {
     type ImgPixel: ::image::Pixel + 'static;
 }
@@ -53,6 +55,7 @@ impl<'fw, Pixel> crate::GpuImage<'fw, Pixel>
 where
     Pixel: image::Pixel + ImageToGpgpu + 'static,
 {
+    /// Creates a new [`GpuImage`] from a [`image::ImageBuffer`].
     pub fn from_image_crate<Container>(
         fw: &'fw crate::Framework,
         img: &ImageBuffer<Pixel, Container>,
@@ -69,6 +72,7 @@ where
         output_image
     }
 
+    /// Creates a new normalised [`GpuImage`] from a [`image::ImageBuffer`].
     pub fn from_image_crate_normalised<Container>(
         fw: &'fw crate::Framework,
         img: &ImageBuffer<Pixel, Container>,
@@ -90,7 +94,8 @@ impl<'fw, P> GpuImage<'fw, P>
 where
     P: PixelInfo + GpgpuToImage,
 {
-    pub fn read_to_image(
+    /// Blocking read of the [`GpuImage`], creating a new [`image::ImageBuffer`] as output.
+    pub fn read_to_image_buffer(
         &self,
     ) -> GpuResult<
         ::image::ImageBuffer<
@@ -108,7 +113,11 @@ where
         img
     }
 
-    pub async fn read_to_image_async(
+    /// Asyncronously read of the [`GpuImage`], creating a new [`image::ImageBuffer`] as output.
+    ///
+    /// In order for this future to resolve, [`Framework::poll`](crate::Framework::poll) or [`Framework::blocking_poll`](crate::Framework::blocking_poll)
+    /// must be invoked.
+    pub async fn read_to_image_buffer_async(
         &self,
     ) -> GpuResult<
         ::image::ImageBuffer<
@@ -126,6 +135,7 @@ where
         img
     }
 
+    /// Writes the [`image::ImageBuffer`] `img` into the [`GpuImage`].
     pub fn write_from_image(
         &mut self,
         img: &::image::ImageBuffer<
@@ -137,7 +147,11 @@ where
         self.write(bytes);
     }
 
-    pub async fn write_from_image_async(
+    /// Asyncronously writes the [`image::ImageBuffer`] `img` into the [`GpuImage`].
+    ///     
+    /// In order for this future to resolve, [`Framework::poll`](crate::Framework::poll) or [`Framework::blocking_poll`](crate::Framework::blocking_poll)
+    /// must be invoked.
+    pub async fn write_from_image_buffer_async(
         &mut self,
         img: &::image::ImageBuffer<
             P::ImgPixel,

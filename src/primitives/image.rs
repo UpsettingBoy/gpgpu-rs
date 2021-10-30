@@ -43,9 +43,8 @@ where
         }
     }
 
-    pub fn from_slice(fw: &'fw crate::Framework, width: u32, data: &[u8]) -> Self {
-        let height = (data.len() / P::byte_size()) as u32 / width;
-
+    /// Creates a new `GpuImage` from an image's raw bytes (`data`) and its dimensions.
+    pub fn from_raw_image(fw: &'fw crate::Framework, width: u32, height: u32, data: &[u8]) -> Self {
         let size = wgpu::Extent3d {
             width,
             height,

@@ -21,12 +21,14 @@
 //!     let cpu_data = (0..10000).into_iter().collect::<Vec<u32>>();
 //!
 //!     // GPU buffer creation
-//!     let buf_a = fw.create_buffer_from_slice(&cpu_data);     // Input
-//!     let buf_b = fw.create_buffer_from_slice(&cpu_data);     // Input
-//!     let buf_c = fw.create_buffer::<u32>(cpu_data.len());    // Output
+//!     let buf_a = GpuBuffer::from_slice(&fw, &cpu_data);       // Input
+//!     let buf_b = GpuBuffer::from_slice(&fw, &cpu_data);       // Input
+//!     let buf_c = GpuBuffer::<u32>::new(&fw, cpu_data.len());  // Output
 //!
-//!     // Shader load from SPIR-V file
-//!     let shader_module = utils::shader::from_spirv_file(&fw, "<shader path>")?;
+//!     // Shader load from SPIR-V binary file
+//!     let shader_module = utils::shader::from_spirv_file(&fw, "<SPIR-V shader path>")?;
+//!     //  or from a WGSL source file
+//!     let shader_module = utils::shader::from_wgsl_file(&fw, "<WGSL shader path>")?;    
 //!
 //!     // Descriptor set creation
 //!     let desc_set = DescriptorSet::default()
@@ -83,7 +85,8 @@ pub mod utils;
 /// Lazy error handling :)
 pub type GpuResult<T> = Result<T, Box<dyn std::error::Error>>;
 
-/// Allows the creation of [`GpuBuffer`], [`GpuImage`] and [`Kernel`].
+/// Entry point of `gpgpu-rs`. A [`Framework`] must be created
+/// first as all GPU primitives needs it to be created.
 #[allow(dead_code)]
 pub struct Framework {
     instance: wgpu::Instance,
@@ -116,7 +119,7 @@ pub enum AccessMode {
 }
 
 /// Vector of contiguous homogeneous elements on GPU memory.
-/// This elements must implement [`bytemuck::Pod`](bytemuck::Pod).
+/// Its elements must implement [`bytemuck::Pod`](bytemuck::Pod).
 ///
 /// Equivalent to OpenCL's Buffer objects.
 pub struct GpuBuffer<'fw, T: bytemuck::Pod> {
@@ -127,6 +130,10 @@ pub struct GpuBuffer<'fw, T: bytemuck::Pod> {
     _marker: PhantomData<T>,
 }
 
+/// Uniform vector of contiguous homogeneous elements on GPU memory.
+/// Its elements must implement [`bytemuck::Pod`](bytemuck::Pod).
+///
+/// Equivalent to OpenCL's Uniform Buffer objects.
 pub struct GpuUniformBuffer<'fw, T: bytemuck::Pod> {
     fw: &'fw Framework,
     pub storage: wgpu::Buffer,
@@ -168,7 +175,6 @@ pub struct KernelBuilder<'fw, 'res, 'sha> {
 ///
 /// Can only be created from [`KernelBuilder`].
 /// Equivalent to OpenCL's Kernel.
-// pub struct Kernel<'fw, 'res, 'sha> {
 pub struct Kernel<'fw> {
     fw: &'fw Framework,
     // layouts: Vec<wgpu::BindGroupLayout>,
