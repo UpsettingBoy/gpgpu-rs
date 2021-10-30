@@ -89,6 +89,7 @@ pub struct Framework {
     instance: wgpu::Instance,
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
+    limits: wgpu::Limits,
 }
 
 /// Access mode of a `gpgpu` object.
@@ -119,6 +120,14 @@ pub enum AccessMode {
 ///
 /// Equivalent to OpenCL's Buffer objects.
 pub struct GpuBuffer<'fw, T: bytemuck::Pod> {
+    fw: &'fw Framework,
+    pub storage: wgpu::Buffer,
+    size: usize,
+
+    _marker: PhantomData<T>,
+}
+
+pub struct GpuUniformBuffer<'fw, T: bytemuck::Pod> {
     fw: &'fw Framework,
     pub storage: wgpu::Buffer,
     size: usize,

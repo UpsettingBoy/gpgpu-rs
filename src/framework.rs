@@ -29,6 +29,7 @@ impl Default for Framework {
 
         Self {
             instance,
+            limits: device.limits(),
             device,
             queue,
         }
@@ -46,6 +47,7 @@ impl Framework {
     pub fn new(instance: wgpu::Instance, device: wgpu::Device, queue: wgpu::Queue) -> Self {
         Self {
             instance,
+            limits: device.limits(),
             device,
             queue,
         }
