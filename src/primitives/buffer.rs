@@ -195,8 +195,8 @@ where
         let size = len * std::mem::size_of::<T>();
 
         if size as u32 > fw.limits.max_uniform_buffer_binding_size {
-            let msg = format!("Cannot create GpuUniformBuffer of {} bytes (max. {} bytes). Consider creating a GpuBuffer instead.", 
-                                        size, 
+            let msg = format!("Cannot create GpuUniformBuffer of {} bytes (max. {} bytes). Consider creating a GpuBuffer instead.",
+                                        size,
                                         fw.limits.max_uniform_buffer_binding_size);
             return Err(msg.into());
         }
@@ -204,8 +204,7 @@ where
         let storage = fw.device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
             size: size as u64,
-            usage: wgpu::BufferUsages::UNIFORM
-                | wgpu::BufferUsages::COPY_DST,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
 
@@ -217,27 +216,33 @@ where
         })
     }
 
-    pub fn from_slice(fw: &'fw crate::Framework, data: &[T]) -> Self
+    pub fn from_slice(fw: &'fw crate::Framework, data: &[T]) -> GpuResult<Self>
     where
         T: bytemuck::Pod,
     {
         let size = data.len() * std::mem::size_of::<T>();
+
+        if size as u32 > fw.limits.max_uniform_buffer_binding_size {
+            let msg = format!("Cannot create GpuUniformBuffer of {} bytes (max. {} bytes). Consider creating a GpuBuffer instead.",
+                                        size,
+                                        fw.limits.max_uniform_buffer_binding_size);
+            return Err(msg.into());
+        }
 
         let storage = fw
             .device
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: None,
                 contents: bytemuck::cast_slice(data),
-                usage: wgpu::BufferUsages::UNIFORM
-                    | wgpu::BufferUsages::COPY_DST,
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             });
 
-        Self {
+        Ok(Self {
             fw,
             storage,
             size,
             _marker: PhantomData,
-        }
+        })
     }
 
     /// Creates a complete [`BindingResource`](wgpu::BindingResource) of the [`GpuUniformBuffer`].

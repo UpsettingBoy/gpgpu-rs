@@ -1,9 +1,10 @@
 use crate::{
-    primitives::PixelInfo, AccessMode, DescriptorSet, GpuBuffer, GpuImage, Kernel, KernelBuilder,
+    primitives::PixelInfo, AccessMode, DescriptorSet, GpuBuffer, GpuImage, GpuUniformBuffer,
+    Kernel, KernelBuilder,
 };
 
 impl<'res> DescriptorSet<'res> {
-    pub fn bind_uniform_buffer<T>(mut self, uniform_buf: &'res GpuBuffer<T>) -> Self
+    pub fn bind_uniform_buffer<T>(mut self, uniform_buf: &'res GpuUniformBuffer<T>) -> Self
     where
         T: bytemuck::Pod,
     {
