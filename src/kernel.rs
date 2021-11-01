@@ -1,5 +1,5 @@
 use crate::{
-    primitives::PixelInfo, AccessMode, DescriptorSet, GpuBuffer, GpuImage, GpuUniformBuffer,
+    primitives::PixelInfo, DescriptorSet, GpuBuffer, GpuBufferUsage, GpuImage, GpuUniformBuffer,
     Kernel, KernelBuilder,
 };
 
@@ -47,7 +47,7 @@ impl<'res> DescriptorSet<'res> {
 
         let bind = wgpu::BindGroupEntry {
             binding: bind_id,
-            resource: uniform_buf.as_binding_resource(),
+            resource: uniform_buf.0.as_binding_resource(),
         };
 
         self.set_layout.push(bind_entry);
@@ -77,11 +77,7 @@ impl<'res> DescriptorSet<'res> {
     ///     int data[];
     /// };
     /// ```
-    pub fn bind_storage_buffer<T>(
-        mut self,
-        storage_buf: &'res GpuBuffer<T>,
-        access: AccessMode,
-    ) -> Self
+    pub fn bind_buffer<T>(mut self, storage_buf: &'res GpuBuffer<T>, access: GpuBufferUsage) -> Self
     where
         T: bytemuck::Pod,
     {
@@ -94,7 +90,7 @@ impl<'res> DescriptorSet<'res> {
                 has_dynamic_offset: false,
                 min_binding_size: None,
                 ty: wgpu::BufferBindingType::Storage {
-                    read_only: access == AccessMode::ReadOnly,
+                    read_only: access == GpuBufferUsage::ReadOnly,
                 },
             },
             count: None,
@@ -102,7 +98,7 @@ impl<'res> DescriptorSet<'res> {
 
         let bind = wgpu::BindGroupEntry {
             binding: bind_id,
-            resource: storage_buf.as_binding_resource(),
+            resource: storage_buf.0.as_binding_resource(),
         };
 
         self.set_layout.push(bind_entry);
@@ -125,18 +121,14 @@ impl<'res> DescriptorSet<'res> {
     /// ```glsl
     /// layout (set=0, binding=0, rgba8uint) uimage2D myStorageImg;
     /// ```
-    pub fn bind_storage_image<P: PixelInfo>(
-        mut self,
-        img: &'res GpuImage<P>,
-        access: AccessMode,
-    ) -> Self {
+    pub fn bind_storage_image<P: PixelInfo>(mut self, img: &'res GpuImage<P>) -> Self {
         let bind_id = self.set_layout.len() as u32;
 
         let bind_entry = wgpu::BindGroupLayoutEntry {
             binding: bind_id,
             visibility: wgpu::ShaderStages::COMPUTE,
             ty: wgpu::BindingType::StorageTexture {
-                access: access.to_wgpu_storage_texture_access(),
+                access: wgpu::StorageTextureAccess::WriteOnly,
                 format: P::wgpu_format(),
                 view_dimension: wgpu::TextureViewDimension::D2,
             },

@@ -18,7 +18,7 @@ fn main() {
 
     let binds = gpgpu::DescriptorSet::default()
         .bind_image(&input_img)
-        .bind_storage_image(&output_img, gpgpu::AccessMode::WriteOnly);
+        .bind_storage_image(&output_img, gpgpu::ImageUsage::WriteOnly);
 
     fw.create_kernel_builder(&shader_mod, "main")
         .add_descriptor_set(binds)

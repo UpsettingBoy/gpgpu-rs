@@ -1,17 +1,6 @@
-use crate::AccessMode;
-
-pub mod buffer;
+pub mod buffers;
+pub mod generic_buffer;
 pub mod image;
-
-impl AccessMode {
-    pub(crate) fn to_wgpu_storage_texture_access(&self) -> wgpu::StorageTextureAccess {
-        match self {
-            AccessMode::ReadOnly => wgpu::StorageTextureAccess::ReadOnly,
-            AccessMode::WriteOnly => wgpu::StorageTextureAccess::WriteOnly,
-            AccessMode::ReadWrite => wgpu::StorageTextureAccess::ReadWrite,
-        }
-    }
-}
 
 /// Gives some information about the pixel format.
 pub trait PixelInfo {

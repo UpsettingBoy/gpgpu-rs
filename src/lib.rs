@@ -74,6 +74,7 @@
 
 use std::marker::PhantomData;
 
+use primitives::generic_buffer::GenericBuffer;
 pub use wgpu;
 
 pub mod features;
@@ -95,21 +96,14 @@ pub struct Framework {
     limits: wgpu::Limits,
 }
 
-/// Access mode of a `gpgpu` object.
 #[derive(PartialEq, Eq)]
-pub enum AccessMode {
+pub enum GpuBufferUsage {
     /// Read-only object.
     /// ### Example WGSL syntax:
     /// ```ignore
     /// [[group(0), binding(0)]] var<storage, read> input: Vector;
     /// ```
     ReadOnly,
-    /// Write-only object.
-    /// ### Example WGSL syntax:
-    /// ```ignore
-    /// [[group(0), binding(1)]] var output: texture_storage_2d<rgba8uint, write>;
-    /// ```
-    WriteOnly,
     /// Read-write object.
     /// ### Example WGSL syntax:
     /// ```ignore
@@ -119,27 +113,41 @@ pub enum AccessMode {
 }
 
 /// Vector of contiguous homogeneous elements on GPU memory.
-/// Its elements must implement [`bytemuck::Pod`](bytemuck::Pod).
+/// Its elements must implement [`bytemuck::Pod`].
 ///
 /// Equivalent to OpenCL's Buffer objects.
-pub struct GpuBuffer<'fw, T: bytemuck::Pod> {
-    fw: &'fw Framework,
-    pub storage: wgpu::Buffer,
-    size: usize,
-
-    _marker: PhantomData<T>,
-}
+///
+/// More information about its shader representation
+/// under the [`DescriptorSet::bind_buffer`](crate::DescriptorSet::bind_buffer) documentation.
+pub struct GpuBuffer<'fw, T: bytemuck::Pod>(GenericBuffer<'fw, T>);
 
 /// Uniform vector of contiguous homogeneous elements on GPU memory.
-/// Its elements must implement [`bytemuck::Pod`](bytemuck::Pod).
+/// Recommended for small, read-only buffers.
+/// Its elements must implement [`bytemuck::Pod`].
 ///
 /// Equivalent to OpenCL's Uniform Buffer objects.
-pub struct GpuUniformBuffer<'fw, T: bytemuck::Pod> {
-    fw: &'fw Framework,
-    pub storage: wgpu::Buffer,
-    size: usize,
+///
+/// More information about its shader representation
+/// under the [`DescriptorSet::bind_uniform_buffer`](crate::DescriptorSet::bind_uniform_buffer) documentation.
+pub struct GpuUniformBuffer<'fw, T: bytemuck::Pod>(GenericBuffer<'fw, T>);
 
-    _marker: PhantomData<T>,
+#[derive(PartialEq, Eq)]
+pub enum ImageUsage {
+    // TODO textures can be different of WriteOnly if
+    //      wgpu::Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES enabled
+    //
+    // /// Read-only object.
+    // /// ### Example WGSL syntax:
+    // /// ```ignore
+    // /// [[group(0), binding(0)]] var<storage, read> input: Vector;
+    // /// ```
+    // ReadWrite,
+    /// Write-only object.
+    /// ### Example WGSL syntax:
+    /// ```ignore
+    /// [[group(0), binding(1)]] var output: texture_storage_2d<rgba8uint, write>;
+    /// ```
+    WriteOnly,
 }
 
 /// 2D-image of homogeneous pixels.
