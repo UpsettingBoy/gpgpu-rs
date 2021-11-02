@@ -1,5 +1,6 @@
 pub mod buffers;
 pub mod generic_buffer;
+pub mod generic_image;
 pub mod image;
 
 /// Gives some information about the pixel format.

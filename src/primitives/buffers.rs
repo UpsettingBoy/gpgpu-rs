@@ -7,8 +7,8 @@ where
     T: bytemuck::Pod,
 {
     /// Gets the inner [`wgpu::Buffer`] of this [`GpuBuffer`].
-    pub fn as_wgpu_buffer(&self) -> &wgpu::Buffer {
-        self.0.as_wgpu_buffer()
+    pub fn get_inner_buffer(&self) -> &wgpu::Buffer {
+        self.0.get_inner_buffer()
     }
 
     /// Obtains the number of elements (or capacity if created using
@@ -76,8 +76,8 @@ where
     T: bytemuck::Pod,
 {
     /// Gets the inner [`wgpu::Buffer`] of this [`GpuUniformBuffer`].
-    pub fn as_wgpu_buffer(&self) -> &wgpu::Buffer {
-        self.0.as_wgpu_buffer()
+    pub fn get_inner_buffer(&self) -> &wgpu::Buffer {
+        self.0.get_inner_buffer()
     }
 
     /// Obtains the number of elements (or capacity if created using

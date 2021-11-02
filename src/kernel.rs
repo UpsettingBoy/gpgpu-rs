@@ -1,6 +1,6 @@
 use crate::{
-    primitives::PixelInfo, DescriptorSet, GpuBuffer, GpuBufferUsage, GpuImage, GpuUniformBuffer,
-    Kernel, KernelBuilder,
+    primitives::PixelInfo, DescriptorSet, GpuBuffer, GpuBufferUsage, GpuConstImage, GpuImage,
+    GpuUniformBuffer, Kernel, KernelBuilder,
 };
 
 impl<'res> DescriptorSet<'res> {
@@ -47,7 +47,7 @@ impl<'res> DescriptorSet<'res> {
 
         let bind = wgpu::BindGroupEntry {
             binding: bind_id,
-            resource: uniform_buf.0.as_binding_resource(),
+            resource: uniform_buf.0.get_binding_resource(),
         };
 
         self.set_layout.push(bind_entry);
@@ -98,7 +98,7 @@ impl<'res> DescriptorSet<'res> {
 
         let bind = wgpu::BindGroupEntry {
             binding: bind_id,
-            resource: storage_buf.0.as_binding_resource(),
+            resource: storage_buf.0.get_binding_resource(),
         };
 
         self.set_layout.push(bind_entry);
@@ -108,9 +108,7 @@ impl<'res> DescriptorSet<'res> {
     }
 
     /// Binds a [`GpuImage`] as a storage image in the shader.
-    ///
-    /// The `access` mode must be either [`AccessMode::WriteOnly`] or [`AccessMode::ReadWrite`].
-    ///
+    /// This image is write-only.
     /// ### Example WGSL syntax:
     /// ```ignore
     /// [[group(0), binding(0)]]
@@ -121,7 +119,7 @@ impl<'res> DescriptorSet<'res> {
     /// ```glsl
     /// layout (set=0, binding=0, rgba8uint) uimage2D myStorageImg;
     /// ```
-    pub fn bind_storage_image<P: PixelInfo>(mut self, img: &'res GpuImage<P>) -> Self {
+    pub fn bind_image<P: PixelInfo>(mut self, img: &'res GpuImage<P>) -> Self {
         let bind_id = self.set_layout.len() as u32;
 
         let bind_entry = wgpu::BindGroupLayoutEntry {
@@ -137,7 +135,7 @@ impl<'res> DescriptorSet<'res> {
 
         let bind = wgpu::BindGroupEntry {
             binding: bind_id,
-            resource: img.as_binding_resource(),
+            resource: img.0.get_binding_resource(),
         };
 
         self.set_layout.push(bind_entry);
@@ -146,8 +144,8 @@ impl<'res> DescriptorSet<'res> {
         self
     }
 
-    /// Binds a [`GpuImage`] as a texture in the shader.
-    ///
+    /// Binds a [`GpuConstImage`] as a texture in the shader.
+    /// This image is read-only.
     /// ### Example WGSL syntax:
     /// ```ignore
     /// [[group(0), binding(0)]]
@@ -158,7 +156,7 @@ impl<'res> DescriptorSet<'res> {
     /// ```glsl
     /// layout (set=0, binding=0) utexture2D myTexture;
     /// ```
-    pub fn bind_image<P>(mut self, img: &'res GpuImage<P>) -> Self
+    pub fn bind_const_image<P>(mut self, img: &'res GpuConstImage<P>) -> Self
     where
         P: PixelInfo,
     {
@@ -177,7 +175,7 @@ impl<'res> DescriptorSet<'res> {
 
         let bind = wgpu::BindGroupEntry {
             binding: bind_id,
-            resource: img.as_binding_resource(),
+            resource: img.0.get_binding_resource(),
         };
 
         self.set_layout.push(bind_entry);

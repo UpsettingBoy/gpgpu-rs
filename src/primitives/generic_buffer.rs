@@ -18,12 +18,12 @@ where
     T: bytemuck::Pod,
 {
     /// Creates a complete [`wgpu::BindingResource`] of the [`GenericBuffer`].
-    pub fn as_binding_resource(&self) -> wgpu::BindingResource {
+    pub fn get_binding_resource(&self) -> wgpu::BindingResource {
         self.storage.as_entire_binding()
     }
 
     /// Gets the inner [`wgpu::Buffer`] of this [`GenericBuffer`].
-    pub fn as_wgpu_buffer(&self) -> &wgpu::Buffer {
+    pub fn get_inner_buffer(&self) -> &wgpu::Buffer {
         &self.storage
     }
 

@@ -1,294 +1,106 @@
-use std::marker::PhantomData;
-
-use wgpu::util::DeviceExt;
-
-use super::PixelInfo;
-use crate::{GpuImage, GpuResult};
+use super::{generic_image::GenericImage, PixelInfo};
+use crate::{GpuConstImage, GpuImage, GpuResult};
 
 impl<'fw, P> GpuImage<'fw, P>
 where
     P: PixelInfo,
 {
-    /// Creates an empty [`GpuImage`] with the desired `width`, `height` and [`TextureFormat`](wgpu::TextureFormat).
+    /// Gets the inner [`wgpu::Texture`] of the [`GpuImage`].
+    pub fn get_inner_texture(&self) -> &wgpu::Texture {
+        self.0.get_inner_texture()
+    }
+
+    /// Gets the [`wgpu::Extent3d`] of the [`GpuImage`].
+    pub fn get_extent3d(&self) -> wgpu::Extent3d {
+        self.0.get_extent3d()
+    }
+
+    /// Gets the width and height of the [`GpuImage`].
+    pub fn dimensions(&self) -> (u32, u32) {
+        self.0.dimensions()
+    }
+
+    /// Creates an empty [`GpuImage`] with the desired `width` and `height`.
     pub fn new(fw: &'fw crate::Framework, width: u32, height: u32) -> Self {
-        let size = wgpu::Extent3d {
-            width,
-            height,
-            depth_or_array_layers: 1,
-        };
-
-        let format = P::wgpu_format();
-
-        let texture = fw.device.create_texture(&wgpu::TextureDescriptor {
-            label: None,
-            size,
-            dimension: wgpu::TextureDimension::D2,
-            mip_level_count: 1,
-            sample_count: 1,
-            format,
-            usage: wgpu::TextureUsages::STORAGE_BINDING
-                | wgpu::TextureUsages::COPY_SRC
-                | wgpu::TextureUsages::COPY_DST
-                | wgpu::TextureUsages::TEXTURE_BINDING,
-        });
-
-        let full_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-
-        GpuImage {
-            fw,
-            texture,
-            size,
-            full_view,
-            _pixel: PhantomData,
-        }
+        Self(GenericImage::new(fw, width, height))
     }
 
     /// Creates a new `GpuImage` from an image's raw bytes (`data`) and its dimensions.
     pub fn from_raw_image(fw: &'fw crate::Framework, width: u32, height: u32, data: &[u8]) -> Self {
-        let size = wgpu::Extent3d {
-            width,
-            height,
-            depth_or_array_layers: 1,
-        };
-
-        let format = P::wgpu_format();
-
-        let texture = fw.device.create_texture_with_data(
-            &fw.queue,
-            &wgpu::TextureDescriptor {
-                label: None,
-                size,
-                dimension: wgpu::TextureDimension::D2,
-                mip_level_count: 1,
-                sample_count: 1,
-                format,
-                usage: wgpu::TextureUsages::STORAGE_BINDING
-                    | wgpu::TextureUsages::COPY_SRC
-                    | wgpu::TextureUsages::COPY_DST
-                    | wgpu::TextureUsages::TEXTURE_BINDING,
-            },
-            data,
-        );
-
-        let full_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-
-        GpuImage {
-            fw,
-            texture,
-            size,
-            full_view,
-            _pixel: PhantomData,
-        }
-    }
-
-    /// Creates a complete [`BindingResource`](wgpu::BindingResource) of the [`GpuImage`].
-    pub fn as_binding_resource(&self) -> wgpu::BindingResource {
-        wgpu::BindingResource::TextureView(&self.full_view)
+        Self(GenericImage::from_raw_image(fw, width, height, data))
     }
 
     /// Asyncronously reads the contents of the [`GpuImage`] into a [`Vec`].
     ///
-    /// In order for this future to resolve, [`Framework::poll`](crate::Framework::poll) or [`Framework::blocking_poll`](crate::Framework::blocking_poll)
+    /// In order for this future to resolve, [`Framework::poll`](crate::Framework::poll) or
+    /// [`Framework::blocking_poll`](crate::Framework::blocking_poll)
     /// must be invoked.
     pub async fn read_async(&self) -> GpuResult<Vec<u8>> {
-        use std::num::NonZeroU32;
-
-        let bytes_per_pixel = P::byte_size() as u32;
-        let unpadded_bytes_per_row = self.size.width * bytes_per_pixel;
-        let align = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
-        let padded_bytes_per_row_padding = (align - unpadded_bytes_per_row % align) % align;
-        let padded_bytes_per_row = unpadded_bytes_per_row + padded_bytes_per_row_padding;
-
-        let staging = self
-            .fw
-            .create_download_staging_buffer((padded_bytes_per_row * self.size.height) as usize);
-
-        let mut encoder = self
-            .fw
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("GpuImage::read_async"),
-            });
-
-        let copy_texture = wgpu::ImageCopyTexture {
-            aspect: wgpu::TextureAspect::All,
-            mip_level: 0,
-            origin: wgpu::Origin3d::ZERO,
-            texture: &self.texture,
-        };
-
-        let copy_buffer = wgpu::ImageCopyBuffer {
-            buffer: &staging,
-            layout: wgpu::ImageDataLayout {
-                offset: 0,
-                bytes_per_row: NonZeroU32::new(padded_bytes_per_row),
-                rows_per_image: None,
-            },
-        };
-
-        encoder.copy_texture_to_buffer(copy_texture, copy_buffer, self.size);
-
-        self.fw.queue.submit(Some(encoder.finish()));
-
-        let buff_slice = staging.slice(..);
-        let buf_future = buff_slice.map_async(wgpu::MapMode::Read);
-
-        buf_future.await?;
-
-        let data = buff_slice.get_mapped_range();
-        let result = data
-            .chunks(padded_bytes_per_row as usize)
-            .flat_map(|row| &row[0..unpadded_bytes_per_row as usize])
-            .copied()
-            .collect::<Vec<_>>();
-
-        drop(data);
-        staging.unmap();
-
-        Ok(result)
+        self.0.read_async().await
     }
 
     /// Blocking read of the content of the [`GpuImage`] into a [`Vec`].
     pub fn read(&self) -> GpuResult<Vec<u8>> {
-        use std::num::NonZeroU32;
-
-        let bytes_per_pixel = P::byte_size() as u32;
-        let unpadded_bytes_per_row = self.size.width * bytes_per_pixel;
-        let align = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
-        let padded_bytes_per_row_padding = (align - unpadded_bytes_per_row % align) % align;
-        let padded_bytes_per_row = unpadded_bytes_per_row + padded_bytes_per_row_padding;
-
-        let staging = self
-            .fw
-            .create_download_staging_buffer((padded_bytes_per_row * self.size.height) as usize);
-
-        let mut encoder = self
-            .fw
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("GpuImage::read"),
-            });
-
-        let copy_texture = self.texture.as_image_copy();
-
-        let copy_buffer = wgpu::ImageCopyBuffer {
-            buffer: &staging,
-            layout: wgpu::ImageDataLayout {
-                offset: 0,
-                bytes_per_row: NonZeroU32::new(padded_bytes_per_row),
-                rows_per_image: None,
-            },
-        };
-
-        encoder.copy_texture_to_buffer(copy_texture, copy_buffer, self.size);
-
-        self.fw.queue.submit(Some(encoder.finish()));
-
-        let buff_slice = staging.slice(..);
-        let buf_future = buff_slice.map_async(wgpu::MapMode::Read);
-
-        self.fw.blocking_poll();
-
-        futures::executor::block_on(buf_future)?;
-
-        let data = buff_slice.get_mapped_range();
-        let result = data
-            .chunks(padded_bytes_per_row as usize)
-            .flat_map(|row| &row[0..unpadded_bytes_per_row as usize])
-            .copied()
-            .collect::<Vec<_>>();
-
-        drop(data);
-        staging.unmap();
-
-        Ok(result)
+        self.0.read()
     }
 
-    /// Writes the `img_bytes` bytes into the [`GpuImage`] immediately.
+    /// Writes immediately the `img_bytes` bytes into the [`GpuImage`].
     /// The image is format specified at the [`GpuImage`] creation.
     pub fn write(&mut self, img_bytes: &[u8]) {
-        use std::num::NonZeroU32;
-
-        self.fw.queue.write_texture(
-            self.texture.as_image_copy(),
-            img_bytes,
-            wgpu::ImageDataLayout {
-                offset: 0,
-                bytes_per_row: Some(
-                    NonZeroU32::new(P::byte_size() as u32 * self.size.width).unwrap(),
-                ),
-                rows_per_image: None,
-            },
-            self.size,
-        );
-
-        let encoder = self
-            .fw
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("GpuImage::write"),
-            });
-
-        self.fw.queue.submit(Some(encoder.finish()));
+        self.0.write(img_bytes)
     }
 
     /// Asyncronously writes `img_bytes` into the [`GpuImage`].
     ///
-    /// In order for this future to resolve, [`Framework::poll`](crate::Framework::poll) or [`Framework::blocking_poll`](crate::Framework::blocking_poll)
+    /// In order for this future to resolve, [`Framework::poll`](crate::Framework::poll) or
+    /// [`Framework::blocking_poll`](crate::Framework::blocking_poll)
     /// must be invoked.
     pub async fn write_async(&mut self, img_bytes: &[u8]) -> GpuResult<()> {
-        use std::num::NonZeroU32;
+        self.0.write_async(img_bytes).await
+    }
+}
 
-        let bytes_per_pixel = P::byte_size() as u32;
-        let unpadded_bytes_per_row = self.size.width * bytes_per_pixel;
-        let align = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
-        let padded_bytes_per_row_padding = (align - unpadded_bytes_per_row % align) % align;
-        let padded_bytes_per_row = unpadded_bytes_per_row + padded_bytes_per_row_padding;
+impl<'fw, P> GpuConstImage<'fw, P>
+where
+    P: PixelInfo,
+{
+    /// Gets the inner [`wgpu::Texture`] of the [`GpuConstImage`].
+    pub fn get_inner_texture(&self) -> &wgpu::Texture {
+        self.0.get_inner_texture()
+    }
 
-        let staging = self
-            .fw
-            .create_upload_staging_buffer((padded_bytes_per_row * self.size.height) as usize);
+    /// Gets the [`wgpu::Extent3d`] of the [`GpuConstImage`].
+    pub fn get_extent3d(&self) -> wgpu::Extent3d {
+        self.0.get_extent3d()
+    }
 
-        let mut encoder = self
-            .fw
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("GpuImage::write_async"),
-            });
+    /// Gets the width and height of the [`GpuConstImage`].
+    pub fn dimensions(&self) -> (u32, u32) {
+        self.0.dimensions()
+    }
 
-        let staging_view = staging.slice(..);
-        staging_view.map_async(wgpu::MapMode::Write).await?;
+    /// Creates an empty [`GpuConstImage`] with the desired `width` and `height`.
+    pub fn new(fw: &'fw crate::Framework, width: u32, height: u32) -> Self {
+        Self(GenericImage::new(fw, width, height))
+    }
 
-        let mut staging_map = staging_view.get_mapped_range_mut();
-        staging_map
-            .chunks_mut(padded_bytes_per_row as usize)
-            .enumerate()
-            .for_each(|(chunk_id, padded_row)| {
-                let start = chunk_id * unpadded_bytes_per_row as usize;
-                let end = start + unpadded_bytes_per_row as usize;
+    /// Creates a new [`GpuConstImage`] from an image's raw bytes (`data`) and its dimensions.
+    pub fn from_raw_image(fw: &'fw crate::Framework, width: u32, height: u32, data: &[u8]) -> Self {
+        Self(GenericImage::from_raw_image(fw, width, height, data))
+    }
 
-                padded_row[0..unpadded_bytes_per_row as usize]
-                    .copy_from_slice(&img_bytes[start..end]);
-            });
+    /// Writes immediately the `img_bytes` bytes into the [`GpuConstImage`].
+    /// The image is format specified at the [`GpuConstImage`] creation.
+    pub fn write(&mut self, img_bytes: &[u8]) {
+        self.0.write(img_bytes)
+    }
 
-        drop(staging_map);
-        staging.unmap();
-
-        let copy_texture = self.texture.as_image_copy();
-
-        let copy_buffer = wgpu::ImageCopyBuffer {
-            buffer: &staging,
-            layout: wgpu::ImageDataLayout {
-                offset: 0,
-                bytes_per_row: NonZeroU32::new(padded_bytes_per_row),
-                rows_per_image: None,
-            },
-        };
-
-        encoder.copy_buffer_to_texture(copy_buffer, copy_texture, self.size);
-
-        self.fw.queue.submit(Some(encoder.finish()));
-
-        Ok(())
+    /// Asyncronously writes `img_bytes` into the [`GpuConstImage`].
+    ///
+    /// In order for this future to resolve, [`Framework::poll`](crate::Framework::poll) or
+    /// [`Framework::blocking_poll`](crate::Framework::blocking_poll)
+    /// must be invoked.
+    pub async fn write_async(&mut self, img_bytes: &[u8]) -> GpuResult<()> {
+        self.0.write_async(img_bytes).await
     }
 }

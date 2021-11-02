@@ -12,15 +12,15 @@ fn main() {
     let (width, height) = rgba.dimensions();
 
     // GPU image creation
-    let mut input_img = gpgpu::GpuImage::<Rgba8Uint>::new(&fw, width, height); // Input
+    let mut input_img = gpgpu::GpuConstImage::<Rgba8Uint>::new(&fw, width, height); // Input
     let output_img = gpgpu::GpuImage::<Rgba8Uint>::new(&fw, width, height); // Output
 
     // Write input image into the GPU
     input_img.write(&rgba);
 
     let binds = gpgpu::DescriptorSet::default()
-        .bind_image(&input_img)
-        .bind_storage_image(&output_img, gpgpu::ImageUsage::ReadWrite);
+        .bind_const_image(&input_img)
+        .bind_image(&output_img);
 
     fw.create_kernel_builder(&shader_mod, "main")
         .add_descriptor_set(binds)

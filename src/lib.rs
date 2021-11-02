@@ -1,11 +1,8 @@
 //! A simple GPU compute library based on [`wgpu`](https://github.com/gfx-rs/wgpu).
 //! It is meant to be used alongside `wgpu` if desired.
 //!
-//! Right now `gpgpu` uses some of `wgpu`'s type on its public API.
-//! It may be removed in the future.
-//!
-//! To start using `gpgpu`, just create a [`Framework`](crate::Framework) instance
-//! and follow the [examples](https://github.com/UpsettingBoy/gpgpu-rs) in the main repository.
+//! To start using `gpgpu`, just create a [`Framework`] instance
+//! and follow the [examples](https://github.com/UpsettingBoy/gpgpu-rs/tree/dev/examples) in the main repository.
 //!
 //! # Example
 //! Small program that multiplies 2 vectors A and B; and stores the
@@ -32,9 +29,9 @@
 //!
 //!     // Descriptor set creation
 //!     let desc_set = DescriptorSet::default()
-//!         .bind_storage_buffer(&buf_a, AccessMode::ReadOnly)
-//!         .bind_storage_buffer(&buf_b, AccessMode::ReadOnly)
-//!         .bind_storage_buffer(&buf_c, AccessMode::ReadWrite);
+//!         .bind_buffer(&buf_a, GpuBufferUsage::ReadOnly)
+//!         .bind_buffer(&buf_b, GpuBufferUsage::ReadOnly)
+//!         .bind_buffer(&buf_c, GpuBufferUsage::ReadWrite);
 //!     
 //!     // Kernel creation and enqueuing
 //!     fw.create_kernel_builder(&shader_module, "main")   // Entry point
@@ -72,9 +69,7 @@
 //! ```
 //!
 
-use std::marker::PhantomData;
-
-use primitives::generic_buffer::GenericBuffer;
+use primitives::{generic_buffer::GenericBuffer, generic_image::GenericImage};
 pub use wgpu;
 
 pub mod features;
@@ -117,7 +112,7 @@ pub enum GpuBufferUsage {
 ///
 /// Equivalent to OpenCL's Buffer objects.
 ///
-/// More information about its shader representation
+/// More information about its shader representation is
 /// under the [`DescriptorSet::bind_buffer`](crate::DescriptorSet::bind_buffer) documentation.
 pub struct GpuBuffer<'fw, T: bytemuck::Pod>(GenericBuffer<'fw, T>);
 
@@ -127,39 +122,25 @@ pub struct GpuBuffer<'fw, T: bytemuck::Pod>(GenericBuffer<'fw, T>);
 ///
 /// Equivalent to OpenCL's Uniform Buffer objects.
 ///
-/// More information about its shader representation
+/// More information about its shader representation is
 /// under the [`DescriptorSet::bind_uniform_buffer`](crate::DescriptorSet::bind_uniform_buffer) documentation.
 pub struct GpuUniformBuffer<'fw, T: bytemuck::Pod>(GenericBuffer<'fw, T>);
 
-#[derive(PartialEq, Eq)]
-pub enum ImageUsage {
-    // TODO textures can be different of WriteOnly if
-    //      wgpu::Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES enabled
-    //
-    // /// Read-only object.
-    // /// ### Example WGSL syntax:
-    // /// ```ignore
-    // /// [[group(0), binding(0)]] var<storage, read> input: Vector;
-    // /// ```
-    // ReadWrite,
-    /// Write-only object.
-    /// ### Example WGSL syntax:
-    /// ```ignore
-    /// [[group(0), binding(1)]] var output: texture_storage_2d<rgba8uint, write>;
-    /// ```
-    WriteOnly,
-}
+/// 2D-image of homogeneous pixels.
+///
+/// Equivalent to write-only OpenCL's Image objects.
+///
+/// More information about its shader representation is
+/// under the [`DescriptorSet::bind_image`](crate::DescriptorSet::bind_image) documentation.
+pub struct GpuImage<'fw, P>(GenericImage<'fw, P>);
 
 /// 2D-image of homogeneous pixels.
 ///
-/// Equivalent to OpenCL's Image objects.
-pub struct GpuImage<'fw, P> {
-    fw: &'fw Framework,
-    pub texture: wgpu::Texture,
-    pub size: wgpu::Extent3d,
-    full_view: wgpu::TextureView,
-    _pixel: PhantomData<P>,
-}
+/// Equivalent to read-only OpenCL's Image objects.
+///
+/// More information about its shader representation is
+/// under the [`DescriptorSet::bind_const_image`](crate::DescriptorSet::bind_const_image) documentation.
+pub struct GpuConstImage<'fw, P>(GenericImage<'fw, P>);
 
 /// Contains a binding group of resources.
 #[derive(Default)]
@@ -185,11 +166,7 @@ pub struct KernelBuilder<'fw, 'res, 'sha> {
 /// Equivalent to OpenCL's Kernel.
 pub struct Kernel<'fw> {
     fw: &'fw Framework,
-    // layouts: Vec<wgpu::BindGroupLayout>,
-    // pipeline_layout: wgpu::PipelineLayout,
     pipeline: wgpu::ComputePipeline,
-    // descriptors: Vec<DescriptorSet<'res>>,
     sets: Vec<wgpu::BindGroup>,
-    // shader: &'sha wgpu::ShaderModule,
     entry_point: String,
 }

@@ -5,11 +5,8 @@
 A simple GPU compute library based on [`wgpu`](https://github.com/gfx-rs/wgpu).
 It is meant to be used alongside `wgpu` if desired.
 
-Right now `gpgpu` uses some of `wgpu`'s type on its public API.
-It may be removed in the future.
-
-To start using `gpgpu`, just create a [`Framework`](https://docs.rs/gpgpu/latest/gpgpu/struct.Framework.html) instance
-and follow the [examples](https://github.com/UpsettingBoy/gpgpu-rs) in the main repository.
+To start using `gpgpu`, just create a [`Framework`] instance
+and follow the [examples](https://github.com/UpsettingBoy/gpgpu-rs/tree/dev/examples) in the main repository.
 
 # Example
 Small program that multiplies 2 vectors A and B; and stores the
@@ -36,9 +33,9 @@ result in another vector C.
 
     // Descriptor set creation
     let desc_set = DescriptorSet::default()
-        .bind_storage_buffer(&buf_a, AccessMode::ReadOnly)
-        .bind_storage_buffer(&buf_b, AccessMode::ReadOnly)
-        .bind_storage_buffer(&buf_c, AccessMode::ReadWrite);
+        .bind_buffer(&buf_a, GpuBufferUsage::ReadOnly)
+        .bind_buffer(&buf_b, GpuBufferUsage::ReadOnly)
+        .bind_buffer(&buf_c, GpuBufferUsage::ReadWrite);
     
     // Kernel creation and enqueuing
     fw.create_kernel_builder(&shader_module, "main")   // Entry point
