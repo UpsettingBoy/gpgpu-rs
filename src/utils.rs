@@ -1,4 +1,4 @@
-/// Contains some helper functions to create [`wgpu::ShaderModule`](wgpu::ShaderModule) from SPIR-V files or bytes.
+/// Contains some helper functions to create [`wgpu::ShaderModule`] from SPIR-V files or bytes.
 pub mod shader {
     use std::{borrow::Cow, path::Path};
 
@@ -6,7 +6,7 @@ pub mod shader {
 
     use crate::{Framework, GpuResult};
 
-    /// Creates a [`wgpu::ShaderModule`](wgpu::ShaderModule) instance from a SPIR-V file.
+    /// Creates a [`wgpu::ShaderModule`] instance from a SPIR-V file.
     pub fn from_spirv_file(fw: &Framework, path: impl AsRef<Path>) -> GpuResult<ShaderModule> {
         let bytes = std::fs::read(&path)?;
         let shader_name = path.as_ref().to_str();
@@ -30,8 +30,7 @@ pub mod shader {
             })
     }
 
-    /// Creates a [`wgpu::ShaderModule`](wgpu::ShaderModule) instance from a `WGSL` file.
-    /// Intended use is `examples` crates.
+    /// Creates a [`wgpu::ShaderModule`] instance from a `WGSL` file.
     pub fn from_wgsl_file(fw: &Framework, path: impl AsRef<Path>) -> GpuResult<ShaderModule> {
         let source_string = std::fs::read_to_string(path)?;
 

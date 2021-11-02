@@ -186,7 +186,7 @@ impl<'res> DescriptorSet<'res> {
 }
 
 impl<'fw, 'res, 'sha> KernelBuilder<'fw, 'res, 'sha> {
-    /// Adds a [`DescriptorSet`] into the [`Kernel`] internal layout.
+    /// Adds a [`DescriptorSet`] into the [`KernelBuilder`] internal layout.
     pub fn add_descriptor_set(mut self, desc: DescriptorSet<'res>) -> Self {
         let set_layout =
             self.fw
@@ -247,7 +247,7 @@ impl<'fw, 'res, 'sha> KernelBuilder<'fw, 'res, 'sha> {
 impl<'fw> Kernel<'fw> {
     /// Enqueues the execution of this [`Kernel`] to the GPU.
     ///
-    /// [`Kernel`] will dispatch `x`, `y` and `z` work groups per dimension.
+    /// [`Kernel`] will dispatch `x`, `y` and `z` workgroups per dimension.
     pub fn enqueue(&self, x: u32, y: u32, z: u32) {
         let mut encoder = self
             .fw

@@ -39,11 +39,11 @@ impl Default for Framework {
 impl Framework {
     /// Creates a new [`Framework`] instance from `wgpu` objects.
     ///
-    /// This is mainly used when you want to use wgpu alongside of `gpgpu_rs`
+    /// This is mainly used when you want to use `wgpu` and `gpgpu` alongside
     /// or you need special requiremients (device, features, ...).
     ///
     /// If you only want a [`Framework`] using a HighPerformance GPU with
-    /// the minimal features to run on the web (WebGPU), use [`Framework::default()`](Framework::default).
+    /// the minimal features to run on the web (WebGPU), use [`Framework::default`](crate::Framework::default).
     pub fn new(instance: wgpu::Instance, device: wgpu::Device, queue: wgpu::Queue) -> Self {
         Self {
             instance,
@@ -53,11 +53,12 @@ impl Framework {
         }
     }
 
-    /// Creates a [`KernelBuilder`] from a `wgpu` [`ShaderModule`](wgpu::ShaderModule)
+    /// Creates a [`KernelBuilder`] from a `wgpu` [`wgpu::ShaderModule`] and
+    /// its `entry_point`.
     ///
     /// A `ShaderModule` can be created using the `utils::shader` methods,
-    /// [`utils::shader::from_spirv_file()`](crate::utils::shader::from_spirv_file) and
-    /// [`utils::shader::from_spirv_bytes()`](crate::utils::shader::from_spirv_bytes); or
+    /// [`utils::shader::from_spirv_file`](crate::utils::shader::from_spirv_file) and
+    /// [`utils::shader::from_spirv_bytes`](crate::utils::shader::from_spirv_bytes); or
     /// using `wgpu`.
     pub fn create_kernel_builder<'sha>(
         &self,

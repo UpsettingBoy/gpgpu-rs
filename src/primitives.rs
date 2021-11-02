@@ -1,3 +1,21 @@
+//! This module contains the `gpgpu` primitives.
+//!
+//! # Buffers
+//! ## GpuBuffer
+//! Intended for large, read-only or read-write (in the shader)
+//! chunks of data on the GPU.
+//!
+//! ## GpuUniformBuffer
+//! Intended for small, read-only (in the shader)
+//! chunks of data on the GPU.
+//!
+//! # Images
+//! ## GpuImage
+//! Intended for write-only (in the shader) images on the GPU.
+//!
+//! ## GpuConstImage
+//! Intended for read-only (in th shader) images on the GPU.
+
 pub mod buffers;
 pub mod generic_buffer;
 pub mod generic_image;

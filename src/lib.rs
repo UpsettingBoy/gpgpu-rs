@@ -70,7 +70,6 @@
 //!
 
 use primitives::{generic_buffer::GenericBuffer, generic_image::GenericImage};
-pub use wgpu;
 
 pub mod features;
 pub mod framework;
@@ -81,7 +80,7 @@ pub mod utils;
 /// Lazy error handling :)
 pub type GpuResult<T> = Result<T, Box<dyn std::error::Error>>;
 
-/// Entry point of `gpgpu-rs`. A [`Framework`] must be created
+/// Entry point of `gpgpu`. A [`Framework`] must be created
 /// first as all GPU primitives needs it to be created.
 #[allow(dead_code)]
 pub struct Framework {
