@@ -3,13 +3,15 @@ authors = ["Jerónimo Sánchez <jeronimosg@hotmail.es>"]
 categories = ["concurrency", "science"]
 description = "Simple WIP GPGPU framework built on top of wgpu"
 edition = "2018"
-exclude = ["examples"]
+exclude = ["/examples", "/Vagrantfile"]
 keywords = ["gpgpu", "compute", "opencl", "cuda"]
-license = "MIT"
+license = "EUPL-1.2"
 name = "gpgpu"
 repository = "https://www.github.com/UpsettingBoy/gpgpu-rs"
 resolver = "2"
-version = "0.0.0"
+version = "0.1.0"
+homepage = "https://www.github.com/UpsettingBoy/gpgpu-rs"
+
 
 [dependencies]
 bytemuck = "1.7"
