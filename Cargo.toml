@@ -24,6 +24,8 @@ image = { version = "0.23.14", default-features = false, features = [
     "png",
 ] }
 lazy_static = "1.4.0"
+nokhwa = { version = "0.8.0", features = ["input-v4l", "input-msmf"] }
+minifb = "0.19.3"
 
 [features]
 integrate-image = ["image"]
@@ -36,4 +38,11 @@ name = "mirror-image"
 
 [[example]]
 name = "image-compatibility"
+required-features = ["integrate-image"]
+
+[[example]]
+name = "parallel-compute"
+
+[[example]]
+name = "webcam"
 required-features = ["integrate-image"]
