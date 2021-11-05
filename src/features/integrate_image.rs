@@ -54,6 +54,7 @@ image_to_gpgpu_impl! {
 impl<'fw, Pixel> GenericImage<'fw, Pixel>
 where
     Pixel: image::Pixel + ImageToGpgpu + 'static,
+    Pixel::Subpixel: bytemuck::Pod,
 {
     /// Creates a new [`GenericImage`] from a [`image::ImageBuffer`].
     pub fn from_image_buffer<Container>(
@@ -66,7 +67,7 @@ where
         let (width, height) = img.dimensions();
         let mut output_image = GenericImage::new(fw, width, height);
 
-        let bytes = primitive_slice_to_bytes(img);
+        let bytes = bytemuck::cast_slice(img);
         output_image.write(bytes);
 
         output_image
@@ -83,7 +84,7 @@ where
         let (width, height) = img.dimensions();
         let mut output_image = GenericImage::new(fw, width, height);
 
-        let bytes = primitive_slice_to_bytes(img);
+        let bytes = bytemuck::cast_slice(img);
         output_image.write(bytes);
 
         output_image
@@ -93,6 +94,7 @@ where
 impl<'fw, Pixel> GpuImage<'fw, Pixel>
 where
     Pixel: image::Pixel + ImageToGpgpu + 'static,
+    Pixel::Subpixel: bytemuck::Pod,
 {
     /// Creates a new [`GpuImage`] from a [`image::ImageBuffer`].
     pub fn from_image_buffer<Container>(
@@ -120,6 +122,7 @@ where
 impl<'fw, Pixel> GpuConstImage<'fw, Pixel>
 where
     Pixel: image::Pixel + ImageToGpgpu + 'static,
+    Pixel::Subpixel: bytemuck::Pod,
 {
     /// Creates a new [`GpuConstImage`] from a [`image::ImageBuffer`].
     pub fn from_image_buffer<Container>(
@@ -147,6 +150,7 @@ where
 impl<'fw, P> GenericImage<'fw, P>
 where
     P: PixelInfo + GpgpuToImage,
+    <<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel: bytemuck::Pod,
 {
     /// Blocking read of the [`GpuImage`], creating a new [`image::GenericImage`] as output.
     pub fn read_to_image_buffer(
@@ -202,7 +206,7 @@ where
             Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
         >,
     ) {
-        let bytes = primitive_slice_to_bytes(img);
+        let bytes = bytemuck::cast_slice(img);
         self.write(bytes);
     }
 
@@ -217,7 +221,7 @@ where
             Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
         >,
     ) -> GpuResult<()> {
-        let bytes = primitive_slice_to_bytes(img);
+        let bytes = bytemuck::cast_slice(img);
         self.write_async(bytes).await
     }
 }
@@ -225,6 +229,7 @@ where
 impl<'fw, P> GpuImage<'fw, P>
 where
     P: PixelInfo + GpgpuToImage,
+    <<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel: bytemuck::Pod,
 {
     /// Blocking read of the [`GpuImage`], creating a new [`image::ImageBuffer`] as output.
     pub fn read_to_image_buffer(
@@ -283,6 +288,7 @@ where
 impl<'fw, P> GpuConstImage<'fw, P>
 where
     P: PixelInfo + GpgpuToImage,
+    <<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel: bytemuck::Pod,
 {
     /// Writes immediately the [`image::ImageBuffer`] `img` into the [`GpuConstImage`].
     pub fn write_from_image_buffer(
@@ -311,39 +317,22 @@ where
     }
 }
 
-pub(crate) fn primitive_slice_to_bytes<P>(primitive: &[P]) -> &[u8]
-where
-    P: image::Primitive,
-{
-    let times = std::mem::size_of::<P>() / std::mem::size_of::<u8>();
-
-    unsafe {
-        // Pointer transmutation (as I would do in C 🤣)
-        let input_ptr = primitive.as_ptr();
-        let new_ptr: *const u8 = std::mem::transmute(input_ptr);
-
-        std::slice::from_raw_parts(new_ptr, primitive.len() * times)
-    }
-}
-
 pub(crate) fn bytes_to_primitive_vec<P>(mut bytes: Vec<u8>) -> Vec<P::Subpixel>
 where
     P: image::Pixel,
+    P::Subpixel: bytemuck::Pod,
 {
     // Fit vector to min possible size
-    // Since Vec::shrink_to_fit cannot assure that the inner vector memory is
-    // exactly its theorical min possible size, UB? 😢
     bytes.shrink_to_fit();
-    let len = bytes.len() / std::mem::size_of::<P::Subpixel>(); // Get num of primitives
+    assert_eq!(bytes.len(), bytes.capacity()); // Since `Vec::shrink_to_fit` cannot assure that the inner vector memory is
+                                               // exactly its theorical min, we panic if that happened.
 
-    unsafe {
-        // Pointer transmutation (as I would do in C 🤣)
-        let input_ptr = bytes.as_mut_ptr();
-        let new_ptr: *mut P::Subpixel = std::mem::transmute(input_ptr);
+    // Original memory won't be dropped. No copy of `bytes` needed 😁
+    let mut man_drop = std::mem::ManuallyDrop::new(bytes);
 
-        // `bytes` cannot be dropped or a copy of the vector will be required
-        std::mem::forget(bytes);
+    // `bytemuck` will do the aligment and cast for us.
+    let (_, new_type, _) = bytemuck::pod_align_to_mut(&mut man_drop);
+    let ptr = new_type.as_mut_ptr();
 
-        Vec::from_raw_parts(new_ptr, len, len)
-    }
+    unsafe { Vec::from_raw_parts(ptr, new_type.len(), new_type.len()) }
 }
