@@ -71,6 +71,9 @@
 
 use primitives::{generic_buffer::GenericBuffer, generic_image::GenericImage};
 
+#[cfg(feature = "integrate-ndarray")]
+pub use features::integrate_ndarray::GpuArray;
+
 pub mod features;
 pub mod framework;
 pub mod kernel;
