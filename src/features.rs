@@ -3,3 +3,6 @@
 
 #[cfg(feature = "integrate-image")]
 pub mod integrate_image;
+
+#[cfg(feature = "integrate-ndarray")]
+pub mod integrate_ndarray;

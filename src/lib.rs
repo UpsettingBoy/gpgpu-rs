@@ -113,7 +113,7 @@ pub enum GpuBufferUsage {
 ///
 /// More information about its shader representation is
 /// under the [`DescriptorSet::bind_buffer`](crate::DescriptorSet::bind_buffer) documentation.
-pub struct GpuBuffer<'fw, T: bytemuck::Pod>(GenericBuffer<'fw, T>);
+pub struct GpuBuffer<'fw, T>(GenericBuffer<'fw, T>);
 
 /// Uniform vector of contiguous homogeneous elements on GPU memory.
 /// Recommended for small, read-only buffers.
@@ -123,7 +123,7 @@ pub struct GpuBuffer<'fw, T: bytemuck::Pod>(GenericBuffer<'fw, T>);
 ///
 /// More information about its shader representation is
 /// under the [`DescriptorSet::bind_uniform_buffer`](crate::DescriptorSet::bind_uniform_buffer) documentation.
-pub struct GpuUniformBuffer<'fw, T: bytemuck::Pod>(GenericBuffer<'fw, T>);
+pub struct GpuUniformBuffer<'fw, T>(GenericBuffer<'fw, T>);
 
 /// 2D-image of homogeneous pixels.
 ///
