@@ -6,5 +6,6 @@
 | mirror-image        | Simple image compute example that mirror an image          | None              | cargo r --example mirror-image          |
 | image-compatibility | mirror-image example with compatibility with `image` crate | integrate-image   | cargo r --example image-compatibility --features="integrate-image"  |
 | webcam (*)              | Webcam shader implemented via compute                      | integrate-image   | cargo r --release --example webcam --features="integrate-image" |
+| ndarray             | Relatively simple compute example with compatiility with `ndarray` crate                      | integrate-ndarry   | cargo r --release --example ndarray --features="integrate-ndarray" |
 
 (*) Example makes use of release mode for visible performance issues.
