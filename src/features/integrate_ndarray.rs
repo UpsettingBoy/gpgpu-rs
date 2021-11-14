@@ -13,7 +13,7 @@ where
     ) -> GpuResult<Self> {
         let slice: Result<&[T], Box<dyn std::error::Error>> = array
             .as_slice_memory_order()
-            .ok_or("Array is not contiguous".into());
+            .ok_or_else(|| "Array is not contiguous".into());
 
         let buf = GenericBuffer::from_slice(fw, slice?);
 
@@ -29,7 +29,7 @@ where
     pub fn write_to_array(&mut self, array: ndarray::ArrayView<T, D>) -> GpuResult<()> {
         let slice: Result<&[T], Box<dyn std::error::Error>> = array
             .as_slice_memory_order()
-            .ok_or("Array is not contiguous".into());
+            .ok_or_else(|| "Array is not contiguous".into());
 
         self.0.write(slice?);
 

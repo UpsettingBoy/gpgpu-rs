@@ -12,8 +12,8 @@ fn main() {
 
     let gpu_arrays_len = gpgpu::GpuUniformBuffer::from_slice(&fw, &[dims.0, dims.1]).unwrap(); // Send the ndarray dimensions
 
-    let gpu_array_a = gpgpu::GpuArray::from_array(&fw, src_view.clone()).unwrap(); // Array A
-    let gpu_array_b = gpgpu::GpuArray::from_array(&fw, src_view.clone()).unwrap(); // Array B
+    let gpu_array_a = gpgpu::GpuArray::from_array(&fw, src_view).unwrap(); // Array A
+    let gpu_array_b = gpgpu::GpuArray::from_array(&fw, src_view).unwrap(); // Array B
     let gpu_array_c = gpgpu::GpuArray::from_array(&fw, ndarray::Array::zeros(dims).view()).unwrap(); // Array C: result storage
 
     let desc_0 = gpgpu::DescriptorSet::default().bind_uniform_buffer(&gpu_arrays_len); // Descriptor set of arrays dimensions.

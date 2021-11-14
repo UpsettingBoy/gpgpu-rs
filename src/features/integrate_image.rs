@@ -51,6 +51,8 @@ image_to_gpgpu_impl! {
     ::image::Luma<u8>, pixels::Luma8, pixels::Luma8Norm
 }
 
+type PixelContainer<P> = Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>;
+
 impl<'fw, Pixel> GenericImage<'fw, Pixel>
 where
     Pixel: image::Pixel + ImageToGpgpu + 'static,
@@ -155,12 +157,7 @@ where
     /// Blocking read of the [`GpuImage`], creating a new [`image::GenericImage`] as output.
     pub fn read_to_image_buffer(
         &self,
-    ) -> GpuResult<
-        ::image::ImageBuffer<
-            P::ImgPixel,
-            Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
-        >,
-    > {
+    ) -> GpuResult<::image::ImageBuffer<P::ImgPixel, PixelContainer<P>>> {
         let bytes = self.read()?;
         let container = bytes_to_primitive_vec::<P::ImgPixel>(bytes);
 
@@ -168,7 +165,7 @@ where
 
         let img: Result<ImageBuffer<P::ImgPixel, Vec<_>>, Box<dyn std::error::Error>> =
             image::ImageBuffer::from_vec(width, height, container)
-                .ok_or("Buffer is too small!".into());
+                .ok_or_else(|| "Buffer is too small!".into());
 
         img
     }
@@ -193,7 +190,7 @@ where
 
         let img: Result<ImageBuffer<P::ImgPixel, Vec<_>>, Box<dyn std::error::Error>> =
             image::ImageBuffer::from_vec(width, height, container)
-                .ok_or("Buffer is too small!".into());
+                .ok_or_else(|| "Buffer is too small!".into());
 
         img
     }
@@ -234,12 +231,7 @@ where
     /// Blocking read of the [`GpuImage`], creating a new [`image::ImageBuffer`] as output.
     pub fn read_to_image_buffer(
         &self,
-    ) -> GpuResult<
-        ::image::ImageBuffer<
-            P::ImgPixel,
-            Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
-        >,
-    > {
+    ) -> GpuResult<::image::ImageBuffer<P::ImgPixel, PixelContainer<P>>> {
         self.0.read_to_image_buffer()
     }
 
