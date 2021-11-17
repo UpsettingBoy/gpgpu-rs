@@ -1,7 +1,7 @@
 //! A simple GPU compute library based on [`wgpu`](https://github.com/gfx-rs/wgpu).
 //! It is meant to be used alongside `wgpu` if desired.
 //!
-//! To start using `gpgpu`, just create a [`Framework`] instance
+//! To start using `gpgpu`, just create a [`Framework`](crate::Framework) instance
 //! and follow the [examples](https://github.com/UpsettingBoy/gpgpu-rs/tree/dev/examples) in the main repository.
 //!
 //! # Example
@@ -70,6 +70,9 @@
 
 use primitives::{generic_buffer::GenericBuffer, generic_image::GenericImage};
 
+#[cfg(feature = "integrate-ndarray")]
+pub use features::integrate_ndarray::GpuArray;
+
 pub mod features;
 pub mod framework;
 pub mod kernel;
@@ -111,7 +114,7 @@ pub enum GpuBufferUsage {
 ///
 /// More information about its shader representation is
 /// under the [`DescriptorSet::bind_buffer`](crate::DescriptorSet::bind_buffer) documentation.
-pub struct GpuBuffer<'fw, T: bytemuck::Pod>(GenericBuffer<'fw, T>);
+pub struct GpuBuffer<'fw, T>(GenericBuffer<'fw, T>);
 
 /// Uniform vector of contiguous homogeneous elements on GPU memory.
 /// Recommended for small, read-only buffers.
@@ -121,7 +124,7 @@ pub struct GpuBuffer<'fw, T: bytemuck::Pod>(GenericBuffer<'fw, T>);
 ///
 /// More information about its shader representation is
 /// under the [`DescriptorSet::bind_uniform_buffer`](crate::DescriptorSet::bind_uniform_buffer) documentation.
-pub struct GpuUniformBuffer<'fw, T: bytemuck::Pod>(GenericBuffer<'fw, T>);
+pub struct GpuUniformBuffer<'fw, T>(GenericBuffer<'fw, T>);
 
 /// 2D-image of homogeneous pixels.
 ///
