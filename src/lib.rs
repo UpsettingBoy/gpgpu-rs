@@ -1,7 +1,7 @@
 //! A simple GPU compute library based on [`wgpu`](https://github.com/gfx-rs/wgpu).
 //! It is meant to be used alongside `wgpu` if desired.
 //!
-//! To start using `gpgpu`, just create a [`Framework`] instance
+//! To start using `gpgpu`, just create a [`Framework`](crate::Framework) instance
 //! and follow the [examples](https://github.com/UpsettingBoy/gpgpu-rs/tree/dev/examples) in the main repository.
 //!
 //! # Example

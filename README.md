@@ -1,11 +1,11 @@
 # gpgpu
 
-<!-- cargo-sync-readme start -->
+<!-- cargo-rdme start -->
 
 A simple GPU compute library based on [`wgpu`](https://github.com/gfx-rs/wgpu).
 It is meant to be used alongside `wgpu` if desired.
 
-To start using `gpgpu`, just create a [`Framework`] instance
+To start using `gpgpu`, just create a [`Framework`](https://docs.rs/gpgpu/latest/gpgpu/struct.Framework.html) instance
 and follow the [examples](https://github.com/UpsettingBoy/gpgpu-rs/tree/dev/examples) in the main repository.
 
 # Example
@@ -72,5 +72,4 @@ fn main([[builtin(global_invocation_id)]] global_id: vec3<u32>) {
 }
 ```
 
-
-<!-- cargo-sync-readme end -->
+<!-- cargo-rdme end -->
