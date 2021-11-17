@@ -2,8 +2,7 @@
 fn main() {
     let fw = gpgpu::Framework::default(); // Framework initialization.
 
-    let shader_mod =
-        gpgpu::utils::shader::from_wgsl_file(&fw, "examples/simple-compute/mult.wgsl").unwrap(); // Shader loading.
+    let shader = gpgpu::Shader::from_wgsl_file(&fw, "examples/simple-compute/mult.wgsl").unwrap(); // Shader loading.
 
     let size = 10000; // Size of the vectors
 
@@ -22,12 +21,12 @@ fn main() {
         .bind_buffer(&gpu_vec_b, gpgpu::GpuBufferUsage::ReadOnly) // Binding 1
         .bind_buffer(&gpu_vec_c, gpgpu::GpuBufferUsage::ReadWrite); // Binding 2. read_write in shader. No write-only yet.
 
-    // Creation of a kernel. If a function on a GPU with an already set of inputs and
-    // outputs following a layout (the variable `bindings` above).
-    let kernel = fw
-        .create_kernel_builder(&shader_mod, "main")
-        .add_descriptor_set(bindings)
-        .build();
+    // Match a shader entry point with its descriptor (the bindings).
+    // A program represents a function on a GPU with an already set of inputs and outputs following a layout (the variable `bindings` above).
+    let program = gpgpu::Program::new(&shader, "main").add_descriptor_set(bindings);
+
+    // Creation of a kernel. This represents the `program` function and its `enqueuing` parameters,
+    let kernel = gpgpu::Kernel::new(&fw, program);
 
     // Execution of the kernel. It needs 3 dimmensions, x y and z.
     // Since we are using single-dim vectors, only x is required.

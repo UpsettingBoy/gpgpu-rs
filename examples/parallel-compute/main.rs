@@ -8,7 +8,7 @@ lazy_static::lazy_static! {
 
 fn main() {
     let shader = Arc::new(
-        gpgpu::utils::shader::from_wgsl_file(&FW, "examples/parallel-compute/shader.wgsl").unwrap(),
+        gpgpu::Shader::from_wgsl_file(&FW, "examples/parallel-compute/shader.wgsl").unwrap(),
     );
 
     let threading = 4; // Threading level
@@ -29,17 +29,14 @@ fn main() {
             let local_input_buffer = gpgpu::GpuBuffer::from_slice(&FW, &local_cpu_data);
             let local_output_buffer = gpgpu::GpuBuffer::<u32>::new(&FW, size as usize);
 
-            let binds = gpgpu::DescriptorSet::default()
+            let desc = gpgpu::DescriptorSet::default()
                 .bind_buffer(&local_shader_input_buffer, gpgpu::GpuBufferUsage::ReadOnly)
                 .bind_buffer(&local_input_buffer, gpgpu::GpuBufferUsage::ReadOnly)
                 .bind_buffer(&local_output_buffer, gpgpu::GpuBufferUsage::ReadWrite);
+            let program = gpgpu::Program::new(&local_shader, "main").add_descriptor_set(desc);
 
-            let kernel = &FW
-                .create_kernel_builder(&local_shader, "main")
-                .add_descriptor_set(binds)
-                .build();
+            gpgpu::Kernel::new(&FW, program).enqueue(size / 32, 1, 1);
 
-            kernel.enqueue(size / 32, 1, 1);
             local_output_buffer.read().unwrap()
         });
 

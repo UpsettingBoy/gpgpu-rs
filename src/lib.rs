@@ -75,7 +75,6 @@ pub mod features;
 pub mod framework;
 pub mod kernel;
 pub mod primitives;
-pub mod utils;
 
 /// Lazy error handling :)
 pub type GpuResult<T> = Result<T, Box<dyn std::error::Error>>;
@@ -141,27 +140,27 @@ pub struct GpuImage<'fw, P>(GenericImage<'fw, P>);
 /// under the [`DescriptorSet::bind_const_image`](crate::DescriptorSet::bind_const_image) documentation.
 pub struct GpuConstImage<'fw, P>(GenericImage<'fw, P>);
 
+/// Represents a shader.
+///
+/// It's just a wrapper over [`wgpu::ShaderModule`].
+pub struct Shader(wgpu::ShaderModule);
+
+/// Represents an entry point with its bindings on a [`Shader`].
+pub struct Program<'sha, 'res> {
+    shader: &'sha Shader,
+    entry_point: String,
+    descriptors: Vec<DescriptorSet<'res>>,
+}
+
 /// Contains a binding group of resources.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct DescriptorSet<'res> {
     set_layout: Vec<wgpu::BindGroupLayoutEntry>,
     binds: Vec<wgpu::BindGroupEntry<'res>>,
 }
 
-/// Creates a [`Kernel`] instance with the bindings
-/// used during the configuration of this structure.
-pub struct KernelBuilder<'fw, 'res, 'sha> {
-    fw: &'fw Framework,
-    layouts: Vec<wgpu::BindGroupLayout>,
-    descriptors: Vec<DescriptorSet<'res>>,
-    sets: Vec<wgpu::BindGroup>,
-    shader: &'sha wgpu::ShaderModule,
-    entry_point: String,
-}
-
 /// Used to enqueue the execution of a shader with the bidings provided.
 ///
-/// Can only be created from [`KernelBuilder`].
 /// Equivalent to OpenCL's Kernel.
 pub struct Kernel<'fw> {
     fw: &'fw Framework,
