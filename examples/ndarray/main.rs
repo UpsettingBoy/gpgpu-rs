@@ -2,8 +2,7 @@
 fn main() {
     let fw = gpgpu::Framework::default();
 
-    let shader_mod =
-        gpgpu::utils::shader::from_wgsl_file(&fw, "examples/ndarray/shader.wgsl").unwrap();
+    let shader = gpgpu::Shader::from_wgsl_file(&fw, "examples/ndarray/shader.wgsl").unwrap();
 
     let dims = (3200, 3200); // X and Y dimensions. Must be multiple of the enqueuing dimensions
 
@@ -23,10 +22,11 @@ fn main() {
         .bind_array(&gpu_array_b, gpgpu::GpuBufferUsage::ReadOnly)
         .bind_array(&gpu_array_c, gpgpu::GpuBufferUsage::ReadWrite);
 
-    fw.create_kernel_builder(&shader_mod, "main_fn_2")
+    let program = gpgpu::Program::new(&shader, "main_fn_2")
         .add_descriptor_set(desc_0)
-        .add_descriptor_set(desc_1)
-        .build()
+        .add_descriptor_set(desc_1);
+
+    gpgpu::Kernel::new(&fw, program)
         // .enqueue((dims.0 * dims.1) as u32, 1, 1); // Kernel main_fn 1. Enqueuing in a single dimension
         .enqueue(dims.0 as u32 / 32, dims.1 as u32 / 32, 1); // Kernel main_fn 2. Enqueuing in x and y dimensions (array dimensions are needed)
 

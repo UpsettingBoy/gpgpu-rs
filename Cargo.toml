@@ -51,5 +51,9 @@ name = "parallel-compute"
 name = "webcam"
 required-features = ["integrate-image"]
 
+[[example]]
+name = "ndarray"
+required-features = ["integrate-ndarray"]
+
 [package.metadata.docs.rs]
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples=examples"]
