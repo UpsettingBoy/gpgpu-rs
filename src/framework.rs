@@ -1,4 +1,4 @@
-use crate::{Framework, KernelBuilder};
+use crate::Framework;
 
 impl Default for Framework {
     fn default() -> Self {
@@ -50,28 +50,6 @@ impl Framework {
             limits: device.limits(),
             device,
             queue,
-        }
-    }
-
-    /// Creates a [`KernelBuilder`] from a `wgpu` [`wgpu::ShaderModule`] and
-    /// its `entry_point`.
-    ///
-    /// A `ShaderModule` can be created using the `utils::shader` methods,
-    /// [`utils::shader::from_spirv_file`](crate::utils::shader::from_spirv_file) and
-    /// [`utils::shader::from_spirv_bytes`](crate::utils::shader::from_spirv_bytes); or
-    /// using `wgpu`.
-    pub fn create_kernel_builder<'sha>(
-        &self,
-        shader: &'sha wgpu::ShaderModule,
-        entry_point: impl Into<String>,
-    ) -> KernelBuilder<'_, '_, 'sha> {
-        KernelBuilder {
-            fw: self,
-            layouts: Vec::new(),
-            descriptors: Vec::new(),
-            sets: Vec::new(),
-            shader,
-            entry_point: entry_point.into(),
         }
     }
 

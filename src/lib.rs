@@ -12,8 +12,9 @@
 //!  use gpgpu::*;
 //!
 //!  fn main() -> GpuResult<()> {
+//!     // Framework initialization
 //!     let fw = Framework::default();
-//!     
+//!
 //!     // Original CPU data
 //!     let cpu_data = (0..10000).into_iter().collect::<Vec<u32>>();
 //!
@@ -23,21 +24,19 @@
 //!     let buf_c = GpuBuffer::<u32>::new(&fw, cpu_data.len());  // Output
 //!
 //!     // Shader load from SPIR-V binary file
-//!     let shader_module = utils::shader::from_spirv_file(&fw, "<SPIR-V shader path>")?;
+//!     let shader = Shader::from_spirv_file(&fw, "<SPIR-V shader path>")?;
 //!     //  or from a WGSL source file
-//!     let shader_module = utils::shader::from_wgsl_file(&fw, "<WGSL shader path>")?;    
+//!     let shader = Shader::from_wgsl_file(&fw, "<WGSL shader path>")?;    
 //!
-//!     // Descriptor set creation
-//!     let desc_set = DescriptorSet::default()
+//!     // Descriptor set and program creation
+//!     let desc = DescriptorSet::default()
 //!         .bind_buffer(&buf_a, GpuBufferUsage::ReadOnly)
 //!         .bind_buffer(&buf_b, GpuBufferUsage::ReadOnly)
 //!         .bind_buffer(&buf_c, GpuBufferUsage::ReadWrite);
-//!     
+//!     let program = Program::new(&shader, "main").add_descriptor_set(desc); // Entry point
+//!
 //!     // Kernel creation and enqueuing
-//!     fw.create_kernel_builder(&shader_module, "main")   // Entry point
-//!         .add_descriptor_set(desc_set)                      
-//!         .build()
-//!         .enqueue(cpu_data.len() as u32, 1, 1);         // Enqueuing, not very optimus 😅
+//!     Kernel::new(&fw, program).enqueue(cpu_data.len() as u32, 1, 1); // Enqueuing, not very optimus 😅
 //!
 //!     let output = buf_c.read()?;                        // Read back C from GPU
 //!     for (a, b) in cpu_data.into_iter().zip(output) {
@@ -75,7 +74,6 @@ pub mod features;
 pub mod framework;
 pub mod kernel;
 pub mod primitives;
-pub mod utils;
 
 /// Lazy error handling :)
 pub type GpuResult<T> = Result<T, Box<dyn std::error::Error>>;
@@ -141,27 +139,27 @@ pub struct GpuImage<'fw, P>(GenericImage<'fw, P>);
 /// under the [`DescriptorSet::bind_const_image`](crate::DescriptorSet::bind_const_image) documentation.
 pub struct GpuConstImage<'fw, P>(GenericImage<'fw, P>);
 
+/// Represents a shader.
+///
+/// It's just a wrapper over [`wgpu::ShaderModule`].
+pub struct Shader(wgpu::ShaderModule);
+
+/// Represents an entry point with its bindings on a [`Shader`].
+pub struct Program<'sha, 'res> {
+    shader: &'sha Shader,
+    entry_point: String,
+    descriptors: Vec<DescriptorSet<'res>>,
+}
+
 /// Contains a binding group of resources.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct DescriptorSet<'res> {
     set_layout: Vec<wgpu::BindGroupLayoutEntry>,
     binds: Vec<wgpu::BindGroupEntry<'res>>,
 }
 
-/// Creates a [`Kernel`] instance with the bindings
-/// used during the configuration of this structure.
-pub struct KernelBuilder<'fw, 'res, 'sha> {
-    fw: &'fw Framework,
-    layouts: Vec<wgpu::BindGroupLayout>,
-    descriptors: Vec<DescriptorSet<'res>>,
-    sets: Vec<wgpu::BindGroup>,
-    shader: &'sha wgpu::ShaderModule,
-    entry_point: String,
-}
-
 /// Used to enqueue the execution of a shader with the bidings provided.
 ///
-/// Can only be created from [`KernelBuilder`].
 /// Equivalent to OpenCL's Kernel.
 pub struct Kernel<'fw> {
     fw: &'fw Framework,

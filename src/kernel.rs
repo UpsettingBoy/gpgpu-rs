@@ -1,6 +1,8 @@
+use std::{borrow::Cow, path::Path};
+
 use crate::{
-    primitives::PixelInfo, DescriptorSet, GpuBuffer, GpuBufferUsage, GpuConstImage, GpuImage,
-    GpuUniformBuffer, Kernel, KernelBuilder,
+    primitives::PixelInfo, DescriptorSet, Framework, GpuBuffer, GpuBufferUsage, GpuConstImage,
+    GpuImage, GpuResult, GpuUniformBuffer, Kernel, Program, Shader,
 };
 
 impl<'res> DescriptorSet<'res> {
@@ -185,67 +187,114 @@ impl<'res> DescriptorSet<'res> {
     }
 }
 
-impl<'fw, 'res, 'sha> KernelBuilder<'fw, 'res, 'sha> {
-    /// Adds a [`DescriptorSet`] into the [`KernelBuilder`] internal layout.
+impl Shader {
+    /// Initialises a [`Shader`] from a SPIR-V file.
+    pub fn from_spirv_file(fw: &Framework, path: impl AsRef<Path>) -> GpuResult<Self> {
+        let bytes = std::fs::read(&path)?;
+        let shader_name = path.as_ref().to_str();
+
+        Ok(Self::from_spirv_bytes(fw, &bytes, shader_name))
+    }
+
+    /// Initialises a [`Shader`] from SPIR-V bytes with an optional `name`.
+    pub fn from_spirv_bytes(fw: &Framework, bytes: &[u8], name: Option<&str>) -> Self {
+        let source = wgpu::util::make_spirv(bytes);
+
+        let shader = fw
+            .device
+            .create_shader_module(&wgpu::ShaderModuleDescriptor {
+                label: name,
+                source,
+            });
+
+        Self(shader)
+    }
+
+    /// Initialises a [`Shader`] from a `WGSL` file.
+    pub fn from_wgsl_file(fw: &Framework, path: impl AsRef<Path>) -> GpuResult<Self> {
+        let source_string = std::fs::read_to_string(&path)?;
+        let shader_name = path.as_ref().to_str();
+
+        Ok(Self(fw.device.create_shader_module(
+            &wgpu::ShaderModuleDescriptor {
+                label: shader_name,
+                source: wgpu::ShaderSource::Wgsl(Cow::Owned(source_string)),
+            },
+        )))
+    }
+}
+
+impl<'sha, 'res> Program<'sha, 'res> {
+    /// Creates a new [`Program`] using a `shader` and an `entry_point`.
+    pub fn new(shader: &'sha Shader, entry_point: impl Into<String>) -> Self {
+        Self {
+            shader,
+            entry_point: entry_point.into(),
+            descriptors: Vec::new(),
+        }
+    }
+
+    /// Adds a [`DescriptorSet`] to this [`Program`] layout.
     pub fn add_descriptor_set(mut self, desc: DescriptorSet<'res>) -> Self {
-        let set_layout =
-            self.fw
+        self.descriptors.push(desc);
+        self
+    }
+}
+
+impl<'fw> Kernel<'fw> {
+    /// Creates a [`Kernel`] from a [`Program`].
+    pub fn new<'sha, 'res>(fw: &'fw Framework, program: Program<'sha, 'res>) -> Self {
+        let mut layouts = Vec::new();
+        let mut sets = Vec::new();
+
+        // Unwraping of descriptors from program
+        for desc in &program.descriptors {
+            let set_layout = fw
                 .device
                 .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                     label: None,
                     entries: &desc.set_layout,
                 });
 
-        let set = self
-            .fw
-            .device
-            .create_bind_group(&wgpu::BindGroupDescriptor {
+            let set = fw.device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: None,
                 layout: &set_layout,
                 entries: &desc.binds,
             });
 
-        self.layouts.push(set_layout);
-        self.descriptors.push(desc);
-        self.sets.push(set);
+            layouts.push(set_layout);
+            sets.push(set);
+        }
 
-        self
-    }
+        // Compute pipeline bindings
+        let group_layouts = layouts.iter().collect::<Vec<_>>();
 
-    /// Builds a [`Kernel`] from the layout stored in [`KernelBuilder`].
-    pub fn build(self) -> Kernel<'fw> {
-        let sets = self.layouts.iter().collect::<Vec<_>>();
+        let pipeline_layout = fw
+            .device
+            .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: None,
+                bind_group_layouts: &group_layouts,
+                push_constant_ranges: &[],
+            });
 
-        let pipeline_layout =
-            self.fw
-                .device
-                .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                    label: None,
-                    bind_group_layouts: &sets,
-                    push_constant_ranges: &[],
-                });
-
-        let pipeline = self
-            .fw
+        let pipeline = fw
             .device
             .create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
                 label: None,
-                module: self.shader,
-                entry_point: &self.entry_point,
+                module: &program.shader.0,
+                entry_point: &program.entry_point,
                 layout: Some(&pipeline_layout),
             });
 
-        Kernel {
-            fw: self.fw,
+        Self {
+            fw,
             pipeline,
-            sets: self.sets,
-            entry_point: self.entry_point,
+            sets,
+            entry_point: program.entry_point,
         }
     }
-}
 
-impl<'fw> Kernel<'fw> {
-    /// Enqueues the execution of this [`Kernel`] to the GPU.
+    /// Enqueues the execution of this [`Kernel`] onto the GPU.
     ///
     /// [`Kernel`] will dispatch `x`, `y` and `z` workgroups per dimension.
     pub fn enqueue(&self, x: u32, y: u32, z: u32) {

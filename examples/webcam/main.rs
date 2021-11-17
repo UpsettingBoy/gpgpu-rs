@@ -46,17 +46,15 @@ fn main() {
 
     let gpu_output = GpuImage::<Rgba8UintNorm>::new(&fw, WIDTH as u32, HEIGHT as u32); // Shader output
 
+    let shader = gpgpu::Shader::from_wgsl_file(&fw, "examples/webcam/shader.wgsl").unwrap();
+
     let desc = DescriptorSet::default()
         .bind_const_image(&gpu_input)
         .bind_image(&gpu_output)
         .bind_uniform_buffer(&buf_time);
+    let program = gpgpu::Program::new(&shader, "main").add_descriptor_set(desc);
 
-    let shader = gpgpu::utils::shader::from_wgsl_file(&fw, "examples/webcam/shader.wgsl").unwrap();
-
-    let kernel = fw
-        .create_kernel_builder(&shader, "main")
-        .add_descriptor_set(desc)
-        .build();
+    let kernel = gpgpu::Kernel::new(&fw, program);
 
     let time = std::time::Instant::now();
 
