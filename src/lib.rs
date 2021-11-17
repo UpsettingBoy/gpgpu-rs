@@ -12,8 +12,9 @@
 //!  use gpgpu::*;
 //!
 //!  fn main() -> GpuResult<()> {
+//!     // Framework initialization
 //!     let fw = Framework::default();
-//!     
+//!
 //!     // Original CPU data
 //!     let cpu_data = (0..10000).into_iter().collect::<Vec<u32>>();
 //!
@@ -23,21 +24,19 @@
 //!     let buf_c = GpuBuffer::<u32>::new(&fw, cpu_data.len());  // Output
 //!
 //!     // Shader load from SPIR-V binary file
-//!     let shader_module = utils::shader::from_spirv_file(&fw, "<SPIR-V shader path>")?;
+//!     let shader = Shader::from_spirv_file(&fw, "<SPIR-V shader path>")?;
 //!     //  or from a WGSL source file
-//!     let shader_module = utils::shader::from_wgsl_file(&fw, "<WGSL shader path>")?;    
+//!     let shader = Shader::from_wgsl_file(&fw, "<WGSL shader path>")?;    
 //!
-//!     // Descriptor set creation
-//!     let desc_set = DescriptorSet::default()
+//!     // Descriptor set and program creation
+//!     let desc = DescriptorSet::default()
 //!         .bind_buffer(&buf_a, GpuBufferUsage::ReadOnly)
 //!         .bind_buffer(&buf_b, GpuBufferUsage::ReadOnly)
 //!         .bind_buffer(&buf_c, GpuBufferUsage::ReadWrite);
-//!     
+//!     let program = Program::new(&shader, "main").add_descriptor_set(desc); // Entry point
+//!
 //!     // Kernel creation and enqueuing
-//!     fw.create_kernel_builder(&shader_module, "main")   // Entry point
-//!         .add_descriptor_set(desc_set)                      
-//!         .build()
-//!         .enqueue(cpu_data.len() as u32, 1, 1);         // Enqueuing, not very optimus 😅
+//!     Kernel::new(&fw, program).enqueue(cpu_data.len() as u32, 1, 1); // Enqueuing, not very optimus 😅
 //!
 //!     let output = buf_c.read()?;                        // Read back C from GPU
 //!     for (a, b) in cpu_data.into_iter().zip(output) {

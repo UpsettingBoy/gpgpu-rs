@@ -188,7 +188,7 @@ impl<'res> DescriptorSet<'res> {
 }
 
 impl Shader {
-    /// Creates a [`wgpu::ShaderModule`] instance from a SPIR-V file.
+    /// Initialises a [`Shader`] from a SPIR-V file.
     pub fn from_spirv_file(fw: &Framework, path: impl AsRef<Path>) -> GpuResult<Self> {
         let bytes = std::fs::read(&path)?;
         let shader_name = path.as_ref().to_str();
@@ -234,7 +234,7 @@ impl<'sha, 'res> Program<'sha, 'res> {
         }
     }
 
-    /// Adds a [`DescriptorSet`] for this [`Program`].
+    /// Adds a [`DescriptorSet`] to this [`Program`] layout.
     pub fn add_descriptor_set(mut self, desc: DescriptorSet<'res>) -> Self {
         self.descriptors.push(desc);
         self
@@ -242,12 +242,7 @@ impl<'sha, 'res> Program<'sha, 'res> {
 }
 
 impl<'fw> Kernel<'fw> {
-    /// Creates a [`KernelBuilder`] from a [`Program`].
-    ///
-    /// A `ShaderModule` can be created using the `utils::shader` methods,
-    /// [`utils::shader::from_spirv_file`](crate::utils::shader::from_spirv_file) and
-    /// [`utils::shader::from_spirv_bytes`](crate::utils::shader::from_spirv_bytes); or
-    /// using `wgpu`.
+    /// Creates a [`Kernel`] from a [`Program`].
     pub fn new<'sha, 'res>(fw: &'fw Framework, program: Program<'sha, 'res>) -> Self {
         let mut layouts = Vec::new();
         let mut sets = Vec::new();
@@ -299,7 +294,7 @@ impl<'fw> Kernel<'fw> {
         }
     }
 
-    /// Enqueues the execution of this [`Kernel`] to the GPU.
+    /// Enqueues the execution of this [`Kernel`] onto the GPU.
     ///
     /// [`Kernel`] will dispatch `x`, `y` and `z` workgroups per dimension.
     pub fn enqueue(&self, x: u32, y: u32, z: u32) {
