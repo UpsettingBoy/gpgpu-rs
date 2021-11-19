@@ -4,8 +4,8 @@ use wgpu::util::DeviceExt;
 
 use crate::{Framework, GpuResult};
 
-/// Generic internal implementation for [`wgpu::Buffer`] handling
-/// for both uniform and storage buffer.
+/// Generic internal implementation for [`wgpu::Buffer`]
+/// handling both uniform and storage buffers.
 pub(crate) struct GenericBuffer<'fw, T> {
     fw: &'fw Framework,
     storage: wgpu::Buffer,
@@ -23,8 +23,13 @@ where
     }
 
     /// Gets the inner [`wgpu::Buffer`] of this [`GenericBuffer`].
-    pub fn get_inner_buffer(&self) -> &wgpu::Buffer {
+    pub fn get_wgpu_buffer(&self) -> &wgpu::Buffer {
         &self.storage
+    }
+
+    /// Consumes this [`GenericBuffer`] into a [`wgpu::Buffer`] and its `size` in bytes.
+    pub fn into_wgpu_buffer(self) -> (wgpu::Buffer, usize) {
+        (self.storage, self.size)
     }
 
     /// Obtains the number of elements (or capacity if created using [`Framework::create_buffer`](crate::Framework::create_buffer))
@@ -115,6 +120,16 @@ where
         Self {
             fw,
             storage,
+            size,
+            _marker: PhantomData,
+        }
+    }
+
+    /// Creates a [`GenericBuffer`] from a [`wgpu::Buffer`] and its size in bytes.
+    pub fn from_wgpu_buffer(fw: &'fw crate::Framework, buffer: wgpu::Buffer, size: usize) -> Self {
+        Self {
+            fw,
+            storage: buffer,
             size,
             _marker: PhantomData,
         }
