@@ -86,8 +86,8 @@ pub type GpuResult<T> = Result<T, Box<dyn std::error::Error>>;
 #[allow(dead_code)]
 pub struct Framework {
     instance: wgpu::Instance,
-    pub device: wgpu::Device,
-    pub queue: wgpu::Queue,
+    device: wgpu::Device,
+    queue: wgpu::Queue,
     limits: wgpu::Limits,
 }
 
