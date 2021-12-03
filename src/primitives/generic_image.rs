@@ -23,12 +23,17 @@ where
     }
 
     /// Gets the inner [`wgpu::Texture`] of the [`GenericImage`].
-    pub fn get_inner_texture(&self) -> &wgpu::Texture {
+    pub fn get_wgpu_texture(&self) -> &wgpu::Texture {
         &self.texture
     }
 
+    /// Consumes this [`GenericImage`] into a [`wgpu::Texture`] and its `dimensions`.
+    pub fn into_wgpu_texture(self) -> (wgpu::Texture, wgpu::Extent3d) {
+        (self.texture, self.size)
+    }
+
     /// Gets the [`wgpu::Extent3d`] of the [`GenericImage`].
-    pub fn get_extent3d(&self) -> wgpu::Extent3d {
+    pub fn get_wgpu_extent3d(&self) -> wgpu::Extent3d {
         self.size
     }
 
@@ -72,7 +77,7 @@ where
     }
 
     /// Creates a new [`GenericImage`] from an image's raw bytes (`data`) and its dimensions.
-    pub fn from_raw_image(fw: &'fw crate::Framework, width: u32, height: u32, data: &[u8]) -> Self {
+    pub fn from_raw_bytes(fw: &'fw crate::Framework, width: u32, height: u32, data: &[u8]) -> Self {
         let size = wgpu::Extent3d {
             width,
             height,
@@ -98,7 +103,31 @@ where
             data,
         );
 
-        let full_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let full_view = texture.create_view(&Default::default());
+
+        Self {
+            fw,
+            texture,
+            size,
+            full_view,
+            _pixel: PhantomData,
+        }
+    }
+
+    /// Creates a new [`GenericImage`] from a [`wgpu::Texture`] and its dimensions.
+    pub fn from_wgpu_texture(
+        fw: &'fw crate::Framework,
+        texture: wgpu::Texture,
+        width: u32,
+        height: u32,
+    ) -> Self {
+        let size = wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        };
+
+        let full_view = texture.create_view(&Default::default());
 
         Self {
             fw,
@@ -127,7 +156,7 @@ where
             .fw
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("GpuImage::read_async"),
+                label: Some("GenericImage::read_async"),
             });
 
         let copy_texture = wgpu::ImageCopyTexture {
@@ -186,7 +215,7 @@ where
             .fw
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("GpuImage::read"),
+                label: Some("GenericImage::read"),
             });
 
         let copy_texture = self.texture.as_image_copy();
@@ -245,7 +274,7 @@ where
             .fw
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("GpuImage::write"),
+                label: Some("GenericImage::write"),
             });
 
         self.fw.queue.submit(Some(encoder.finish()));
@@ -269,7 +298,7 @@ where
             .fw
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("GpuImage::write_async"),
+                label: Some("GenericImage::write_async"),
             });
 
         let staging_view = staging.slice(..);

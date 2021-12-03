@@ -7,8 +7,13 @@ where
     T: bytemuck::Pod,
 {
     /// Gets the inner [`wgpu::Buffer`] of this [`GpuBuffer`].
-    pub fn get_inner_buffer(&self) -> &wgpu::Buffer {
-        self.0.get_inner_buffer()
+    pub fn get_wgpu_buffer(&self) -> &wgpu::Buffer {
+        self.0.get_wgpu_buffer()
+    }
+
+    /// Consumes this [`GpuBuffer`] into a [`wgpu::Buffer`] and its `size` in bytes.
+    pub fn into_wgpu_buffer(self) -> (wgpu::Buffer, usize) {
+        self.0.into_wgpu_buffer()
     }
 
     /// Obtains the number of elements (or capacity if created using
@@ -44,6 +49,13 @@ where
         Self(GenericBuffer::from_slice(fw, data))
     }
 
+    /// Creates a [`GpuBuffer`] from a [`wgpu::Buffer`] and its size in bytes.
+    ///
+    /// `buffer` must have `wgpu::BufferUsages::STORAGE`, `wgpu::BufferUsages::COPY_SRC` and `wgpu::BufferUsages::COPY_DST` usages.
+    pub fn from_wgpu_buffer(fw: &'fw crate::Framework, buffer: wgpu::Buffer, size: usize) -> Self {
+        Self(GenericBuffer::from_wgpu_buffer(fw, buffer, size))
+    }
+
     /// Asyncronously reads the contents of the [`GpuBuffer`] into a [`Vec`].
     ///
     /// In order for this future to resolve, [`Framework::poll`](crate::Framework::poll) or
@@ -76,8 +88,13 @@ where
     T: bytemuck::Pod,
 {
     /// Gets the inner [`wgpu::Buffer`] of this [`GpuUniformBuffer`].
-    pub fn get_inner_buffer(&self) -> &wgpu::Buffer {
-        self.0.get_inner_buffer()
+    pub fn get_wgpu_buffer(&self) -> &wgpu::Buffer {
+        self.0.get_wgpu_buffer()
+    }
+
+    /// Consumes this [`GpuUniformBuffer`] into a [`wgpu::Buffer`] and its `size` in bytes.
+    pub fn into_wgpu_buffer(self) -> (wgpu::Buffer, usize) {
+        self.0.into_wgpu_buffer()
     }
 
     /// Obtains the number of elements (or capacity if created using

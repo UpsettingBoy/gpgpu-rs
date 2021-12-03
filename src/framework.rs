@@ -80,4 +80,24 @@ impl Framework {
     pub fn blocking_poll(&self) {
         self.device.poll(wgpu::Maintain::Wait);
     }
+
+    /// Gets the [`wgpu::Instance`] of this [`Framework`].
+    pub fn get_wgpu_instance(&self) -> &wgpu::Instance {
+        &self.instance
+    }
+
+    /// Gets the [`wgpu::Device`] of this [`Framework`].
+    pub fn get_wgpu_device(&self) -> &wgpu::Device {
+        &self.device
+    }
+
+    /// Gets the [`wgpu::Queue`] of this [`Framework`].
+    pub fn get_wgpu_queue(&self) -> &wgpu::Queue {
+        &self.queue
+    }
+
+    /// Consumes this [`Framework`] returning the `wgpu` components that form it.
+    pub fn into_wgpu(self) -> (wgpu::Instance, wgpu::Device, wgpu::Queue) {
+        (self.instance, self.device, self.queue)
+    }
 }
