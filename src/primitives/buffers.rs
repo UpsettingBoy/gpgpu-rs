@@ -1,6 +1,6 @@
-use crate::{GpuBuffer, GpuResult, GpuUniformBuffer};
+use crate::{GpuBuffer, GpuUniformBuffer};
 
-use super::generic_buffer::GenericBuffer;
+use super::generic_buffer::{BufferResult, GenericBuffer};
 
 impl<'fw, T> GpuBuffer<'fw, T>
 where
@@ -48,12 +48,12 @@ where
     ///
     /// In order for this future to resolve, [`Framework::poll`](crate::Framework::poll) or
     /// [`Framework::blocking_poll`](crate::Framework::poll) must be invoked.
-    pub async fn read_async(&self) -> GpuResult<Vec<T>> {
+    pub async fn read_async(&self) -> BufferResult<Vec<T>> {
         self.0.read_async().await
     }
 
     /// Blocking read of the content of the [`GpuBuffer`] into a [`Vec`].
-    pub fn read(&self) -> GpuResult<Vec<T>> {
+    pub fn read(&self) -> BufferResult<Vec<T>> {
         self.0.read()
     }
 
@@ -61,7 +61,7 @@ where
     ///
     /// In order for this future to resolve, [`Framework::poll`](crate::Framework::poll) or
     /// [`Framework::blocking_poll`](crate::Framework::blocking_poll) must be invoked.
-    pub async fn write_async(&mut self, data: &[T]) -> GpuResult<()> {
+    pub async fn write_async(&mut self, data: &[T]) -> BufferResult<()> {
         self.0.write_async(data).await
     }
 
@@ -100,14 +100,14 @@ where
     /// Creates an empty [`GpuUniformBuffer`] of the desired `len`gth.
     ///
     /// Fails if `sizeof::<T>() * len` is bigger than GPU's max uniform buffer size.
-    pub fn new(fw: &'fw crate::Framework, len: usize) -> GpuResult<Self> {
+    pub fn new(fw: &'fw crate::Framework, len: usize) -> BufferResult<Self> {
         Ok(Self(GenericBuffer::new_uniform(fw, len)?))
     }
 
     /// Creates a [`GpuUniformBuffer`] from a `data` slice.
     ///
     /// Fails if `data` byte size is bigger than GPU's max uniform buffer size.
-    pub fn from_slice(fw: &'fw crate::Framework, data: &[T]) -> GpuResult<Self>
+    pub fn from_slice(fw: &'fw crate::Framework, data: &[T]) -> BufferResult<Self>
     where
         T: bytemuck::Pod,
     {
@@ -118,7 +118,7 @@ where
     ///
     /// In order for this future to resolve, [`Framework::poll`](crate::Framework::poll) or
     /// [`Framework::blocking_poll`](crate::Framework::blocking_poll) must be invoked.
-    pub async fn write_async(&mut self, data: &[T]) -> GpuResult<()> {
+    pub async fn write_async(&mut self, data: &[T]) -> BufferResult<()> {
         self.0.write_async(data).await
     }
 

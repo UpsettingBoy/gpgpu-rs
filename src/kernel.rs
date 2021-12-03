@@ -2,7 +2,7 @@ use std::{borrow::Cow, path::Path};
 
 use crate::{
     primitives::PixelInfo, DescriptorSet, Framework, GpuBuffer, GpuBufferUsage, GpuConstImage,
-    GpuImage, GpuResult, GpuUniformBuffer, Kernel, Program, Shader,
+    GpuImage, GpuUniformBuffer, Kernel, Program, Shader,
 };
 
 impl<'res> DescriptorSet<'res> {
@@ -189,7 +189,7 @@ impl<'res> DescriptorSet<'res> {
 
 impl Shader {
     /// Initialises a [`Shader`] from a SPIR-V file.
-    pub fn from_spirv_file(fw: &Framework, path: impl AsRef<Path>) -> GpuResult<Self> {
+    pub fn from_spirv_file(fw: &Framework, path: impl AsRef<Path>) -> std::io::Result<Self> {
         let bytes = std::fs::read(&path)?;
         let shader_name = path.as_ref().to_str();
 
@@ -211,7 +211,7 @@ impl Shader {
     }
 
     /// Initialises a [`Shader`] from a `WGSL` file.
-    pub fn from_wgsl_file(fw: &Framework, path: impl AsRef<Path>) -> GpuResult<Self> {
+    pub fn from_wgsl_file(fw: &Framework, path: impl AsRef<Path>) -> std::io::Result<Self> {
         let source_string = std::fs::read_to_string(&path)?;
         let shader_name = path.as_ref().to_str();
 

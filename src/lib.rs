@@ -79,7 +79,7 @@ pub mod kernel;
 pub mod primitives;
 
 /// Lazy error handling :)
-pub type GpuResult<T> = Result<T, Box<dyn std::error::Error>>;
+// pub type GpuResult<T> = Result<T, Box<dyn std::error::Error>>;
 
 /// Entry point of `gpgpu`. A [`Framework`] must be created
 /// first as all GPU primitives needs it to be created.
