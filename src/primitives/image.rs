@@ -6,13 +6,18 @@ where
     P: PixelInfo,
 {
     /// Gets the inner [`wgpu::Texture`] of the [`GpuImage`].
-    pub fn get_inner_texture(&self) -> &wgpu::Texture {
-        self.0.get_inner_texture()
+    pub fn get_wgpu_texture(&self) -> &wgpu::Texture {
+        self.0.get_wgpu_texture()
+    }
+
+    /// Consumes this [`GpuImage`] into a [`wgpu::Texture`] and its `dimensions`.
+    pub fn into_wgpu_texture(self) -> (wgpu::Texture, wgpu::Extent3d) {
+        self.0.into_wgpu_texture()
     }
 
     /// Gets the [`wgpu::Extent3d`] of the [`GpuImage`].
-    pub fn get_extent3d(&self) -> wgpu::Extent3d {
-        self.0.get_extent3d()
+    pub fn get_wgpu_extent3d(&self) -> wgpu::Extent3d {
+        self.0.get_wgpu_extent3d()
     }
 
     /// Gets the width and height of the [`GpuImage`].
@@ -26,8 +31,21 @@ where
     }
 
     /// Creates a new `GpuImage` from an image's raw bytes (`data`) and its dimensions.
-    pub fn from_raw_image(fw: &'fw crate::Framework, width: u32, height: u32, data: &[u8]) -> Self {
-        Self(GenericImage::from_raw_image(fw, width, height, data))
+    pub fn from_raw_bytes(fw: &'fw crate::Framework, width: u32, height: u32, data: &[u8]) -> Self {
+        Self(GenericImage::from_raw_bytes(fw, width, height, data))
+    }
+
+    /// Creates a new [`GpuImage`] from a [`wgpu::Texture`] and its dimensions.
+    ///
+    /// `texture` must have `wgpu::TextureUsages::STORAGE_BINDING`, `wgpu::TextureUsages::COPY_SRC`,
+    /// `wgpu::TextureUsages::COPY_DST` and `wgpu::TextureUsages::TEXTURE_BINDING` usages.
+    pub fn from_wgpu_texture(
+        fw: &'fw crate::Framework,
+        texture: wgpu::Texture,
+        width: u32,
+        height: u32,
+    ) -> Self {
+        Self(GenericImage::from_wgpu_texture(fw, texture, width, height))
     }
 
     /// Asyncronously reads the contents of the [`GpuImage`] into a [`Vec`].
@@ -65,13 +83,13 @@ where
     P: PixelInfo,
 {
     /// Gets the inner [`wgpu::Texture`] of the [`GpuConstImage`].
-    pub fn get_inner_texture(&self) -> &wgpu::Texture {
-        self.0.get_inner_texture()
+    pub fn get_wgpu_texture(&self) -> &wgpu::Texture {
+        self.0.get_wgpu_texture()
     }
 
     /// Gets the [`wgpu::Extent3d`] of the [`GpuConstImage`].
-    pub fn get_extent3d(&self) -> wgpu::Extent3d {
-        self.0.get_extent3d()
+    pub fn get_wgpu_extent3d(&self) -> wgpu::Extent3d {
+        self.0.get_wgpu_extent3d()
     }
 
     /// Gets the width and height of the [`GpuConstImage`].
@@ -85,8 +103,21 @@ where
     }
 
     /// Creates a new [`GpuConstImage`] from an image's raw bytes (`data`) and its dimensions.
-    pub fn from_raw_image(fw: &'fw crate::Framework, width: u32, height: u32, data: &[u8]) -> Self {
-        Self(GenericImage::from_raw_image(fw, width, height, data))
+    pub fn from_raw_bytes(fw: &'fw crate::Framework, width: u32, height: u32, data: &[u8]) -> Self {
+        Self(GenericImage::from_raw_bytes(fw, width, height, data))
+    }
+
+    /// Creates a new [`GpuConstImage`] from a [`wgpu::Texture`] and its dimensions.
+    ///
+    /// `texture` must have `wgpu::TextureUsages::STORAGE_BINDING`, `wgpu::TextureUsages::COPY_SRC`,
+    /// `wgpu::TextureUsages::COPY_DST` and `wgpu::TextureUsages::TEXTURE_BINDING` usages.
+    pub fn from_wgpu_texture(
+        fw: &'fw crate::Framework,
+        texture: wgpu::Texture,
+        width: u32,
+        height: u32,
+    ) -> Self {
+        Self(GenericImage::from_wgpu_texture(fw, texture, width, height))
     }
 
     /// Writes immediately the `img_bytes` bytes into the [`GpuConstImage`].

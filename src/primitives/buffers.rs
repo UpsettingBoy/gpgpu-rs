@@ -88,7 +88,7 @@ where
     T: bytemuck::Pod,
 {
     /// Gets the inner [`wgpu::Buffer`] of this [`GpuUniformBuffer`].
-    pub fn get_inner_buffer(&self) -> &wgpu::Buffer {
+    pub fn get_wgpu_buffer(&self) -> &wgpu::Buffer {
         self.0.get_wgpu_buffer()
     }
 
