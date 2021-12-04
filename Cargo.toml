@@ -19,7 +19,9 @@ cfg-if = "1.0"
 futures = { version = "0.3", default-features = false, features = ["executor"] }
 image = { version = "0.23", default-features = false, optional = true }
 wgpu = { version = "0.11", features = ["spirv"] }
-ndarray = { version = "*", default-features = false, optional = true }
+ndarray = { version = "*", default-features = false, features = [
+    "std",
+], optional = true }
 thiserror = "1.0"
 
 [dev-dependencies]

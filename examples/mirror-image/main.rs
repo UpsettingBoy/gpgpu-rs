@@ -15,7 +15,7 @@ fn main() {
     let output_img = gpgpu::GpuImage::<Rgba8Uint>::new(&fw, width, height); // Output
 
     // Write input image into the GPU
-    input_img.write(&rgba);
+    input_img.write(&rgba).unwrap();
 
     let desc = gpgpu::DescriptorSet::default()
         .bind_const_image(&input_img)
