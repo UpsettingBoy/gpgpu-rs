@@ -9,9 +9,8 @@
 //! result in another vector C.
 //! ## Rust program
 //! ```no_run
-//!  use gpgpu::*;
-//!
-//!  fn main() -> GpuResult<()> {
+//!     use gpgpu::*;
+//! fn main() -> Result<(), Box<dyn std::error::Error>> {
 //!     // Framework initialization
 //!     let fw = Framework::default();
 //!
@@ -48,7 +47,7 @@
 //! ```
 //!
 //! ## Shader program
-//! The shader is writen in [WGSL](https://gpuweb.github.io/gpuweb/wgsl/)
+//! The shader is written in [WGSL](https://gpuweb.github.io/gpuweb/wgsl/)
 //! ```ignore
 //! // Vector type definition. Used for both input and output
 //! [[block]]
@@ -77,9 +76,6 @@ pub mod features;
 pub mod framework;
 pub mod kernel;
 pub mod primitives;
-
-/// Lazy error handling :)
-// pub type GpuResult<T> = Result<T, Box<dyn std::error::Error>>;
 
 /// Entry point of `gpgpu`. A [`Framework`] must be created
 /// first as all GPU primitives needs it to be created.
