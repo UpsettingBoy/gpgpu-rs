@@ -60,7 +60,9 @@ fn main() {
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
         let cam_buf = camera.frame().unwrap(); // Obtain cam current frame
-        gpu_input.write_from_image_buffer(&cam_buf.convert()); // Upload cam frame into the cam frame texture
+        gpu_input
+            .write_from_image_buffer(&cam_buf.convert())
+            .unwrap(); // Upload cam frame into the cam frame texture
         buf_time.write(&[time.elapsed().as_secs_f32()]); // Upload elapsed time into elapsed time buffer
 
         kernel.enqueue(WIDTH as u32 / 32, HEIGHT as u32 / 32, 1);

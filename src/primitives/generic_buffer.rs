@@ -1,8 +1,19 @@
 use std::marker::PhantomData;
 
+use thiserror::Error;
 use wgpu::util::DeviceExt;
 
-use crate::{Framework, GpuResult};
+use crate::Framework;
+
+pub type BufferResult<T> = Result<T, BufferError>;
+
+#[derive(Error, Debug)]
+pub enum BufferError {
+    #[error("Cannot create GpuUniformBuffer of {current} bytes (max. {max} bytes). Consider creating a GpuBuffer instead.")]
+    UniformCreationExceededCapacity { current: u32, max: u32 },
+    #[error(transparent)]
+    AsyncMapError(#[from] wgpu::BufferAsyncError),
+}
 
 /// Generic internal implementation for [`wgpu::Buffer`]
 /// handling both uniform and storage buffers.
@@ -75,14 +86,14 @@ where
     /// Creates an empty uniform [`GenericBuffer`] of the desired `len`gth.
     ///
     /// Fails if `sizeof::<T>() * len` is bigger than GPU's max uniform buffer size.
-    pub fn new_uniform(fw: &'fw Framework, len: usize) -> GpuResult<Self> {
+    pub fn new_uniform(fw: &'fw Framework, len: usize) -> BufferResult<Self> {
         let size = len * std::mem::size_of::<T>();
 
         if size as u32 > fw.limits.max_uniform_buffer_binding_size {
-            let msg = format!("Cannot create GpuUniformBuffer of {} bytes (max. {} bytes). Consider creating a GenericBuffer instead.",
-                                        size,
-                                        fw.limits.max_uniform_buffer_binding_size);
-            return Err(msg.into());
+            return Err(BufferError::UniformCreationExceededCapacity {
+                current: size as u32,
+                max: fw.limits.max_uniform_buffer_binding_size,
+            });
         }
 
         let storage = fw.device.create_buffer(&wgpu::BufferDescriptor {
@@ -138,18 +149,17 @@ where
     /// Creates an uniform [`GenericBuffer`] from a `data` slice.
     ///
     /// Fails if `data` byte size is bigger than GPU's max uniform buffer size.
-    pub fn uniform_from_slice(fw: &'fw crate::Framework, data: &[T]) -> GpuResult<Self>
+    pub fn uniform_from_slice(fw: &'fw crate::Framework, data: &[T]) -> BufferResult<Self>
     where
         T: bytemuck::Pod,
     {
         let size = data.len() * std::mem::size_of::<T>();
 
         if size as u32 > fw.limits.max_uniform_buffer_binding_size {
-            let msg = format!(
-                "Cannot create an uniform GenericBuffer of {} bytes (max. {} bytes).",
-                size, fw.limits.max_uniform_buffer_binding_size
-            );
-            return Err(msg.into());
+            return Err(BufferError::UniformCreationExceededCapacity {
+                current: size as u32,
+                max: fw.limits.max_uniform_buffer_binding_size,
+            });
         }
 
         let storage = fw
@@ -169,7 +179,7 @@ where
     }
 
     /// Asyncronously reads the contents of the [`GenericBuffer`] into a [`Vec`].
-    pub async fn read_async(&self) -> GpuResult<Vec<T>> {
+    pub async fn read_async(&self) -> BufferResult<Vec<T>> {
         let staging = self.fw.create_download_staging_buffer(self.size);
 
         let mut encoder = self
@@ -197,7 +207,7 @@ where
     }
 
     /// Blocking read of the content of the [`GenericBuffer`] into a [`Vec`].
-    pub fn read(&self) -> GpuResult<Vec<T>> {
+    pub fn read(&self) -> BufferResult<Vec<T>> {
         let staging = self.fw.create_download_staging_buffer(self.size);
 
         let mut encoder = self
@@ -227,7 +237,7 @@ where
     }
 
     /// Asyncronously writes the contents of `data` into the [`GenericBuffer`].
-    pub async fn write_async(&mut self, data: &[T]) -> GpuResult<()> {
+    pub async fn write_async(&mut self, data: &[T]) -> BufferResult<()> {
         let staging = self.fw.create_upload_staging_buffer(self.size);
 
         let mut encoder = self

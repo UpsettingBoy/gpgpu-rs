@@ -1,6 +1,9 @@
 use crate::{
-    primitives::{generic_image::GenericImage, pixels, PixelInfo},
-    GpuConstImage, GpuImage, GpuResult,
+    primitives::{
+        generic_image::{GenericImage, ImageResult},
+        pixels, PixelInfo,
+    },
+    GpuConstImage, GpuImage,
 };
 
 use image::ImageBuffer;
@@ -62,7 +65,7 @@ where
     pub fn from_image_buffer<Container>(
         fw: &'fw crate::Framework,
         img: &ImageBuffer<Pixel, Container>,
-    ) -> GenericImage<'fw, Pixel::GpgpuPixel>
+    ) -> ImageResult<GenericImage<'fw, Pixel::GpgpuPixel>>
     where
         Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
     {
@@ -70,16 +73,16 @@ where
         let mut output_image = GenericImage::new(fw, width, height);
 
         let bytes = bytemuck::cast_slice(img);
-        output_image.write(bytes);
+        output_image.write(bytes)?;
 
-        output_image
+        Ok(output_image)
     }
 
     /// Creates a new normalised [`GenericImage`] from a [`image::ImageBuffer`].
     pub fn from_image_buffer_normalised<Container>(
         fw: &'fw crate::Framework,
         img: &ImageBuffer<Pixel, Container>,
-    ) -> GenericImage<'fw, Pixel::NormGpgpuPixel>
+    ) -> ImageResult<GenericImage<'fw, Pixel::NormGpgpuPixel>>
     where
         Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
     {
@@ -87,9 +90,9 @@ where
         let mut output_image = GenericImage::new(fw, width, height);
 
         let bytes = bytemuck::cast_slice(img);
-        output_image.write(bytes);
+        output_image.write(bytes)?;
 
-        output_image
+        Ok(output_image)
     }
 }
 
@@ -102,22 +105,24 @@ where
     pub fn from_image_buffer<Container>(
         fw: &'fw crate::Framework,
         img: &ImageBuffer<Pixel, Container>,
-    ) -> GpuImage<'fw, Pixel::GpgpuPixel>
+    ) -> ImageResult<GpuImage<'fw, Pixel::GpgpuPixel>>
     where
         Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
     {
-        GpuImage(GenericImage::from_image_buffer(fw, img))
+        Ok(GpuImage(GenericImage::from_image_buffer(fw, img)?))
     }
 
     /// Creates a new normalised [`GpuImage`] from a [`image::ImageBuffer`].
     pub fn from_image_buffer_normalised<Container>(
         fw: &'fw crate::Framework,
         img: &ImageBuffer<Pixel, Container>,
-    ) -> GpuImage<'fw, Pixel::NormGpgpuPixel>
+    ) -> ImageResult<GpuImage<'fw, Pixel::NormGpgpuPixel>>
     where
         Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
     {
-        GpuImage(GenericImage::from_image_buffer_normalised(fw, img))
+        Ok(GpuImage(GenericImage::from_image_buffer_normalised(
+            fw, img,
+        )?))
     }
 }
 
@@ -130,22 +135,24 @@ where
     pub fn from_image_buffer<Container>(
         fw: &'fw crate::Framework,
         img: &ImageBuffer<Pixel, Container>,
-    ) -> GpuConstImage<'fw, Pixel::GpgpuPixel>
+    ) -> ImageResult<GpuConstImage<'fw, Pixel::GpgpuPixel>>
     where
         Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
     {
-        GpuConstImage(GenericImage::from_image_buffer(fw, img))
+        Ok(GpuConstImage(GenericImage::from_image_buffer(fw, img)?))
     }
 
     /// Creates a new normalised [`GpuConstImage`] from a [`image::ImageBuffer`].
     pub fn from_image_buffer_normalised<Container>(
         fw: &'fw crate::Framework,
         img: &ImageBuffer<Pixel, Container>,
-    ) -> GpuConstImage<'fw, Pixel::NormGpgpuPixel>
+    ) -> ImageResult<GpuConstImage<'fw, Pixel::NormGpgpuPixel>>
     where
         Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
     {
-        GpuConstImage(GenericImage::from_image_buffer_normalised(fw, img))
+        Ok(GpuConstImage(GenericImage::from_image_buffer_normalised(
+            fw, img,
+        )?))
     }
 }
 
@@ -157,17 +164,13 @@ where
     /// Blocking read of the [`GpuImage`], creating a new [`image::GenericImage`] as output.
     pub fn read_to_image_buffer(
         &self,
-    ) -> GpuResult<::image::ImageBuffer<P::ImgPixel, PixelContainer<P>>> {
+    ) -> ImageResult<::image::ImageBuffer<P::ImgPixel, PixelContainer<P>>> {
         let bytes = self.read()?;
         let container = bytes_to_primitive_vec::<P::ImgPixel>(bytes);
 
         let (width, height) = self.dimensions();
 
-        let img: Result<ImageBuffer<P::ImgPixel, Vec<_>>, Box<dyn std::error::Error>> =
-            image::ImageBuffer::from_vec(width, height, container)
-                .ok_or_else(|| "Buffer is too small!".into());
-
-        img
+        Ok(image::ImageBuffer::from_vec(width, height, container).expect("Cannot fail here."))
     }
 
     /// Asyncronously read of the [`GenericImage`], creating a new [`image::ImageBuffer`] as output.
@@ -177,7 +180,7 @@ where
     /// must be invoked.
     pub async fn read_to_image_buffer_async(
         &self,
-    ) -> GpuResult<
+    ) -> ImageResult<
         ::image::ImageBuffer<
             P::ImgPixel,
             Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
@@ -188,11 +191,7 @@ where
 
         let (width, height) = self.dimensions();
 
-        let img: Result<ImageBuffer<P::ImgPixel, Vec<_>>, Box<dyn std::error::Error>> =
-            image::ImageBuffer::from_vec(width, height, container)
-                .ok_or_else(|| "Buffer is too small!".into());
-
-        img
+        Ok(image::ImageBuffer::from_vec(width, height, container).expect("Cannot fail here."))
     }
 
     /// Writes the [`image::ImageBuffer`] `img` into the [`GenericImage`].
@@ -202,9 +201,11 @@ where
             P::ImgPixel,
             Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
         >,
-    ) {
+    ) -> ImageResult<()> {
         let bytes = bytemuck::cast_slice(img);
-        self.write(bytes);
+        self.write(bytes)?;
+
+        Ok(())
     }
 
     /// Asyncronously writes the [`image::ImageBuffer`] `img` into the [`GenericImage`].
@@ -217,7 +218,7 @@ where
             P::ImgPixel,
             Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
         >,
-    ) -> GpuResult<()> {
+    ) -> ImageResult<()> {
         let bytes = bytemuck::cast_slice(img);
         self.write_async(bytes).await
     }
@@ -231,7 +232,7 @@ where
     /// Blocking read of the [`GpuImage`], creating a new [`image::ImageBuffer`] as output.
     pub fn read_to_image_buffer(
         &self,
-    ) -> GpuResult<::image::ImageBuffer<P::ImgPixel, PixelContainer<P>>> {
+    ) -> ImageResult<::image::ImageBuffer<P::ImgPixel, PixelContainer<P>>> {
         self.0.read_to_image_buffer()
     }
 
@@ -241,7 +242,7 @@ where
     /// must be invoked.
     pub async fn read_to_image_buffer_async(
         &self,
-    ) -> GpuResult<
+    ) -> ImageResult<
         ::image::ImageBuffer<
             P::ImgPixel,
             Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
@@ -257,7 +258,7 @@ where
             P::ImgPixel,
             Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
         >,
-    ) {
+    ) -> ImageResult<()> {
         self.0.write_from_image(img)
     }
 
@@ -272,7 +273,7 @@ where
             P::ImgPixel,
             Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
         >,
-    ) -> GpuResult<()> {
+    ) -> ImageResult<()> {
         self.0.write_from_image_buffer_async(img).await
     }
 }
@@ -289,7 +290,7 @@ where
             P::ImgPixel,
             Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
         >,
-    ) {
+    ) -> ImageResult<()> {
         self.0.write_from_image(img)
     }
 
@@ -304,7 +305,7 @@ where
             P::ImgPixel,
             Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
         >,
-    ) -> GpuResult<()> {
+    ) -> ImageResult<()> {
         self.0.write_from_image_buffer_async(img).await
     }
 }

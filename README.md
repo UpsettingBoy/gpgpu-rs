@@ -1,5 +1,7 @@
 # gpgpu
-
+![Crates.io](https://img.shields.io/crates/l/gpgpu?style=flat-square)
+![Crates.io](https://img.shields.io/crates/v/gpgpu?style=flat-square)
+[![docs.rs](https://img.shields.io/static/v1?label=docs.rs&message=read&color=brightgreen&style=flat-square)](https://docs.rs/gpgpu)
 <!-- cargo-rdme start -->
 
 A simple GPU compute library based on [`wgpu`](https://github.com/gfx-rs/wgpu).
@@ -13,9 +15,8 @@ Small program that multiplies 2 vectors A and B; and stores the
 result in another vector C.
 ## Rust program
 ```rust
- use gpgpu::*;
-
- fn main() -> GpuResult<()> {
+    use gpgpu::*;
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Framework initialization
     let fw = Framework::default();
 
@@ -52,7 +53,7 @@ result in another vector C.
 ```
 
 ## Shader program
-The shader is writen in [WGSL](https://gpuweb.github.io/gpuweb/wgsl/)
+The shader is written in [WGSL](https://gpuweb.github.io/gpuweb/wgsl/)
 ```rust
 // Vector type definition. Used for both input and output
 [[block]]

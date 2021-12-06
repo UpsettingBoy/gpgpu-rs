@@ -1,9 +1,21 @@
 use std::marker::PhantomData;
 
+use thiserror::Error;
 use wgpu::util::DeviceExt;
 
 use super::PixelInfo;
-use crate::GpuResult;
+
+pub type ImageResult<T> = Result<T, ImageError>;
+
+#[derive(Error, Debug)]
+pub enum ImageError {
+    #[error(transparent)]
+    AsyncMapError(#[from] wgpu::BufferAsyncError),
+    #[error(
+        "Texture size ({required} bytes) and `img_bytes` size ({current} bytes) must be equal."
+    )]
+    MismatchedWriteSizes { required: usize, current: usize },
+}
 
 pub(crate) struct GenericImage<'fw, P> {
     fw: &'fw crate::Framework,
@@ -139,7 +151,7 @@ where
     }
 
     /// Asyncronously reads the contents of the [`GenericImage`] into a [`Vec`].
-    pub async fn read_async(&self) -> GpuResult<Vec<u8>> {
+    pub async fn read_async(&self) -> ImageResult<Vec<u8>> {
         use std::num::NonZeroU32;
 
         let bytes_per_pixel = P::byte_size() as u32;
@@ -198,7 +210,7 @@ where
     }
 
     /// Blocking read of the content of the [`GenericImage`] into a [`Vec`].
-    pub fn read(&self) -> GpuResult<Vec<u8>> {
+    pub fn read(&self) -> ImageResult<Vec<u8>> {
         use std::num::NonZeroU32;
 
         let bytes_per_pixel = P::byte_size() as u32;
@@ -254,8 +266,16 @@ where
     }
 
     /// Writes the `img_bytes` bytes into the [`GenericImage`] immediately.
-    pub fn write(&mut self, img_bytes: &[u8]) {
+    pub fn write(&mut self, img_bytes: &[u8]) -> ImageResult<()> {
         use std::num::NonZeroU32;
+
+        let total_bytes = P::byte_size() * (self.size.width * self.size.height) as usize;
+        if total_bytes != img_bytes.len() {
+            return Err(ImageError::MismatchedWriteSizes {
+                required: total_bytes,
+                current: img_bytes.len(),
+            });
+        }
 
         self.fw.queue.write_texture(
             self.texture.as_image_copy(),
@@ -278,13 +298,24 @@ where
             });
 
         self.fw.queue.submit(Some(encoder.finish()));
+
+        Ok(())
     }
 
     /// Asyncronously writes `img_bytes` into the [`GenericImage`].
-    pub async fn write_async(&mut self, img_bytes: &[u8]) -> GpuResult<()> {
+    pub async fn write_async(&mut self, img_bytes: &[u8]) -> ImageResult<()> {
         use std::num::NonZeroU32;
 
         let bytes_per_pixel = P::byte_size() as u32;
+
+        let total_bytes = (bytes_per_pixel * self.size.width * self.size.height) as usize;
+        if total_bytes != img_bytes.len() {
+            return Err(ImageError::MismatchedWriteSizes {
+                required: total_bytes,
+                current: img_bytes.len(),
+            });
+        }
+
         let unpadded_bytes_per_row = self.size.width * bytes_per_pixel;
         let align = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
         let padded_bytes_per_row_padding = (align - unpadded_bytes_per_row % align) % align;

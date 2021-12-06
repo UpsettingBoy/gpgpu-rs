@@ -1,4 +1,27 @@
-use crate::{primitives::generic_buffer::GenericBuffer, DescriptorSet, GpuBufferUsage, GpuResult};
+use thiserror::Error;
+
+use crate::{
+    primitives::generic_buffer::{BufferError, GenericBuffer},
+    DescriptorSet, GpuBufferUsage,
+};
+
+#[derive(Error, Debug)]
+pub enum NdarrayError {
+    #[error("array is not contiguous.")]
+    ArrayNotContiguous,
+    #[error(transparent)]
+    InvalidShape(#[from] ndarray::ShapeError),
+}
+
+#[derive(Error, Debug)]
+pub enum ArrayError {
+    #[error(transparent)]
+    NdarrayError(#[from] NdarrayError),
+    #[error(transparent)]
+    BufferError(#[from] BufferError),
+}
+
+pub type ArrayResult<T> = Result<T, ArrayError>;
 
 pub struct GpuArray<'fw, T, D>(GenericBuffer<'fw, T>, D);
 
@@ -10,26 +33,27 @@ where
     pub fn from_array(
         fw: &'fw crate::Framework,
         array: ndarray::ArrayView<T, D>,
-    ) -> GpuResult<Self> {
-        let slice: Result<&[T], Box<dyn std::error::Error>> = array
+    ) -> ArrayResult<Self> {
+        let slice: Result<&[T], _> = array
             .as_slice_memory_order()
-            .ok_or_else(|| "Array is not contiguous".into());
+            .ok_or(NdarrayError::ArrayNotContiguous);
 
         let buf = GenericBuffer::from_slice(fw, slice?);
 
         Ok(Self(buf, array.raw_dim()))
     }
 
-    pub fn read_to_array(&self) -> GpuResult<ndarray::Array<T, D>> {
+    pub fn read_to_array(&self) -> ArrayResult<ndarray::Array<T, D>> {
         let v = self.0.read()?;
-        let array = ndarray::Array::from_shape_vec(self.1.clone(), v).map_err(|_| "Shape error");
-        Ok(array?)
+        ndarray::Array::from_shape_vec(self.1.clone(), v)
+            .map_err(NdarrayError::InvalidShape)
+            .map_err(ArrayError::NdarrayError)
     }
 
-    pub fn write_to_array(&mut self, array: ndarray::ArrayView<T, D>) -> GpuResult<()> {
-        let slice: Result<&[T], Box<dyn std::error::Error>> = array
+    pub fn write_to_array(&mut self, array: ndarray::ArrayView<T, D>) -> ArrayResult<()> {
+        let slice: Result<&[T], _> = array
             .as_slice_memory_order()
-            .ok_or_else(|| "Array is not contiguous".into());
+            .ok_or(NdarrayError::ArrayNotContiguous);
 
         self.0.write(slice?);
 

@@ -1,5 +1,8 @@
-use super::{generic_image::GenericImage, PixelInfo};
-use crate::{GpuConstImage, GpuImage, GpuResult};
+use super::{
+    generic_image::{GenericImage, ImageResult},
+    PixelInfo,
+};
+use crate::{GpuConstImage, GpuImage};
 
 impl<'fw, P> GpuImage<'fw, P>
 where
@@ -53,18 +56,18 @@ where
     /// In order for this future to resolve, [`Framework::poll`](crate::Framework::poll) or
     /// [`Framework::blocking_poll`](crate::Framework::blocking_poll)
     /// must be invoked.
-    pub async fn read_async(&self) -> GpuResult<Vec<u8>> {
+    pub async fn read_async(&self) -> ImageResult<Vec<u8>> {
         self.0.read_async().await
     }
 
     /// Blocking read of the content of the [`GpuImage`] into a [`Vec`].
-    pub fn read(&self) -> GpuResult<Vec<u8>> {
+    pub fn read(&self) -> ImageResult<Vec<u8>> {
         self.0.read()
     }
 
     /// Writes immediately the `img_bytes` bytes into the [`GpuImage`].
     /// The image is format specified at the [`GpuImage`] creation.
-    pub fn write(&mut self, img_bytes: &[u8]) {
+    pub fn write(&mut self, img_bytes: &[u8]) -> ImageResult<()> {
         self.0.write(img_bytes)
     }
 
@@ -73,7 +76,7 @@ where
     /// In order for this future to resolve, [`Framework::poll`](crate::Framework::poll) or
     /// [`Framework::blocking_poll`](crate::Framework::blocking_poll)
     /// must be invoked.
-    pub async fn write_async(&mut self, img_bytes: &[u8]) -> GpuResult<()> {
+    pub async fn write_async(&mut self, img_bytes: &[u8]) -> ImageResult<()> {
         self.0.write_async(img_bytes).await
     }
 }
@@ -122,7 +125,7 @@ where
 
     /// Writes immediately the `img_bytes` bytes into the [`GpuConstImage`].
     /// The image is format specified at the [`GpuConstImage`] creation.
-    pub fn write(&mut self, img_bytes: &[u8]) {
+    pub fn write(&mut self, img_bytes: &[u8]) -> ImageResult<()> {
         self.0.write(img_bytes)
     }
 
@@ -131,7 +134,7 @@ where
     /// In order for this future to resolve, [`Framework::poll`](crate::Framework::poll) or
     /// [`Framework::blocking_poll`](crate::Framework::blocking_poll)
     /// must be invoked.
-    pub async fn write_async(&mut self, img_bytes: &[u8]) -> GpuResult<()> {
+    pub async fn write_async(&mut self, img_bytes: &[u8]) -> ImageResult<()> {
         self.0.write_async(img_bytes).await
     }
 }
