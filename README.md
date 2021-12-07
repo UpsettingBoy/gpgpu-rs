@@ -1,4 +1,5 @@
 # gpgpu
+![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/UpsettingBoy/gpgpu-rs/Rust%20CI/dev?label=Actions&style=flat-square)
 ![Crates.io](https://img.shields.io/crates/l/gpgpu?style=flat-square)
 ![Crates.io](https://img.shields.io/crates/v/gpgpu?style=flat-square)
 [![docs.rs](https://img.shields.io/static/v1?label=docs.rs&message=read&color=brightgreen&style=flat-square)](https://docs.rs/gpgpu)
