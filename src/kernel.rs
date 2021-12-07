@@ -58,9 +58,7 @@ impl<'res> DescriptorSet<'res> {
         self
     }
 
-    /// Binds a [`GpuBuffer`] as a storage buffer in the shader.
-    ///
-    /// The `access` mode must be either [`AccessMode::ReadOnly`] or [`AccessMode::ReadWrite`].
+    /// Binds a [`GpuBuffer`] as a storage buffer in the shader with a specific `usage`.
     ///
     /// ### Example WGSL syntax:
     /// ```ignore
@@ -79,7 +77,7 @@ impl<'res> DescriptorSet<'res> {
     ///     int data[];
     /// };
     /// ```
-    pub fn bind_buffer<T>(mut self, storage_buf: &'res GpuBuffer<T>, access: GpuBufferUsage) -> Self
+    pub fn bind_buffer<T>(mut self, storage_buf: &'res GpuBuffer<T>, usage: GpuBufferUsage) -> Self
     where
         T: bytemuck::Pod,
     {
@@ -92,7 +90,7 @@ impl<'res> DescriptorSet<'res> {
                 has_dynamic_offset: false,
                 min_binding_size: None,
                 ty: wgpu::BufferBindingType::Storage {
-                    read_only: access == GpuBufferUsage::ReadOnly,
+                    read_only: usage == GpuBufferUsage::ReadOnly,
                 },
             },
             count: None,

@@ -16,9 +16,7 @@ where
         self.0.into_wgpu_buffer()
     }
 
-    /// Obtains the number of elements (or capacity if created using
-    /// [`Framework::create_buffer`](crate::Framework::create_buffer))
-    /// of the [`GpuBuffer`].
+    /// Obtains the number of elements of the [`GpuBuffer`].
     pub fn len(&self) -> usize {
         self.0.len()
     }
@@ -97,9 +95,7 @@ where
         self.0.into_wgpu_buffer()
     }
 
-    /// Obtains the number of elements (or capacity if created using
-    /// [`Framework::create_buffer`](crate::Framework::create_buffer))
-    /// of the [`GpuUniformBuffer`].
+    /// Obtains the number of elements of the [`GpuUniformBuffer`].
     pub fn len(&self) -> usize {
         self.0.len()
     }
