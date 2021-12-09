@@ -19,7 +19,7 @@ impl Default for Framework {
                     &wgpu::DeviceDescriptor {
                         label: None,
                         features: wgpu::Features::empty(),
-                        limits: wgpu::Limits::downlevel_webgl2_defaults(),
+                        limits: adapter.limits(), // Bye WebGL2 support :(
                     },
                     None,
                 )
