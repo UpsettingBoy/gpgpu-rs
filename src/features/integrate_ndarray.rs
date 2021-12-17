@@ -1,9 +1,6 @@
 use thiserror::Error;
 
-use crate::{
-    primitives::generic_buffer::{BufferError, GenericBuffer},
-    DescriptorSet, GpuBufferUsage,
-};
+use crate::{primitives::buffers::BufferError, BufOps, DescriptorSet, GpuBuffer, GpuBufferUsage};
 
 #[derive(Error, Debug)]
 pub enum NdarrayError {
@@ -23,7 +20,7 @@ pub enum ArrayError {
 
 pub type ArrayResult<T> = Result<T, ArrayError>;
 
-pub struct GpuArray<'fw, T, D>(GenericBuffer<'fw, T>, D);
+pub struct GpuArray<'fw, T, D>(GpuBuffer<'fw, T>, D);
 
 impl<'fw, T, D> GpuArray<'fw, T, D>
 where
@@ -38,26 +35,32 @@ where
             .as_slice_memory_order()
             .ok_or(NdarrayError::ArrayNotContiguous);
 
-        let buf = GenericBuffer::from_slice(fw, slice?);
+        let buf = GpuBuffer::from_slice(fw, slice?);
 
         Ok(Self(buf, array.raw_dim()))
     }
 
-    pub fn read_to_array(&self) -> ArrayResult<ndarray::Array<T, D>> {
-        let v = self.0.read()?;
+    pub async fn read(&self) -> ArrayResult<ndarray::Array<T, D>> {
+        let v = self.0.read_vec().await?;
         ndarray::Array::from_shape_vec(self.1.clone(), v)
             .map_err(NdarrayError::InvalidShape)
             .map_err(ArrayError::NdarrayError)
     }
 
-    pub fn write_to_array(&mut self, array: ndarray::ArrayView<T, D>) -> ArrayResult<()> {
+    pub fn read_blocking(&self) -> ArrayResult<ndarray::Array<T, D>> {
+        futures::executor::block_on(self.read())
+    }
+
+    pub fn write(&mut self, array: ndarray::ArrayView<T, D>) -> ArrayResult<usize> {
         let slice: Result<&[T], _> = array
             .as_slice_memory_order()
             .ok_or(NdarrayError::ArrayNotContiguous);
 
-        self.0.write(slice?);
+        Ok(self.0.write(slice?)?)
+    }
 
-        Ok(())
+    pub fn to_gpu_buffer(self) -> GpuBuffer<'fw, T> {
+        self.0
     }
 }
 
@@ -84,7 +87,7 @@ impl<'res> DescriptorSet<'res> {
 
         let bind = wgpu::BindGroupEntry {
             binding: bind_id,
-            resource: array.0.get_binding_resource(),
+            resource: array.0.as_binding_resource(),
         };
 
         self.set_layout.push(bind_entry);
