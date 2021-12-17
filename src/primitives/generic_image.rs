@@ -248,7 +248,7 @@ where
         let buff_slice = staging.slice(..);
         let buf_future = buff_slice.map_async(wgpu::MapMode::Read);
 
-        self.fw.blocking_poll();
+        // self.fw.blocking_poll();
 
         futures::executor::block_on(buf_future)?;
 

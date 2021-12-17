@@ -1,56 +1,54 @@
+use std::{sync::Arc, time::Duration};
+
 use crate::Framework;
 
 impl Default for Framework {
     fn default() -> Self {
         let backend = wgpu::util::backend_bits_from_env().unwrap_or(wgpu::Backends::PRIMARY);
-
+        let power_preference = wgpu::util::power_preference_from_env()
+            .unwrap_or(wgpu::PowerPreference::HighPerformance);
         let instance = wgpu::Instance::new(backend);
-        let (device, queue) = futures::executor::block_on(async {
+
+        futures::executor::block_on(async {
             let adapter = instance
                 .request_adapter(&wgpu::RequestAdapterOptions {
-                    power_preference: wgpu::PowerPreference::HighPerformance,
+                    power_preference,
                     ..Default::default()
                 })
                 .await
                 .unwrap();
 
-            adapter
-                .request_device(
-                    &wgpu::DeviceDescriptor {
-                        label: None,
-                        features: wgpu::Features::empty(),
-                        limits: adapter.limits(), // Bye WebGL2 support :(
-                    },
-                    None,
-                )
-                .await
-                .unwrap()
-        });
-
-        Self {
-            instance,
-            limits: device.limits(),
-            device,
-            queue,
-        }
+            Self::new(adapter, Duration::from_millis(10)).await
+        })
     }
 }
 
 impl Framework {
-    /// Creates a new [`Framework`] instance from `wgpu` objects.
+    /// Creates a new [`Framework`] instance from a [`wgpu::Adapter`] and a `polling_time`.
     ///
-    /// This is mainly used when you want to use `wgpu` and `gpgpu` alongside
-    /// or you need special requiremients (device, features, ...).
-    ///
-    /// If you only want a [`Framework`] using a HighPerformance GPU with
-    /// the minimal features to run on the web (WebGPU), use [`Framework::default`](crate::Framework::default).
-    pub fn new(instance: wgpu::Instance, device: wgpu::Device, queue: wgpu::Queue) -> Self {
-        Self {
-            instance,
-            limits: device.limits(),
-            device,
-            queue,
-        }
+    /// Use this method when there are multiple GPUs in use or when a [`wgpu::Surface`] is required.
+    pub async fn new(adapter: wgpu::Adapter, polling_time: Duration) -> Self {
+        let (device, queue) = adapter
+            .request_device(
+                &wgpu::DeviceDescriptor {
+                    label: None,
+                    features: wgpu::Features::empty(),
+                    limits: adapter.limits(), // Bye WebGL2 support :(
+                },
+                None,
+            )
+            .await
+            .unwrap();
+
+        let device = Arc::new(device);
+        let polling_device = Arc::clone(&device);
+
+        std::thread::spawn(move || loop {
+            polling_device.poll(wgpu::Maintain::Poll);
+            std::thread::sleep(polling_time);
+        });
+
+        Self { device, queue }
     }
 
     pub(crate) fn create_download_staging_buffer(&self, size: usize) -> wgpu::Buffer {
@@ -69,35 +67,5 @@ impl Framework {
             usage: wgpu::BufferUsages::MAP_WRITE | wgpu::BufferUsages::COPY_SRC,
             mapped_at_creation: false,
         })
-    }
-
-    /// Non-blocking GPU poll.
-    pub fn poll(&self) {
-        self.device.poll(wgpu::Maintain::Poll);
-    }
-
-    /// Blocking GPU poll.
-    pub fn blocking_poll(&self) {
-        self.device.poll(wgpu::Maintain::Wait);
-    }
-
-    /// Gets the [`wgpu::Instance`] of this [`Framework`].
-    pub fn get_wgpu_instance(&self) -> &wgpu::Instance {
-        &self.instance
-    }
-
-    /// Gets the [`wgpu::Device`] of this [`Framework`].
-    pub fn get_wgpu_device(&self) -> &wgpu::Device {
-        &self.device
-    }
-
-    /// Gets the [`wgpu::Queue`] of this [`Framework`].
-    pub fn get_wgpu_queue(&self) -> &wgpu::Queue {
-        &self.queue
-    }
-
-    /// Consumes this [`Framework`] returning the `wgpu` components that form it.
-    pub fn into_wgpu(self) -> (wgpu::Instance, wgpu::Device, wgpu::Queue) {
-        (self.instance, self.device, self.queue)
     }
 }

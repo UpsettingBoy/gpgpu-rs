@@ -1,8 +1,10 @@
+use gpgpu::BufOps;
+
 // Simple compute example that multiplies 2 vectors A and B, storing the result in a vector C.
 fn main() {
     let fw = gpgpu::Framework::default(); // Framework initialization.
 
-    let shader = gpgpu::Shader::from_wgsl_file(&fw, "examples/simple-compute/mult.wgsl").unwrap(); // Shader loading.
+    let shader = gpgpu::Shader::from_wgsl_file(&fw, "examples/simple-compute/shader.wgsl").unwrap(); // Shader loading.
 
     let size = 10000; // Size of the vectors
 
@@ -12,7 +14,7 @@ fn main() {
     // Allocation of new vectors on the GPU
     let gpu_vec_a = gpgpu::GpuBuffer::from_slice(&fw, &data_a); // Input vector A.
     let gpu_vec_b = gpgpu::GpuBuffer::from_slice(&fw, &data_b); // Input vector B.
-    let gpu_vec_c = gpgpu::GpuBuffer::new(&fw, size as usize); // Output vector C. Empty.
+    let gpu_vec_c = gpgpu::GpuBuffer::with_capacity(&fw, size as usize); // Output vector C. Empty.
 
     // We have to tell the GPU how the data is sent. Take a look at the shader (mult.wgsl).
     // The boolean indicates wether the vector is read-only or not.
@@ -33,7 +35,7 @@ fn main() {
     kernel.enqueue(size as u32, 1, 1);
 
     // After the kernel execution, we can read the results from the GPU.
-    let gpu_result = gpu_vec_c.read().unwrap();
+    let gpu_result = gpu_vec_c.read_vec_blocking().unwrap();
 
     // We test that the results are correct.
     for (idx, (a, b)) in data_a.into_iter().zip(data_b).enumerate() {

@@ -67,10 +67,13 @@
 //! ```
 //!
 
-use primitives::{generic_buffer::GenericBuffer, generic_image::GenericImage};
+use std::{marker::PhantomData, sync::Arc};
+
+use primitives::generic_image::GenericImage;
 
 #[cfg(feature = "integrate-ndarray")]
 pub use features::integrate_ndarray::GpuArray;
+pub use primitives::BufOps;
 
 pub mod features;
 pub mod framework;
@@ -79,12 +82,9 @@ pub mod primitives;
 
 /// Entry point of `gpgpu`. A [`Framework`] must be created
 /// first as all GPU primitives needs it to be created.
-#[allow(dead_code)]
 pub struct Framework {
-    instance: wgpu::Instance,
-    device: wgpu::Device,
+    device: Arc<wgpu::Device>,
     queue: wgpu::Queue,
-    limits: wgpu::Limits,
 }
 
 #[derive(PartialEq, Eq)]
@@ -110,7 +110,12 @@ pub enum GpuBufferUsage {
 ///
 /// More information about its shader representation is
 /// under the [`DescriptorSet::bind_buffer`](crate::DescriptorSet::bind_buffer) documentation.
-pub struct GpuBuffer<'fw, T>(GenericBuffer<'fw, T>);
+pub struct GpuBuffer<'fw, T> {
+    fw: &'fw Framework,
+    buf: wgpu::Buffer,
+    size: usize,
+    marker: PhantomData<T>,
+}
 
 /// Uniform vector of contiguous homogeneous elements on GPU memory.
 /// Recommended for small, read-only buffers.
@@ -120,7 +125,12 @@ pub struct GpuBuffer<'fw, T>(GenericBuffer<'fw, T>);
 ///
 /// More information about its shader representation is
 /// under the [`DescriptorSet::bind_uniform_buffer`](crate::DescriptorSet::bind_uniform_buffer) documentation.
-pub struct GpuUniformBuffer<'fw, T>(GenericBuffer<'fw, T>);
+pub struct GpuUniformBuffer<'fw, T> {
+    fw: &'fw Framework,
+    buf: wgpu::Buffer,
+    size: usize,
+    marker: PhantomData<T>,
+}
 
 /// 2D-image of homogeneous pixels.
 ///

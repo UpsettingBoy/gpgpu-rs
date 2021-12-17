@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use gpgpu::BufOps;
+
 // Framework is required to be static because of std::thread::spawn lifetime requirements.
 // By using crossbeam ScopedThreads this could be avoided.
 lazy_static::lazy_static! {
@@ -27,7 +29,7 @@ fn main() {
             // Current thread GPU objects
             let local_cpu_data = (0..size).into_iter().collect::<Vec<u32>>();
             let local_input_buffer = gpgpu::GpuBuffer::from_slice(&FW, &local_cpu_data);
-            let local_output_buffer = gpgpu::GpuBuffer::<u32>::new(&FW, size as usize);
+            let local_output_buffer = gpgpu::GpuBuffer::<u32>::with_capacity(&FW, size as usize);
 
             let desc = gpgpu::DescriptorSet::default()
                 .bind_buffer(&local_shader_input_buffer, gpgpu::GpuBufferUsage::ReadOnly)
@@ -37,7 +39,7 @@ fn main() {
 
             gpgpu::Kernel::new(&FW, program).enqueue(size / 32, 1, 1);
 
-            local_output_buffer.read().unwrap()
+            local_output_buffer.read_vec_blocking().unwrap()
         });
 
         handles.push(handle);
