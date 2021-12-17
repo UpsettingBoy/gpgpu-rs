@@ -109,7 +109,13 @@ where
     where
         Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
     {
-        Ok(GpuImage(GenericImage::from_image_buffer(fw, img)?))
+        let (width, height) = img.dimensions();
+        let mut output_image = GenericImage::new(fw, width, height);
+
+        let bytes = bytemuck::cast_slice(img);
+        output_image.write(bytes)?;
+
+        Ok(output_image)
     }
 
     /// Creates a new normalised [`GpuImage`] from a [`image::ImageBuffer`].
@@ -120,9 +126,13 @@ where
     where
         Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
     {
-        Ok(GpuImage(GenericImage::from_image_buffer_normalised(
-            fw, img,
-        )?))
+        let (width, height) = img.dimensions();
+        let mut output_image = GenericImage::new(fw, width, height);
+
+        let bytes = bytemuck::cast_slice(img);
+        output_image.write(bytes)?;
+
+        Ok(output_image)
     }
 }
 
@@ -139,7 +149,13 @@ where
     where
         Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
     {
-        Ok(GpuConstImage(GenericImage::from_image_buffer(fw, img)?))
+        let (width, height) = img.dimensions();
+        let mut output_image = GenericImage::new(fw, width, height);
+
+        let bytes = bytemuck::cast_slice(img);
+        output_image.write(bytes)?;
+
+        Ok(output_image)
     }
 
     /// Creates a new normalised [`GpuConstImage`] from a [`image::ImageBuffer`].
@@ -150,9 +166,13 @@ where
     where
         Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
     {
-        Ok(GpuConstImage(GenericImage::from_image_buffer_normalised(
-            fw, img,
-        )?))
+        let (width, height) = img.dimensions();
+        let mut output_image = GenericImage::new(fw, width, height);
+
+        let bytes = bytemuck::cast_slice(img);
+        output_image.write(bytes)?;
+
+        Ok(output_image)
     }
 }
 

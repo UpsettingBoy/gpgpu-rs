@@ -69,8 +69,6 @@
 
 use std::{marker::PhantomData, sync::Arc};
 
-use primitives::generic_image::GenericImage;
-
 #[cfg(feature = "integrate-ndarray")]
 pub use features::integrate_ndarray::GpuArray;
 pub use primitives::BufOps;
@@ -138,7 +136,13 @@ pub struct GpuUniformBuffer<'fw, T> {
 ///
 /// More information about its shader representation is
 /// under the [`DescriptorSet::bind_image`](crate::DescriptorSet::bind_image) documentation.
-pub struct GpuImage<'fw, P>(GenericImage<'fw, P>);
+pub struct GpuImage<'fw, P> {
+    fw: &'fw Framework,
+    texture: wgpu::Texture,
+    size: wgpu::Extent3d,
+    full_view: wgpu::TextureView,
+    pixel: PhantomData<P>,
+}
 
 /// 2D-image of homogeneous pixels.
 ///
@@ -146,7 +150,13 @@ pub struct GpuImage<'fw, P>(GenericImage<'fw, P>);
 ///
 /// More information about its shader representation is
 /// under the [`DescriptorSet::bind_const_image`](crate::DescriptorSet::bind_const_image) documentation.
-pub struct GpuConstImage<'fw, P>(GenericImage<'fw, P>);
+pub struct GpuConstImage<'fw, P> {
+    fw: &'fw Framework,
+    texture: wgpu::Texture,
+    size: wgpu::Extent3d,
+    full_view: wgpu::TextureView,
+    pixel: PhantomData<P>,
+}
 
 /// Represents a shader.
 ///

@@ -21,6 +21,7 @@ use crate::Framework;
 pub mod buffers;
 pub mod generic_image;
 pub mod image;
+pub mod images;
 
 /// Interface to get information, create and decompose GPU allocated buffers.
 pub trait BufOps<'fw, T>
@@ -70,6 +71,39 @@ where
 
     /// Decomposes a buffer into a [`wgpu::Buffer`] and its byte `size`.
     fn into_gpu_parts(self) -> (wgpu::Buffer, usize);
+}
+
+/// Interface to get information, create and decompose GPU allocated images.
+pub trait ImgOps<'fw> {
+    // --------- Information fns --------------
+
+    /// Returns the [`wgpu::Texture`] that handles the GPU image.
+    fn as_gpu_texture(&self) -> &wgpu::Texture;
+
+    /// Returns a [`wgpu::Extent3d`] of the image. Convenience function.
+    fn get_wgpu_extent3d(&self) -> wgpu::Extent3d;
+
+    /// Returns the width and height of the image.
+    fn dimensions(&self) -> (u32, u32);
+
+    // ----------- Creation fns ---------------
+
+    /// Constructs an empty image with the desired `width` and `height`.
+    fn new(fw: &'fw Framework, width: u32, height: u32) -> Self;
+
+    /// Construct a new image from a bytes source `data` and its `width` and `height`.
+    fn from_bytes(fw: &'fw Framework, data: &[u8], width: u32, height: u32) -> Self;
+
+    fn from_gpu_parts(
+        fw: &'fw Framework,
+        texture: wgpu::Texture,
+        dimensions: wgpu::Extent3d,
+    ) -> Self;
+
+    // -------- Decomposition fns -------------
+
+    /// Decomposes an image into a [`wgpu::Texture`] and its [`wgpu::Extent3d`].
+    fn into_gpu_parts(self) -> (wgpu::Texture, wgpu::Extent3d);
 }
 
 /// Gives some information about the pixel format.

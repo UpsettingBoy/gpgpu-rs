@@ -1,5 +1,5 @@
 use gpgpu::{
-    primitives::pixels::Rgba8UintNorm, DescriptorSet, Framework, GpuConstImage, GpuImage,
+    primitives::pixels::Rgba8UintNorm, BufOps, DescriptorSet, Framework, GpuConstImage, GpuImage,
     GpuUniformBuffer,
 };
 use image::buffer::ConvertBuffer;
@@ -12,8 +12,8 @@ const HEIGHT: usize = 720;
 fn main() {
     let fw = Framework::default();
 
-    // Camera initilization. Config may not work if not same cam as a Thinkpad T480.
-    // Change parameters accordingly to yours
+    // Camera initilization. Config may not work if not same cam as the Thinkpad T480 one.
+    // Change parameters accordingly
     let mut camera = {
         let camera_format = CameraFormat::new(
             Resolution {
@@ -42,7 +42,7 @@ fn main() {
     // Since the same GPU resources could be used during the whole execution
     // of the program, they are outside of the event loop
     let mut gpu_input = GpuConstImage::<Rgba8UintNorm>::new(&fw, WIDTH as u32, HEIGHT as u32); // Cam frame texture
-    let mut buf_time = GpuUniformBuffer::<f32>::new(&fw, 1).unwrap(); // Elapsed time buffer (single element) for fancy shaders 😁
+    let mut buf_time = GpuUniformBuffer::<f32>::with_capacity(&fw, 1); // Elapsed time buffer (single element) for fancy shaders 😁
 
     let gpu_output = GpuImage::<Rgba8UintNorm>::new(&fw, WIDTH as u32, HEIGHT as u32); // Shader output
 
@@ -58,12 +58,13 @@ fn main() {
 
     let time = std::time::Instant::now();
 
+    let frame_buffer = vec![0u32; WIDTH * HEIGHT * 4];
     while window.is_open() && !window.is_key_down(Key::Escape) {
         let cam_buf = camera.frame().unwrap(); // Obtain cam current frame
         gpu_input
             .write_from_image_buffer(&cam_buf.convert())
             .unwrap(); // Upload cam frame into the cam frame texture
-        buf_time.write(&[time.elapsed().as_secs_f32()]); // Upload elapsed time into elapsed time buffer
+        buf_time.write(&[time.elapsed().as_secs_f32()]).unwrap(); // Upload elapsed time into elapsed time buffer
 
         kernel.enqueue(WIDTH as u32 / 32, HEIGHT as u32 / 32, 1);
 

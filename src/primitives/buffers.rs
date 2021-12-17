@@ -90,7 +90,7 @@ impl<'fw, T> GpuBuffer<'fw, T>
 where
     T: bytemuck::Pod,
 {
-    /// Pull some elements from the [`GpuBuffer`] into `buf`, returning how many elements were read.
+    /// Pulls some elements from the [`GpuBuffer`] into `buf`, returning how many elements were read.
     pub async fn read(&self, buf: &mut [T]) -> BufferResult<usize> {
         let output_size = buf.len() * std::mem::size_of::<T>();
         let download_size = if output_size > self.size {
@@ -130,7 +130,7 @@ where
         futures::executor::block_on(self.read_vec())
     }
 
-    /// Write a buffer into this [`GpuBuffer`], returning how many elements were written. The operation is instantly offloaded.
+    /// Writes a buffer into this [`GpuBuffer`], returning how many elements were written. The operation is instantly offloaded.
     ///
     /// This function will attempt to write the entire contents of `buf` unless its capacity
     /// exceeds the one of the source buffer, in which case `GpuBuffer::capacity()` elements are written.
@@ -224,7 +224,7 @@ impl<'fw, T> GpuUniformBuffer<'fw, T>
 where
     T: bytemuck::Pod,
 {
-    /// Write a buffer into this [`GpuUniformBuffer`], returning how many elements were written. The operation is instantly offloaded.
+    /// Writes a buffer into this [`GpuUniformBuffer`], returning how many elements were written. The operation is instantly offloaded.
     ///
     /// This function will attempt to write the entire contents of `buf` unless its capacity
     /// exceeds the one of the source buffer, in which case `GpuBuffer::capacity()` elements are written.
