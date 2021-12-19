@@ -1,4 +1,3 @@
-[[block]]
 struct Time {
     time: f32;
 };

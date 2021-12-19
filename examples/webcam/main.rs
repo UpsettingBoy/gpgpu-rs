@@ -58,8 +58,6 @@ fn main() {
 
     let time = std::time::Instant::now();
 
-    println!("Nice");
-
     let mut frame_buffer = vec![0u32; WIDTH * HEIGHT * 4];
     while window.is_open() && !window.is_key_down(Key::Escape) {
         let cam_buf = camera.frame().unwrap(); // Obtain cam current frame

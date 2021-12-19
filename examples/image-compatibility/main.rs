@@ -4,7 +4,7 @@ use gpgpu::{primitives::pixels::Rgba8Uint, ImgOps};
 fn main() {
     let fw = gpgpu::Framework::default();
     let shader =
-        gpgpu::Shader::from_wgsl_file(&fw, "examples/image-compatibility/mirror.wgsl").unwrap();
+        gpgpu::Shader::from_wgsl_file(&fw, "examples/image-compatibility/shader.wgsl").unwrap();
 
     let dynamic_img = image::open("examples/image-compatibility/monke.jpg").unwrap(); // RGB8 image ...
     let rgba = dynamic_img.into_rgba8(); // ... converted to RGBA8
