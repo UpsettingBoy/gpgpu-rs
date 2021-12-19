@@ -21,7 +21,7 @@ image = { version = "0.23", default-features = false, optional = true }
 wgpu = { git = "https://github.com/gfx-rs/wgpu", rev = "90685b5", features = [
     "spirv",
 ] }
-ndarray = { version = "*", default-features = false, features = [
+ndarray = { version = "0.15", default-features = false, features = [
     "std",
 ], optional = true }
 thiserror = "1.0"

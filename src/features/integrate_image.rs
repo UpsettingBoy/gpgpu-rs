@@ -1,8 +1,5 @@
 use crate::{
-    primitives::{
-        generic_image::{GenericImage, ImageResult},
-        pixels, PixelInfo,
-    },
+    primitives::{images::ImageResult, pixels, ImgOps, PixelInfo},
     GpuConstImage, GpuImage,
 };
 
@@ -56,52 +53,12 @@ image_to_gpgpu_impl! {
 
 type PixelContainer<P> = Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>;
 
-impl<'fw, Pixel> GenericImage<'fw, Pixel>
-where
-    Pixel: image::Pixel + ImageToGpgpu + 'static,
-    Pixel::Subpixel: bytemuck::Pod,
-{
-    /// Creates a new [`GenericImage`] from a [`image::ImageBuffer`].
-    pub fn from_image_buffer<Container>(
-        fw: &'fw crate::Framework,
-        img: &ImageBuffer<Pixel, Container>,
-    ) -> ImageResult<GenericImage<'fw, Pixel::GpgpuPixel>>
-    where
-        Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
-    {
-        let (width, height) = img.dimensions();
-        let mut output_image = GenericImage::new(fw, width, height);
-
-        let bytes = bytemuck::cast_slice(img);
-        output_image.write(bytes)?;
-
-        Ok(output_image)
-    }
-
-    /// Creates a new normalised [`GenericImage`] from a [`image::ImageBuffer`].
-    pub fn from_image_buffer_normalised<Container>(
-        fw: &'fw crate::Framework,
-        img: &ImageBuffer<Pixel, Container>,
-    ) -> ImageResult<GenericImage<'fw, Pixel::NormGpgpuPixel>>
-    where
-        Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
-    {
-        let (width, height) = img.dimensions();
-        let mut output_image = GenericImage::new(fw, width, height);
-
-        let bytes = bytemuck::cast_slice(img);
-        output_image.write(bytes)?;
-
-        Ok(output_image)
-    }
-}
-
 impl<'fw, Pixel> GpuImage<'fw, Pixel>
 where
     Pixel: image::Pixel + ImageToGpgpu + 'static,
     Pixel::Subpixel: bytemuck::Pod,
 {
-    /// Creates a new [`GpuImage`] from a [`image::ImageBuffer`].
+    /// Constructs a new [`GpuImage`] from a [`image::ImageBuffer`].
     pub fn from_image_buffer<Container>(
         fw: &'fw crate::Framework,
         img: &ImageBuffer<Pixel, Container>,
@@ -110,7 +67,7 @@ where
         Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
     {
         let (width, height) = img.dimensions();
-        let mut output_image = GenericImage::new(fw, width, height);
+        let mut output_image = GpuImage::new(fw, width, height);
 
         let bytes = bytemuck::cast_slice(img);
         output_image.write(bytes)?;
@@ -118,7 +75,7 @@ where
         Ok(output_image)
     }
 
-    /// Creates a new normalised [`GpuImage`] from a [`image::ImageBuffer`].
+    /// Constructs a new normalised [`GpuImage`] from a [`image::ImageBuffer`].
     pub fn from_image_buffer_normalised<Container>(
         fw: &'fw crate::Framework,
         img: &ImageBuffer<Pixel, Container>,
@@ -127,7 +84,7 @@ where
         Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
     {
         let (width, height) = img.dimensions();
-        let mut output_image = GenericImage::new(fw, width, height);
+        let mut output_image = GpuImage::new(fw, width, height);
 
         let bytes = bytemuck::cast_slice(img);
         output_image.write(bytes)?;
@@ -141,7 +98,7 @@ where
     Pixel: image::Pixel + ImageToGpgpu + 'static,
     Pixel::Subpixel: bytemuck::Pod,
 {
-    /// Creates a new [`GpuConstImage`] from a [`image::ImageBuffer`].
+    /// Constructs a new [`GpuConstImage`] from a [`image::ImageBuffer`].
     pub fn from_image_buffer<Container>(
         fw: &'fw crate::Framework,
         img: &ImageBuffer<Pixel, Container>,
@@ -150,7 +107,7 @@ where
         Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
     {
         let (width, height) = img.dimensions();
-        let mut output_image = GenericImage::new(fw, width, height);
+        let mut output_image = GpuConstImage::new(fw, width, height);
 
         let bytes = bytemuck::cast_slice(img);
         output_image.write(bytes)?;
@@ -158,7 +115,7 @@ where
         Ok(output_image)
     }
 
-    /// Creates a new normalised [`GpuConstImage`] from a [`image::ImageBuffer`].
+    /// Constructs a new normalised [`GpuConstImage`] from a [`image::ImageBuffer`].
     pub fn from_image_buffer_normalised<Container>(
         fw: &'fw crate::Framework,
         img: &ImageBuffer<Pixel, Container>,
@@ -167,7 +124,7 @@ where
         Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
     {
         let (width, height) = img.dimensions();
-        let mut output_image = GenericImage::new(fw, width, height);
+        let mut output_image = GpuConstImage::new(fw, width, height);
 
         let bytes = bytemuck::cast_slice(img);
         output_image.write(bytes)?;
@@ -176,91 +133,36 @@ where
     }
 }
 
-impl<'fw, P> GenericImage<'fw, P>
-where
-    P: PixelInfo + GpgpuToImage,
-    <<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel: bytemuck::Pod,
-{
-    /// Blocking read of the [`GpuImage`], creating a new [`image::GenericImage`] as output.
-    pub fn read_to_image_buffer(
-        &self,
-    ) -> ImageResult<::image::ImageBuffer<P::ImgPixel, PixelContainer<P>>> {
-        let bytes = self.read()?;
-        let container = bytes_to_primitive_vec::<P::ImgPixel>(bytes);
-
-        let (width, height) = self.dimensions();
-
-        Ok(image::ImageBuffer::from_vec(width, height, container).expect("Cannot fail here."))
-    }
-
-    /// Asyncronously read of the [`GenericImage`], creating a new [`image::ImageBuffer`] as output.
-    ///
-    /// In order for this future to resolve, [`Framework::poll`](crate::Framework::poll) or
-    /// [`Framework::blocking_poll`](crate::Framework::blocking_poll)
-    /// must be invoked.
-    pub async fn read_to_image_buffer_async(
-        &self,
-    ) -> ImageResult<
-        ::image::ImageBuffer<
-            P::ImgPixel,
-            Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
-        >,
-    > {
-        let bytes = self.read_async().await?;
-        let container = bytes_to_primitive_vec::<P::ImgPixel>(bytes);
-
-        let (width, height) = self.dimensions();
-
-        Ok(image::ImageBuffer::from_vec(width, height, container).expect("Cannot fail here."))
-    }
-
-    /// Writes the [`image::ImageBuffer`] `img` into the [`GenericImage`].
-    pub fn write_from_image(
-        &mut self,
-        img: &::image::ImageBuffer<
-            P::ImgPixel,
-            Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
-        >,
-    ) -> ImageResult<()> {
-        let bytes = bytemuck::cast_slice(img);
-        self.write(bytes)?;
-
-        Ok(())
-    }
-
-    /// Asyncronously writes the [`image::ImageBuffer`] `img` into the [`GenericImage`].
-    ///     
-    /// In order for this future to resolve, [`Framework::poll`](crate::Framework::poll) or [`Framework::blocking_poll`](crate::Framework::blocking_poll)
-    /// must be invoked.
-    pub async fn write_from_image_buffer_async(
-        &mut self,
-        img: &::image::ImageBuffer<
-            P::ImgPixel,
-            Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
-        >,
-    ) -> ImageResult<()> {
-        let bytes = bytemuck::cast_slice(img);
-        self.write_async(bytes).await
-    }
-}
-
 impl<'fw, P> GpuImage<'fw, P>
 where
     P: PixelInfo + GpgpuToImage,
     <<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel: bytemuck::Pod,
 {
-    /// Blocking read of the [`GpuImage`], creating a new [`image::ImageBuffer`] as output.
-    pub fn read_to_image_buffer(
+    /// Pulls some elements from the [`GpuImage`] into buf, returning how many pixels were read.
+    pub async fn read_into_image_buffer(
         &self,
-    ) -> ImageResult<::image::ImageBuffer<P::ImgPixel, PixelContainer<P>>> {
-        self.0.read_to_image_buffer()
+        buf: &mut ::image::ImageBuffer<
+            P::ImgPixel,
+            Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
+        >,
+    ) -> ImageResult<usize> {
+        let output_slice = bytemuck::cast_slice_mut(buf);
+        self.read(output_slice).await
     }
 
-    /// Asyncronously read of the [`GpuImage`], creating a new [`image::ImageBuffer`] as output.
-    ///
-    /// In order for this future to resolve, [`Framework::poll`](crate::Framework::poll) or [`Framework::blocking_poll`](crate::Framework::blocking_poll)
-    /// must be invoked.
-    pub async fn read_to_image_buffer_async(
+    /// Blocking version of `GpuImage::read_into_image_buffer()`.
+    pub fn read_into_image_buffer_blocking(
+        &self,
+        buf: &mut ::image::ImageBuffer<
+            P::ImgPixel,
+            Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
+        >,
+    ) -> ImageResult<usize> {
+        futures::executor::block_on(self.read_into_image_buffer(buf))
+    }
+
+    /// Pulls all the pixels from the [`GpuImage`] into a [`image::ImageBuffer`].
+    pub async fn read_to_image_buffer(
         &self,
     ) -> ImageResult<
         ::image::ImageBuffer<
@@ -268,33 +170,34 @@ where
             Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
         >,
     > {
-        self.0.read_to_image_buffer_async().await
+        let bytes = self.read_vec().await?;
+        let container = bytes_to_primitive_vec::<P::ImgPixel>(bytes);
+
+        let (width, height) = self.dimensions();
+
+        Ok(image::ImageBuffer::from_vec(width, height, container).expect("Cannot fail here."))
     }
 
-    /// Writes immediately the [`image::ImageBuffer`] `img` into the [`GpuImage`].
-    pub fn write_from_image_buffer(
+    /// Blocking version of `GpuImage::read_to_image_buffer()`.
+    pub fn read_to_image_buffer_blocking(
+        &self,
+    ) -> ImageResult<::image::ImageBuffer<P::ImgPixel, PixelContainer<P>>> {
+        futures::executor::block_on(self.read_to_image_buffer())
+    }
+
+    /// Writes a buffer into this [`GpuImage`], returning how many pixels were written. The operation is instantly offloaded.
+    ///
+    /// This function will attempt to write the entire contents of buf, unless its capacity
+    /// exceeds the one of the image, in which case the first width * height pixels are written.
+    pub fn write_image_buffer(
         &mut self,
-        img: &::image::ImageBuffer<
+        buf: &::image::ImageBuffer<
             P::ImgPixel,
             Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
         >,
-    ) -> ImageResult<()> {
-        self.0.write_from_image(img)
-    }
-
-    /// Asyncronously writes the [`image::ImageBuffer`] `img` into the [`GpuImage`].
-    ///     
-    /// In order for this future to resolve, [`Framework::poll`](crate::Framework::poll) or
-    /// [`Framework::blocking_poll`](crate::Framework::blocking_poll)
-    /// must be invoked.
-    pub async fn write_from_image_buffer_async(
-        &mut self,
-        img: &::image::ImageBuffer<
-            P::ImgPixel,
-            Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
-        >,
-    ) -> ImageResult<()> {
-        self.0.write_from_image_buffer_async(img).await
+    ) -> ImageResult<usize> {
+        let bytes = bytemuck::cast_slice(buf);
+        self.write(bytes)
     }
 }
 
@@ -303,30 +206,19 @@ where
     P: PixelInfo + GpgpuToImage,
     <<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel: bytemuck::Pod,
 {
-    /// Writes immediately the [`image::ImageBuffer`] `img` into the [`GpuConstImage`].
-    pub fn write_from_image_buffer(
+    /// Writes a buffer into this [`GpuConstImage`], returning how many pixels were written. The operation is instantly offloaded.
+    ///
+    /// This function will attempt to write the entire contents of buf, unless its capacity
+    /// exceeds the one of the image, in which case the first width * height pixels are written.
+    pub fn write_image_buffer(
         &mut self,
-        img: &::image::ImageBuffer<
+        buf: &::image::ImageBuffer<
             P::ImgPixel,
             Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
         >,
-    ) -> ImageResult<()> {
-        self.0.write_from_image(img)
-    }
-
-    /// Asyncronously writes the [`image::ImageBuffer`] `img` into the [`GpuConstImage`].
-    ///     
-    /// In order for this future to resolve, [`Framework::poll`](crate::Framework::poll) or
-    /// [`Framework::blocking_poll`](crate::Framework::blocking_poll)
-    /// must be invoked.
-    pub async fn write_from_image_buffer_async(
-        &mut self,
-        img: &::image::ImageBuffer<
-            P::ImgPixel,
-            Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
-        >,
-    ) -> ImageResult<()> {
-        self.0.write_from_image_buffer_async(img).await
+    ) -> ImageResult<usize> {
+        let bytes = bytemuck::cast_slice(buf);
+        self.write(bytes)
     }
 }
 

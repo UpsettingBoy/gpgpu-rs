@@ -1,6 +1,6 @@
 use gpgpu::{
     primitives::pixels::Rgba8UintNorm, BufOps, DescriptorSet, Framework, GpuConstImage, GpuImage,
-    GpuUniformBuffer,
+    GpuUniformBuffer, ImgOps,
 };
 use image::buffer::ConvertBuffer;
 use minifb::{Key, Window, WindowOptions};
@@ -58,22 +58,23 @@ fn main() {
 
     let time = std::time::Instant::now();
 
-    let frame_buffer = vec![0u32; WIDTH * HEIGHT * 4];
+    println!("Nice");
+
+    let mut frame_buffer = vec![0u32; WIDTH * HEIGHT * 4];
     while window.is_open() && !window.is_key_down(Key::Escape) {
         let cam_buf = camera.frame().unwrap(); // Obtain cam current frame
-        gpu_input
-            .write_from_image_buffer(&cam_buf.convert())
-            .unwrap(); // Upload cam frame into the cam frame texture
+        gpu_input.write_image_buffer(&cam_buf.convert()).unwrap(); // Upload cam frame into the cam frame texture
         buf_time.write(&[time.elapsed().as_secs_f32()]).unwrap(); // Upload elapsed time into elapsed time buffer
 
         kernel.enqueue(WIDTH as u32 / 32, HEIGHT as u32 / 32, 1);
 
-        let output_buf = gpu_output.read().unwrap();
-        let output_buf = bytemuck::cast_slice(&output_buf);
+        gpu_output
+            .read_blocking(bytemuck::cast_slice_mut(&mut frame_buffer))
+            .unwrap();
 
         // Write processed cam frame into window frame buffer
         window
-            .update_with_buffer(output_buf, WIDTH, HEIGHT)
+            .update_with_buffer(&frame_buffer, WIDTH, HEIGHT)
             .unwrap();
     }
 }

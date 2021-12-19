@@ -51,21 +51,21 @@ impl Framework {
         Self { device, queue }
     }
 
-    pub(crate) fn create_download_staging_buffer(&self, size: usize) -> wgpu::Buffer {
-        self.device.create_buffer(&wgpu::BufferDescriptor {
-            label: None,
-            size: size as u64,
-            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        })
-    }
+    // pub(crate) fn create_download_staging_buffer(&self, size: usize) -> wgpu::Buffer {
+    //     self.device.create_buffer(&wgpu::BufferDescriptor {
+    //         label: None,
+    //         size: size as u64,
+    //         usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+    //         mapped_at_creation: false,
+    //     })
+    // }
 
-    pub(crate) fn create_upload_staging_buffer(&self, size: usize) -> wgpu::Buffer {
-        self.device.create_buffer(&wgpu::BufferDescriptor {
-            label: None,
-            size: size as u64,
-            usage: wgpu::BufferUsages::MAP_WRITE | wgpu::BufferUsages::COPY_SRC,
-            mapped_at_creation: false,
-        })
-    }
+    // pub(crate) fn create_upload_staging_buffer(&self, size: usize) -> wgpu::Buffer {
+    //     self.device.create_buffer(&wgpu::BufferDescriptor {
+    //         label: None,
+    //         size: size as u64,
+    //         usage: wgpu::BufferUsages::MAP_WRITE | wgpu::BufferUsages::COPY_SRC,
+    //         mapped_at_creation: false,
+    //     })
+    // }
 }

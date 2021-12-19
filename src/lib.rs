@@ -71,7 +71,7 @@ use std::{marker::PhantomData, sync::Arc};
 
 #[cfg(feature = "integrate-ndarray")]
 pub use features::integrate_ndarray::GpuArray;
-pub use primitives::BufOps;
+pub use primitives::{BufOps, ImgOps};
 
 pub mod features;
 pub mod framework;

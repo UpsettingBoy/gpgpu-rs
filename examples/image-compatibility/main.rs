@@ -1,4 +1,4 @@
-use gpgpu::primitives::pixels::Rgba8Uint;
+use gpgpu::{primitives::pixels::Rgba8Uint, ImgOps};
 
 // This example simply mirrors an image using the image crate compatibility feature.
 fn main() {
@@ -22,7 +22,7 @@ fn main() {
 
     gpgpu::Kernel::new(&fw, program).enqueue(width / 32, height / 32, 1); // Since the kernel workgroup size is (32,32,1) dims are divided
 
-    let output = output_img.read_to_image_buffer().unwrap();
+    let output = output_img.read_to_image_buffer_blocking().unwrap();
     output
         .save("examples/image-compatibility/mirror-monke.png")
         .unwrap();

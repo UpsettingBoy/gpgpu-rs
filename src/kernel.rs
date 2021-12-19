@@ -1,7 +1,7 @@
 use std::{borrow::Cow, path::Path};
 
 use crate::{
-    primitives::{BufOps, PixelInfo},
+    primitives::{BufOps, ImgOps, PixelInfo},
     DescriptorSet, Framework, GpuBuffer, GpuBufferUsage, GpuConstImage, GpuImage, GpuUniformBuffer,
     Kernel, Program, Shader,
 };
@@ -136,7 +136,7 @@ impl<'res> DescriptorSet<'res> {
 
         let bind = wgpu::BindGroupEntry {
             binding: bind_id,
-            resource: img.0.get_binding_resource(),
+            resource: img.as_binding_resource(),
         };
 
         self.set_layout.push(bind_entry);
@@ -176,7 +176,7 @@ impl<'res> DescriptorSet<'res> {
 
         let bind = wgpu::BindGroupEntry {
             binding: bind_id,
-            resource: img.0.get_binding_resource(),
+            resource: img.as_binding_resource(),
         };
 
         self.set_layout.push(bind_entry);

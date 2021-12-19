@@ -19,8 +19,6 @@
 use crate::Framework;
 
 pub mod buffers;
-pub mod generic_image;
-pub mod image;
 pub mod images;
 
 /// Interface to get information, create and decompose GPU allocated buffers.
@@ -76,6 +74,9 @@ where
 /// Interface to get information, create and decompose GPU allocated images.
 pub trait ImgOps<'fw> {
     // --------- Information fns --------------
+
+    /// Returns a [`wgpu::BindingResource`] of the image.
+    fn as_binding_resource(&self) -> wgpu::BindingResource;
 
     /// Returns the [`wgpu::Texture`] that handles the GPU image.
     fn as_gpu_texture(&self) -> &wgpu::Texture;

@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use thiserror::Error;
 use wgpu::util::DeviceExt;
 
-use crate::{BufOps, GpuBuffer, GpuConstImage, GpuImage};
+use crate::{GpuConstImage, GpuImage};
 
 use super::{ImgOps, PixelInfo};
 
@@ -37,6 +37,10 @@ impl<'fw, P> ImgOps<'fw> for GpuImage<'fw, P>
 where
     P: PixelInfo,
 {
+    fn as_binding_resource(&self) -> wgpu::BindingResource {
+        wgpu::BindingResource::TextureView(&self.full_view)
+    }
+
     fn as_gpu_texture(&self) -> &wgpu::Texture {
         &self.texture
     }
@@ -153,13 +157,12 @@ where
 
         let (width, height) = self.dimensions();
 
-        let buf_pixels = buf.len() / P::byte_size();
-        let img_pixels = (width * height) as usize * P::byte_size();
+        let img_bytes = (width * height) as usize * P::byte_size();
 
-        if buf_pixels < img_pixels {
+        if buf.len() < img_bytes {
             return Err(ImageError::BufferTooSmall {
-                required: img_pixels,
-                current: buf_pixels,
+                required: img_bytes,
+                current: buf.len(),
             });
         }
 
@@ -171,7 +174,12 @@ where
 
         let staging_size = (padded_bytes_per_row * self.size.height) as usize;
 
-        let staging = self.fw.create_download_staging_buffer(staging_size);
+        let staging = self.fw.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("GpuImage::read staging and copy"),
+            size: staging_size as u64,
+            usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
 
         let mut encoder = self
             .fw
@@ -200,8 +208,24 @@ where
 
         self.fw.queue.submit(Some(encoder.finish()));
 
-        let gpu_buf = GpuBuffer::from_gpu_parts(self.fw, staging, staging_size);
-        Ok(gpu_buf.read(buf).await? / P::byte_size())
+        let download = wgpu::util::DownloadBuffer::read_buffer(
+            &self.fw.device,
+            &self.fw.queue,
+            &staging.slice(..),
+        )
+        .await
+        .unwrap();
+
+        let bytes_read: usize = download
+            .chunks(padded_bytes_per_row as usize)
+            .zip(buf.chunks_mut(unpadded_bytes_per_row as usize))
+            .map(|(src, dest)| {
+                dest.copy_from_slice(&src[0..unpadded_bytes_per_row as usize]);
+                dest.len()
+            })
+            .sum();
+
+        Ok(bytes_read / P::byte_size())
     }
 
     /// Pulls all the pixels from the [`GpuImage`] into a [`Vec`].
@@ -275,6 +299,10 @@ impl<'fw, P> ImgOps<'fw> for GpuConstImage<'fw, P>
 where
     P: PixelInfo,
 {
+    fn as_binding_resource(&self) -> wgpu::BindingResource {
+        wgpu::BindingResource::TextureView(&self.full_view)
+    }
+
     fn as_gpu_texture(&self) -> &wgpu::Texture {
         &self.texture
     }
