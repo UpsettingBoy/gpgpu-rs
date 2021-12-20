@@ -29,12 +29,12 @@ where
     // ----------- Information fns -----------
 
     /// Returns the number of elements the buffer can hold.
-    fn capacity(&self) -> usize {
-        self.size() / std::mem::size_of::<T>()
+    fn capacity(&self) -> u64 {
+        self.size() / std::mem::size_of::<T>() as u64
     }
 
     /// Returns the number of bytes of the buffer.
-    fn size(&self) -> usize;
+    fn size(&self) -> u64;
 
     /// Returns a [`wgpu::BindingResource`] of all the elements in the buffer.
     fn as_binding_resource(&self) -> wgpu::BindingResource {
@@ -49,7 +49,7 @@ where
     /// Constructs a new zeroed buffer with the specified capacity.
     ///
     /// The buffer will be able to hold exactly `capacity` elements.
-    fn with_capacity(fw: &'fw Framework, capacity: usize) -> Self;
+    fn with_capacity(fw: &'fw Framework, capacity: u64) -> Self;
 
     /// Constructs a new buffer from a slice.
     ///
@@ -63,12 +63,12 @@ where
     /// panic at any time during its usage.
     /// - `size` needs to be less than or equal to the `buf` creation size.
     /// - `size` needs to be multiple of the `T` size.
-    fn from_gpu_parts(fw: &'fw Framework, buf: wgpu::Buffer, size: usize) -> Self;
+    fn from_gpu_parts(fw: &'fw Framework, buf: wgpu::Buffer, size: u64) -> Self;
 
     // --------- Decomposition fns -------------
 
     /// Decomposes a buffer into a [`wgpu::Buffer`] and its byte `size`.
-    fn into_gpu_parts(self) -> (wgpu::Buffer, usize);
+    fn into_gpu_parts(self) -> (wgpu::Buffer, u64);
 }
 
 /// Interface to get information, create and decompose GPU allocated images.

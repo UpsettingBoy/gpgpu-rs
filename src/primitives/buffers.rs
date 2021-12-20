@@ -29,7 +29,7 @@ impl<'fw, T> BufOps<'fw, T> for GpuBuffer<'fw, T>
 where
     T: bytemuck::Pod,
 {
-    fn size(&self) -> usize {
+    fn size(&self) -> u64 {
         self.size
     }
 
@@ -37,11 +37,11 @@ where
         &self.buf
     }
 
-    fn with_capacity(fw: &'fw crate::Framework, capacity: usize) -> Self {
-        let size = capacity * std::mem::size_of::<T>();
+    fn with_capacity(fw: &'fw crate::Framework, capacity: u64) -> Self {
+        let size = capacity * std::mem::size_of::<T>() as u64;
         let buf = fw.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("GpuBuffer::with_capacity"),
-            size: size as u64,
+            size,
             usage: GPU_BUFFER_USAGES,
             mapped_at_creation: false,
         });
@@ -55,7 +55,7 @@ where
     }
 
     fn from_slice(fw: &'fw crate::Framework, slice: &[T]) -> Self {
-        let size = slice.len() * std::mem::size_of::<T>();
+        let size = (slice.len() * std::mem::size_of::<T>()) as u64;
         let buf = fw
             .device
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -72,7 +72,7 @@ where
         }
     }
 
-    fn from_gpu_parts(fw: &'fw crate::Framework, buf: wgpu::Buffer, size: usize) -> Self {
+    fn from_gpu_parts(fw: &'fw crate::Framework, buf: wgpu::Buffer, size: u64) -> Self {
         Self {
             fw,
             buf,
@@ -81,7 +81,7 @@ where
         }
     }
 
-    fn into_gpu_parts(self) -> (wgpu::Buffer, usize) {
+    fn into_gpu_parts(self) -> (wgpu::Buffer, u64) {
         (self.buf, self.size)
     }
 }
@@ -91,8 +91,8 @@ where
     T: bytemuck::Pod,
 {
     /// Pulls some elements from the [`GpuBuffer`] into `buf`, returning how many elements were read.
-    pub async fn read(&self, buf: &mut [T]) -> BufferResult<usize> {
-        let output_size = buf.len() * std::mem::size_of::<T>();
+    pub async fn read(&self, buf: &mut [T]) -> BufferResult<u64> {
+        let output_size = (buf.len() * std::mem::size_of::<T>()) as u64;
         let download_size = if output_size > self.size {
             self.size
         } else {
@@ -114,14 +114,14 @@ where
     /// Pulls all the elements from the [`GpuBuffer`] into a [`Vec`].
     pub async fn read_vec(&self) -> BufferResult<Vec<T>> {
         // Safety: Since T is Pod: Zeroed + ... it is safe to use zeroed() to init it.
-        let mut buf = vec![unsafe { std::mem::zeroed() }; self.capacity()];
+        let mut buf = vec![unsafe { std::mem::zeroed() }; self.capacity() as usize];
         self.read(&mut buf).await?;
 
         Ok(buf)
     }
 
     /// Blocking version of `GpuBuffer::read()`.
-    pub fn read_blocking(&self, buf: &mut [T]) -> BufferResult<usize> {
+    pub fn read_blocking(&self, buf: &mut [T]) -> BufferResult<u64> {
         futures::executor::block_on(self.read(buf))
     }
 
@@ -134,8 +134,8 @@ where
     ///
     /// This function will attempt to write the entire contents of `buf` unless its capacity
     /// exceeds the one of the source buffer, in which case `GpuBuffer::capacity()` elements are written.
-    pub fn write(&mut self, buf: &[T]) -> BufferResult<usize> {
-        let input_size = buf.len() * std::mem::size_of::<T>();
+    pub fn write(&mut self, buf: &[T]) -> BufferResult<u64> {
+        let input_size = (buf.len() * std::mem::size_of::<T>()) as u64;
         let upload_size = if input_size > self.size {
             self.size
         } else {
@@ -162,7 +162,7 @@ impl<'fw, T> BufOps<'fw, T> for GpuUniformBuffer<'fw, T>
 where
     T: bytemuck::Pod,
 {
-    fn size(&self) -> usize {
+    fn size(&self) -> u64 {
         self.size
     }
 
@@ -170,12 +170,12 @@ where
         &self.buf
     }
 
-    fn with_capacity(fw: &'fw crate::Framework, capacity: usize) -> Self {
-        let size = capacity * std::mem::size_of::<T>();
+    fn with_capacity(fw: &'fw crate::Framework, capacity: u64) -> Self {
+        let size = capacity * std::mem::size_of::<T>() as u64;
 
         let buf = fw.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("GpuUniformBuffer::with_capacity"),
-            size: size as u64,
+            size,
             usage: GPU_UNIFORM_USAGES,
             mapped_at_creation: false,
         });
@@ -189,7 +189,7 @@ where
     }
 
     fn from_slice(fw: &'fw crate::Framework, slice: &[T]) -> Self {
-        let size = slice.len() * std::mem::size_of::<T>();
+        let size = (slice.len() * std::mem::size_of::<T>()) as u64;
         let buf = fw
             .device
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -206,7 +206,7 @@ where
         }
     }
 
-    fn from_gpu_parts(fw: &'fw crate::Framework, buf: wgpu::Buffer, size: usize) -> Self {
+    fn from_gpu_parts(fw: &'fw crate::Framework, buf: wgpu::Buffer, size: u64) -> Self {
         Self {
             fw,
             buf,
@@ -215,7 +215,7 @@ where
         }
     }
 
-    fn into_gpu_parts(self) -> (wgpu::Buffer, usize) {
+    fn into_gpu_parts(self) -> (wgpu::Buffer, u64) {
         (self.buf, self.size)
     }
 }
@@ -228,8 +228,8 @@ where
     ///
     /// This function will attempt to write the entire contents of `buf` unless its capacity
     /// exceeds the one of the source buffer, in which case `GpuBuffer::capacity()` elements are written.
-    pub fn write(&mut self, buf: &[T]) -> BufferResult<usize> {
-        let input_size = buf.len() * std::mem::size_of::<T>();
+    pub fn write(&mut self, buf: &[T]) -> BufferResult<u64> {
+        let input_size = (buf.len() * std::mem::size_of::<T>()) as u64;
         let upload_size = if input_size > self.size {
             self.size
         } else {

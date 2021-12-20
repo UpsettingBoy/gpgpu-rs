@@ -111,7 +111,7 @@ pub enum GpuBufferUsage {
 pub struct GpuBuffer<'fw, T> {
     fw: &'fw Framework,
     buf: wgpu::Buffer,
-    size: usize,
+    size: u64,
     marker: PhantomData<T>,
 }
 
@@ -126,7 +126,7 @@ pub struct GpuBuffer<'fw, T> {
 pub struct GpuUniformBuffer<'fw, T> {
     fw: &'fw Framework,
     buf: wgpu::Buffer,
-    size: usize,
+    size: u64,
     marker: PhantomData<T>,
 }
 

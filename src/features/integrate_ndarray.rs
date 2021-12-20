@@ -51,7 +51,7 @@ where
         futures::executor::block_on(self.read())
     }
 
-    pub fn write(&mut self, array: ndarray::ArrayView<T, D>) -> ArrayResult<usize> {
+    pub fn write(&mut self, array: ndarray::ArrayView<T, D>) -> ArrayResult<u64> {
         let slice: Result<&[T], _> = array
             .as_slice_memory_order()
             .ok_or(NdarrayError::ArrayNotContiguous);

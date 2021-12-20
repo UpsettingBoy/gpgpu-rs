@@ -14,7 +14,7 @@ fn main() {
     // Allocation of new vectors on the GPU
     let gpu_vec_a = gpgpu::GpuBuffer::from_slice(&fw, &data_a); // Input vector A.
     let gpu_vec_b = gpgpu::GpuBuffer::from_slice(&fw, &data_b); // Input vector B.
-    let gpu_vec_c = gpgpu::GpuBuffer::with_capacity(&fw, size as usize); // Output vector C. Empty.
+    let gpu_vec_c = gpgpu::GpuBuffer::with_capacity(&fw, size as u64); // Output vector C. Empty.
 
     // We have to tell the GPU how the data is sent. Take a look at the shader (mult.wgsl).
     // The boolean indicates wether the vector is read-only or not.
