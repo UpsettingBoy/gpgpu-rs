@@ -93,6 +93,8 @@ pub trait ImgOps<'fw> {
     fn new(fw: &'fw Framework, width: u32, height: u32) -> Self;
 
     /// Construct a new image from a bytes source `data` and its `width` and `height`.
+    ///
+    /// If `data` doesn't fit the image perfectly, it panics.
     fn from_bytes(fw: &'fw Framework, data: &[u8], width: u32, height: u32) -> Self;
 
     fn from_gpu_parts(

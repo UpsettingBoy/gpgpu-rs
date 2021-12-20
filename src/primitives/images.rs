@@ -17,19 +17,21 @@ const GPU_CONST_IMAGE_USAGES: wgpu::TextureUsages = wgpu::TextureUsages::from_bi
     wgpu::TextureUsages::TEXTURE_BINDING.bits() | wgpu::TextureUsages::COPY_DST.bits(),
 );
 
-pub type ImageResult<T> = Result<T, ImageError>;
-
 #[derive(Error, Debug)]
-pub enum ImageError {
+pub enum ImageOutputError {
     #[error(transparent)]
     BufferError(#[from] crate::primitives::buffers::BufferError),
     #[error(
-        "Buffer is too small (required size {required} bytes, current size {current} bytes). "
+        "Output is too small (required size {required} bytes, current size {current} bytes). "
     )]
     BufferTooSmall { required: usize, current: usize },
-    #[error("Buffer does not contains an integer number of pixels.")]
+}
+
+#[derive(Error, Debug)]
+pub enum ImageInputError {
+    #[error("Input does not contains an integer number of pixels.")]
     NotIntegerPixelNumber,
-    #[error("Buffer does not contains an integer number of rows.")]
+    #[error("Input does not contains an integer number of rows.")]
     NotIntegerRowNumber,
 }
 
@@ -152,7 +154,7 @@ where
     P: PixelInfo,
 {
     /// Pulls some elements from the [`GpuImage`] into `buf`, returning how many pixels were read.
-    pub async fn read(&self, buf: &mut [u8]) -> ImageResult<usize> {
+    pub async fn read(&self, buf: &mut [u8]) -> Result<usize, ImageOutputError> {
         use std::num::NonZeroU32;
 
         let (width, height) = self.dimensions();
@@ -160,7 +162,7 @@ where
         let img_bytes = (width * height) as usize * P::byte_size();
 
         if buf.len() < img_bytes {
-            return Err(ImageError::BufferTooSmall {
+            return Err(ImageOutputError::BufferTooSmall {
                 required: img_bytes,
                 current: buf.len(),
             });
@@ -229,7 +231,7 @@ where
     }
 
     /// Pulls all the pixels from the [`GpuImage`] into a [`Vec`].
-    pub async fn read_vec(&self) -> ImageResult<Vec<u8>> {
+    pub async fn read_vec(&self) -> Result<Vec<u8>, ImageOutputError> {
         let (width, height) = self.dimensions();
         let img_pixels = (width * height) as usize * P::byte_size();
 
@@ -240,12 +242,12 @@ where
     }
 
     /// Blocking version of `GpuImage::read()`.
-    pub fn read_blocking(&self, buf: &mut [u8]) -> ImageResult<usize> {
+    pub fn read_blocking(&self, buf: &mut [u8]) -> Result<usize, ImageOutputError> {
         futures::executor::block_on(self.read(buf))
     }
 
     /// Blocking version of `GpuImage::read_vec()`.
-    pub fn read_vec_blocking(&self) -> ImageResult<Vec<u8>> {
+    pub fn read_vec_blocking(&self) -> Result<Vec<u8>, ImageOutputError> {
         futures::executor::block_on(self.read_vec())
     }
 
@@ -253,21 +255,34 @@ where
     ///
     /// This function will attempt to write the entire contents of `buf`, unless its capacity
     /// exceeds the one of the image, in which case the first `width * height` pixels are written.
-    pub fn write(&mut self, buf: &[u8]) -> ImageResult<usize> {
+    pub fn write(&mut self, buf: &[u8]) -> Result<usize, ImageInputError> {
         use std::num::NonZeroU32;
 
         if buf.len() % P::byte_size() != 0 {
-            return Err(ImageError::NotIntegerPixelNumber);
+            return Err(ImageInputError::NotIntegerPixelNumber);
         }
         if buf.len() % (P::byte_size() * self.size.width as usize) != 0 {
-            return Err(ImageError::NotIntegerRowNumber);
+            return Err(ImageInputError::NotIntegerRowNumber);
         }
 
         let image_bytes = P::byte_size() * (self.size.width * self.size.height) as usize;
 
+        let (write_buf, size) = match buf.len().cmp(&image_bytes) {
+            std::cmp::Ordering::Less => (
+                buf,
+                wgpu::Extent3d {
+                    width: self.size.width,
+                    height: (buf.len() / P::byte_size()) as u32 / self.size.width,
+                    depth_or_array_layers: 1,
+                },
+            ),
+            std::cmp::Ordering::Equal => (buf, self.size),
+            std::cmp::Ordering::Greater => (&buf[..image_bytes], self.size),
+        };
+
         self.fw.queue.write_texture(
             self.texture.as_image_copy(),
-            buf,
+            write_buf,
             wgpu::ImageDataLayout {
                 offset: 0,
                 bytes_per_row: Some(
@@ -275,7 +290,7 @@ where
                 ),
                 rows_per_image: None,
             },
-            self.size,
+            size,
         );
 
         let encoder = self
@@ -287,11 +302,7 @@ where
 
         self.fw.queue.submit(Some(encoder.finish()));
 
-        Ok(if buf.len() > image_bytes {
-            image_bytes
-        } else {
-            buf.len()
-        })
+        Ok((size.width * size.height) as usize)
     }
 }
 
@@ -416,21 +427,34 @@ where
     ///
     /// This function will attempt to write the entire contents of `buf`, unless its capacity
     /// exceeds the one of the image, in which case the first `width * height` pixels are written.
-    pub fn write(&mut self, buf: &[u8]) -> ImageResult<usize> {
+    pub fn write(&mut self, buf: &[u8]) -> Result<usize, ImageInputError> {
         use std::num::NonZeroU32;
 
         if buf.len() % P::byte_size() != 0 {
-            return Err(ImageError::NotIntegerPixelNumber);
+            return Err(ImageInputError::NotIntegerPixelNumber);
         }
         if buf.len() % (P::byte_size() * self.size.width as usize) != 0 {
-            return Err(ImageError::NotIntegerRowNumber);
+            return Err(ImageInputError::NotIntegerRowNumber);
         }
 
         let image_bytes = P::byte_size() * (self.size.width * self.size.height) as usize;
 
+        let (write_buf, size) = match buf.len().cmp(&image_bytes) {
+            std::cmp::Ordering::Less => (
+                buf,
+                wgpu::Extent3d {
+                    width: self.size.width,
+                    height: buf.len() as u32 / self.size.width,
+                    depth_or_array_layers: 1,
+                },
+            ),
+            std::cmp::Ordering::Equal => (buf, self.size),
+            std::cmp::Ordering::Greater => (&buf[..image_bytes], self.size),
+        };
+
         self.fw.queue.write_texture(
             self.texture.as_image_copy(),
-            buf,
+            write_buf,
             wgpu::ImageDataLayout {
                 offset: 0,
                 bytes_per_row: Some(
@@ -438,7 +462,7 @@ where
                 ),
                 rows_per_image: None,
             },
-            self.size,
+            size,
         );
 
         let encoder = self
@@ -450,10 +474,6 @@ where
 
         self.fw.queue.submit(Some(encoder.finish()));
 
-        Ok(if buf.len() > image_bytes {
-            image_bytes
-        } else {
-            buf.len()
-        })
+        Ok((size.width * size.height) as usize)
     }
 }
