@@ -134,7 +134,7 @@ where
     ///
     /// This function will attempt to write the entire contents of `buf` unless its capacity
     /// exceeds the one of the source buffer, in which case `GpuBuffer::capacity()` elements are written.
-    pub fn write(&mut self, buf: &[T]) -> BufferResult<u64> {
+    pub fn write(&self, buf: &[T]) -> BufferResult<u64> {
         let input_size = (buf.len() * std::mem::size_of::<T>()) as u64;
         let upload_size = if input_size > self.size {
             self.size
@@ -228,7 +228,7 @@ where
     ///
     /// This function will attempt to write the entire contents of `buf` unless its capacity
     /// exceeds the one of the source buffer, in which case `GpuBuffer::capacity()` elements are written.
-    pub fn write(&mut self, buf: &[T]) -> BufferResult<u64> {
+    pub fn write(&self, buf: &[T]) -> BufferResult<u64> {
         let input_size = (buf.len() * std::mem::size_of::<T>()) as u64;
         let upload_size = if input_size > self.size {
             self.size

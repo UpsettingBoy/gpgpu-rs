@@ -41,8 +41,8 @@ fn main() {
 
     // Since the same GPU resources could be used during the whole execution
     // of the program, they are outside of the event loop
-    let mut gpu_input = GpuConstImage::<Rgba8UintNorm>::new(&fw, WIDTH as u32, HEIGHT as u32); // Cam frame texture
-    let mut buf_time = GpuUniformBuffer::<f32>::with_capacity(&fw, 1); // Elapsed time buffer (single element) for fancy shaders 😁
+    let gpu_input = GpuConstImage::<Rgba8UintNorm>::new(&fw, WIDTH as u32, HEIGHT as u32); // Cam frame texture
+    let buf_time = GpuUniformBuffer::<f32>::with_capacity(&fw, 1); // Elapsed time buffer (single element) for fancy shaders 😁
 
     let gpu_output = GpuImage::<Rgba8UintNorm>::new(&fw, WIDTH as u32, HEIGHT as u32); // Shader output
 

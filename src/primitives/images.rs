@@ -255,7 +255,7 @@ where
     ///
     /// This function will attempt to write the entire contents of `buf`, unless its capacity
     /// exceeds the one of the image, in which case the first `width * height` pixels are written.
-    pub fn write(&mut self, buf: &[u8]) -> Result<usize, ImageInputError> {
+    pub fn write(&self, buf: &[u8]) -> Result<usize, ImageInputError> {
         use std::num::NonZeroU32;
 
         if buf.len() % P::byte_size() != 0 {
@@ -427,7 +427,7 @@ where
     ///
     /// This function will attempt to write the entire contents of `buf`, unless its capacity
     /// exceeds the one of the image, in which case the first `width * height` pixels are written.
-    pub fn write(&mut self, buf: &[u8]) -> Result<usize, ImageInputError> {
+    pub fn write(&self, buf: &[u8]) -> Result<usize, ImageInputError> {
         use std::num::NonZeroU32;
 
         if buf.len() % P::byte_size() != 0 {

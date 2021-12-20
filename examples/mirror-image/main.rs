@@ -11,7 +11,7 @@ fn main() {
     let (width, height) = rgba.dimensions();
 
     // GPU image creation
-    let mut input_img = gpgpu::GpuConstImage::<Rgba8Uint>::new(&fw, width, height); // Input
+    let input_img = gpgpu::GpuConstImage::<Rgba8Uint>::new(&fw, width, height); // Input
     let output_img = gpgpu::GpuImage::<Rgba8Uint>::new(&fw, width, height); // Output
 
     // Write input image into the GPU

@@ -194,7 +194,7 @@ where
     /// This function will attempt to write the entire contents of buf, unless its capacity
     /// exceeds the one of the image, in which case the first width * height pixels are written.
     pub fn write_image_buffer(
-        &mut self,
+        &self,
         buf: &::image::ImageBuffer<
             P::ImgPixel,
             Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
@@ -215,7 +215,7 @@ where
     /// This function will attempt to write the entire contents of buf, unless its capacity
     /// exceeds the one of the image, in which case the first width * height pixels are written.
     pub fn write_image_buffer(
-        &mut self,
+        &self,
         buf: &::image::ImageBuffer<
             P::ImgPixel,
             Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>,
