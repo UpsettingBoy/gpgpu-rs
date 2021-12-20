@@ -11,7 +11,6 @@ impl<'res> DescriptorSet<'res> {
     ///
     /// ### Example WGSL syntax:
     /// ```ignore
-    /// [[block]]
     /// struct UniformStruct {
     ///     a: vec3<u32>;
     ///     b: vec3<u32>;
@@ -63,7 +62,6 @@ impl<'res> DescriptorSet<'res> {
     ///
     /// ### Example WGSL syntax:
     /// ```ignore
-    /// [[block]]
     /// struct StorageStruct {
     ///     data: [[stride(4)]] array<i32>;
     /// };

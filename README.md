@@ -5,7 +5,7 @@
 [![docs.rs](https://img.shields.io/static/v1?label=docs.rs&message=read&color=brightgreen&style=flat-square)](https://docs.rs/gpgpu)
 <!-- cargo-rdme start -->
 
-A simple GPU compute library based on [`wgpu`](https://github.com/gfx-rs/wgpu).
+An experimental async GPU compute library based on [`wgpu`](https://github.com/gfx-rs/wgpu).
 It is meant to be used alongside `wgpu` if desired.
 
 To start using `gpgpu`, just create a [`Framework`](https://docs.rs/gpgpu/latest/gpgpu/struct.Framework.html) instance
@@ -27,7 +27,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // GPU buffer creation
     let buf_a = GpuBuffer::from_slice(&fw, &cpu_data);       // Input
     let buf_b = GpuBuffer::from_slice(&fw, &cpu_data);       // Input
-    let buf_c = GpuBuffer::<u32>::new(&fw, cpu_data.len());  // Output
+    let buf_c = GpuBuffer::<u32>::with_capacity(&fw, cpu_data.len() as u64);  // Output
 
     // Shader load from SPIR-V binary file
     let shader = Shader::from_spirv_file(&fw, "<SPIR-V shader path>")?;
@@ -44,7 +44,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Kernel creation and enqueuing
     Kernel::new(&fw, program).enqueue(cpu_data.len() as u32, 1, 1); // Enqueuing, not very optimus 😅
 
-    let output = buf_c.read()?;                        // Read back C from GPU
+    let output = buf_c.read_vec_blocking()?;                        // Read back C from GPU
     for (a, b) in cpu_data.into_iter().zip(output) {
         assert_eq!(a.pow(2), b);
     }
@@ -57,7 +57,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 The shader is written in [WGSL](https://gpuweb.github.io/gpuweb/wgsl/)
 ```rust
 // Vector type definition. Used for both input and output
-[[block]]
 struct Vector {
     data: [[stride(4)]] array<u32>;
 };
