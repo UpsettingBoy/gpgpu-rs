@@ -1,3 +1,5 @@
+use std::io::Write;
+
 use gpgpu::{
     primitives::pixels::Rgba8UintNorm, BufOps, DescriptorSet, Framework, GpuConstImage, GpuImage,
     GpuUniformBuffer, ImgOps,
@@ -59,12 +61,18 @@ fn main() {
     let time = std::time::Instant::now();
 
     let mut frame_buffer = vec![0u32; WIDTH * HEIGHT * 4];
+
+    let mut total = 0.0;
+    let mut count = 0;
+
     while window.is_open() && !window.is_key_down(Key::Escape) {
+        let fps = std::time::Instant::now();
+
         let cam_buf = camera.frame().unwrap(); // Obtain cam current frame
         gpu_input.write_image_buffer(&cam_buf.convert()).unwrap(); // Upload cam frame into the cam frame texture
         buf_time.write(&[time.elapsed().as_secs_f32()]).unwrap(); // Upload elapsed time into elapsed time buffer
 
-        kernel.enqueue(WIDTH as u32 / 32, HEIGHT as u32 / 32, 1);
+        kernel.enqueue(WIDTH as u32 / 32, HEIGHT as u32 / 31, 1);
 
         gpu_output
             .read_blocking(bytemuck::cast_slice_mut(&mut frame_buffer))
@@ -74,5 +82,22 @@ fn main() {
         window
             .update_with_buffer(&frame_buffer, WIDTH, HEIGHT)
             .unwrap();
+
+        print_fps(fps.elapsed().as_secs_f32(), &mut total, &mut count);
     }
+}
+
+fn print_fps(elapsed: f32, total: &mut f32, count: &mut u32) {
+    let fps = 1.0 / elapsed;
+
+    *total += fps;
+    *count += 1;
+
+    print!(
+        "\rFPS: {:00.0}\tAverage: {:00.2}",
+        fps,
+        *total / *count as f32
+    );
+
+    std::io::stdout().flush().unwrap();
 }
