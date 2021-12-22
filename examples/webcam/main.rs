@@ -1,6 +1,8 @@
+use std::io::Write;
+
 use gpgpu::{
-    primitives::pixels::Rgba8UintNorm, DescriptorSet, Framework, GpuConstImage, GpuImage,
-    GpuUniformBuffer,
+    primitives::pixels::Rgba8UintNorm, BufOps, DescriptorSet, Framework, GpuConstImage, GpuImage,
+    GpuUniformBuffer, ImgOps,
 };
 use image::buffer::ConvertBuffer;
 use minifb::{Key, Window, WindowOptions};
@@ -12,8 +14,8 @@ const HEIGHT: usize = 720;
 fn main() {
     let fw = Framework::default();
 
-    // Camera initilization. Config may not work if not same cam as a Thinkpad T480.
-    // Change parameters accordingly to yours
+    // Camera initilization. Config may not work if not same cam as the Thinkpad T480 one.
+    // Change parameters accordingly
     let mut camera = {
         let camera_format = CameraFormat::new(
             Resolution {
@@ -41,8 +43,8 @@ fn main() {
 
     // Since the same GPU resources could be used during the whole execution
     // of the program, they are outside of the event loop
-    let mut gpu_input = GpuConstImage::<Rgba8UintNorm>::new(&fw, WIDTH as u32, HEIGHT as u32); // Cam frame texture
-    let mut buf_time = GpuUniformBuffer::<f32>::new(&fw, 1).unwrap(); // Elapsed time buffer (single element) for fancy shaders 😁
+    let gpu_input = GpuConstImage::<Rgba8UintNorm>::new(&fw, WIDTH as u32, HEIGHT as u32); // Cam frame texture
+    let buf_time = GpuUniformBuffer::<f32>::with_capacity(&fw, 1); // Elapsed time buffer (single element) for fancy shaders 😁
 
     let gpu_output = GpuImage::<Rgba8UintNorm>::new(&fw, WIDTH as u32, HEIGHT as u32); // Shader output
 
@@ -58,21 +60,44 @@ fn main() {
 
     let time = std::time::Instant::now();
 
+    let mut frame_buffer = vec![0u32; WIDTH * HEIGHT * 4];
+
+    let mut total = 0.0;
+    let mut count = 0;
+
     while window.is_open() && !window.is_key_down(Key::Escape) {
+        let fps = std::time::Instant::now();
+
         let cam_buf = camera.frame().unwrap(); // Obtain cam current frame
-        gpu_input
-            .write_from_image_buffer(&cam_buf.convert())
-            .unwrap(); // Upload cam frame into the cam frame texture
-        buf_time.write(&[time.elapsed().as_secs_f32()]); // Upload elapsed time into elapsed time buffer
+        gpu_input.write_image_buffer(&cam_buf.convert()).unwrap(); // Upload cam frame into the cam frame texture
+        buf_time.write(&[time.elapsed().as_secs_f32()]).unwrap(); // Upload elapsed time into elapsed time buffer
 
-        kernel.enqueue(WIDTH as u32 / 32, HEIGHT as u32 / 32, 1);
+        kernel.enqueue(WIDTH as u32 / 32, HEIGHT as u32 / 31, 1);
 
-        let output_buf = gpu_output.read().unwrap();
-        let output_buf = bytemuck::cast_slice(&output_buf);
+        gpu_output
+            .read_blocking(bytemuck::cast_slice_mut(&mut frame_buffer))
+            .unwrap();
 
         // Write processed cam frame into window frame buffer
         window
-            .update_with_buffer(output_buf, WIDTH, HEIGHT)
+            .update_with_buffer(&frame_buffer, WIDTH, HEIGHT)
             .unwrap();
+
+        print_fps(fps.elapsed().as_secs_f32(), &mut total, &mut count);
     }
+}
+
+fn print_fps(elapsed: f32, total: &mut f32, count: &mut u32) {
+    let fps = 1.0 / elapsed;
+
+    *total += fps;
+    *count += 1;
+
+    print!(
+        "\rFPS: {:00.0}\tAverage: {:00.2}",
+        fps,
+        *total / *count as f32
+    );
+
+    std::io::stdout().flush().unwrap();
 }

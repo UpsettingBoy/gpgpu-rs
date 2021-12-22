@@ -1,10 +1,8 @@
-[[block]]
 struct Dims {
     x: u32;
     y: u32;
 };
 
-[[block]]
 struct Array {
     data: [[stride(4)]] array<i32>;
 };

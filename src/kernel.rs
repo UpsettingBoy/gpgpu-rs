@@ -1,8 +1,9 @@
 use std::{borrow::Cow, path::Path};
 
 use crate::{
-    primitives::PixelInfo, DescriptorSet, Framework, GpuBuffer, GpuBufferUsage, GpuConstImage,
-    GpuImage, GpuUniformBuffer, Kernel, Program, Shader,
+    primitives::{BufOps, ImgOps, PixelInfo},
+    DescriptorSet, Framework, GpuBuffer, GpuBufferUsage, GpuConstImage, GpuImage, GpuUniformBuffer,
+    Kernel, Program, Shader,
 };
 
 impl<'res> DescriptorSet<'res> {
@@ -10,7 +11,6 @@ impl<'res> DescriptorSet<'res> {
     ///
     /// ### Example WGSL syntax:
     /// ```ignore
-    /// [[block]]
     /// struct UniformStruct {
     ///     a: vec3<u32>;
     ///     b: vec3<u32>;
@@ -49,7 +49,7 @@ impl<'res> DescriptorSet<'res> {
 
         let bind = wgpu::BindGroupEntry {
             binding: bind_id,
-            resource: uniform_buf.0.get_binding_resource(),
+            resource: uniform_buf.as_binding_resource(),
         };
 
         self.set_layout.push(bind_entry);
@@ -62,7 +62,6 @@ impl<'res> DescriptorSet<'res> {
     ///
     /// ### Example WGSL syntax:
     /// ```ignore
-    /// [[block]]
     /// struct StorageStruct {
     ///     data: [[stride(4)]] array<i32>;
     /// };
@@ -98,7 +97,7 @@ impl<'res> DescriptorSet<'res> {
 
         let bind = wgpu::BindGroupEntry {
             binding: bind_id,
-            resource: storage_buf.0.get_binding_resource(),
+            resource: storage_buf.as_binding_resource(),
         };
 
         self.set_layout.push(bind_entry);
@@ -135,7 +134,7 @@ impl<'res> DescriptorSet<'res> {
 
         let bind = wgpu::BindGroupEntry {
             binding: bind_id,
-            resource: img.0.get_binding_resource(),
+            resource: img.as_binding_resource(),
         };
 
         self.set_layout.push(bind_entry);
@@ -175,7 +174,7 @@ impl<'res> DescriptorSet<'res> {
 
         let bind = wgpu::BindGroupEntry {
             binding: bind_id,
-            resource: img.0.get_binding_resource(),
+            resource: img.as_binding_resource(),
         };
 
         self.set_layout.push(bind_entry);

@@ -1,9 +1,9 @@
-use gpgpu::primitives::pixels::Rgba8Uint;
+use gpgpu::{primitives::pixels::Rgba8Uint, ImgOps};
 
 // This example simply mirrors an image.
 fn main() {
     let fw = gpgpu::Framework::default();
-    let shader = gpgpu::Shader::from_wgsl_file(&fw, "examples/mirror-image/mirror.wgsl").unwrap();
+    let shader = gpgpu::Shader::from_wgsl_file(&fw, "examples/mirror-image/shader.wgsl").unwrap();
 
     let dynamic_img = image::open("examples/mirror-image/monke.jpg").unwrap(); // RGB8 image ...
     let rgba = dynamic_img.into_rgba8(); // ... converted to RGBA8
@@ -11,7 +11,7 @@ fn main() {
     let (width, height) = rgba.dimensions();
 
     // GPU image creation
-    let mut input_img = gpgpu::GpuConstImage::<Rgba8Uint>::new(&fw, width, height); // Input
+    let input_img = gpgpu::GpuConstImage::<Rgba8Uint>::new(&fw, width, height); // Input
     let output_img = gpgpu::GpuImage::<Rgba8Uint>::new(&fw, width, height); // Output
 
     // Write input image into the GPU
@@ -24,7 +24,7 @@ fn main() {
 
     gpgpu::Kernel::new(&fw, program).enqueue(width / 32, height / 32, 1); // Since the kernel workgroup size is (32, 32, 1) dims are divided
 
-    let output_bytes = output_img.read().unwrap();
+    let output_bytes = output_img.read_vec_blocking().unwrap();
     image::save_buffer(
         "examples/mirror-image/mirror-monke.png",
         &output_bytes,

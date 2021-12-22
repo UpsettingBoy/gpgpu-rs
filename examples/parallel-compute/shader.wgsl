@@ -1,4 +1,3 @@
-[[block]]
 struct Vector {
     data: [[stride(4)]] array<u32>;
 };

@@ -1,4 +1,3 @@
-[[block]]
 struct Vector {
     data: [[stride(4)]] array<u32>; // Stride tells the byte size of each element. u32 = unsigned integer 32-bits = 4 bytes per element.
 };

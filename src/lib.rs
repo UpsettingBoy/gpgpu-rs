@@ -1,4 +1,4 @@
-//! A simple GPU compute library based on [`wgpu`](https://github.com/gfx-rs/wgpu).
+//! An experimental async GPU compute library based on [`wgpu`](https://github.com/gfx-rs/wgpu).
 //! It is meant to be used alongside `wgpu` if desired.
 //!
 //! To start using `gpgpu`, just create a [`Framework`](crate::Framework) instance
@@ -20,7 +20,7 @@
 //!     // GPU buffer creation
 //!     let buf_a = GpuBuffer::from_slice(&fw, &cpu_data);       // Input
 //!     let buf_b = GpuBuffer::from_slice(&fw, &cpu_data);       // Input
-//!     let buf_c = GpuBuffer::<u32>::new(&fw, cpu_data.len());  // Output
+//!     let buf_c = GpuBuffer::<u32>::with_capacity(&fw, cpu_data.len() as u64);  // Output
 //!
 //!     // Shader load from SPIR-V binary file
 //!     let shader = Shader::from_spirv_file(&fw, "<SPIR-V shader path>")?;
@@ -37,7 +37,7 @@
 //!     // Kernel creation and enqueuing
 //!     Kernel::new(&fw, program).enqueue(cpu_data.len() as u32, 1, 1); // Enqueuing, not very optimus 😅
 //!
-//!     let output = buf_c.read()?;                        // Read back C from GPU
+//!     let output = buf_c.read_vec_blocking()?;                        // Read back C from GPU
 //!     for (a, b) in cpu_data.into_iter().zip(output) {
 //!         assert_eq!(a.pow(2), b);
 //!     }
@@ -50,7 +50,6 @@
 //! The shader is written in [WGSL](https://gpuweb.github.io/gpuweb/wgsl/)
 //! ```ignore
 //! // Vector type definition. Used for both input and output
-//! [[block]]
 //! struct Vector {
 //!     data: [[stride(4)]] array<u32>;
 //! };
@@ -67,10 +66,11 @@
 //! ```
 //!
 
-use primitives::{generic_buffer::GenericBuffer, generic_image::GenericImage};
+use std::{marker::PhantomData, sync::Arc};
 
 #[cfg(feature = "integrate-ndarray")]
 pub use features::integrate_ndarray::GpuArray;
+pub use primitives::{BufOps, ImgOps};
 
 pub mod features;
 pub mod framework;
@@ -79,12 +79,9 @@ pub mod primitives;
 
 /// Entry point of `gpgpu`. A [`Framework`] must be created
 /// first as all GPU primitives needs it to be created.
-#[allow(dead_code)]
 pub struct Framework {
-    instance: wgpu::Instance,
-    device: wgpu::Device,
+    device: Arc<wgpu::Device>,
     queue: wgpu::Queue,
-    limits: wgpu::Limits,
 }
 
 #[derive(PartialEq, Eq)]
@@ -110,7 +107,12 @@ pub enum GpuBufferUsage {
 ///
 /// More information about its shader representation is
 /// under the [`DescriptorSet::bind_buffer`](crate::DescriptorSet::bind_buffer) documentation.
-pub struct GpuBuffer<'fw, T>(GenericBuffer<'fw, T>);
+pub struct GpuBuffer<'fw, T> {
+    fw: &'fw Framework,
+    buf: wgpu::Buffer,
+    size: u64,
+    marker: PhantomData<T>,
+}
 
 /// Uniform vector of contiguous homogeneous elements on GPU memory.
 /// Recommended for small, read-only buffers.
@@ -120,7 +122,12 @@ pub struct GpuBuffer<'fw, T>(GenericBuffer<'fw, T>);
 ///
 /// More information about its shader representation is
 /// under the [`DescriptorSet::bind_uniform_buffer`](crate::DescriptorSet::bind_uniform_buffer) documentation.
-pub struct GpuUniformBuffer<'fw, T>(GenericBuffer<'fw, T>);
+pub struct GpuUniformBuffer<'fw, T> {
+    fw: &'fw Framework,
+    buf: wgpu::Buffer,
+    size: u64,
+    marker: PhantomData<T>,
+}
 
 /// 2D-image of homogeneous pixels.
 ///
@@ -128,7 +135,13 @@ pub struct GpuUniformBuffer<'fw, T>(GenericBuffer<'fw, T>);
 ///
 /// More information about its shader representation is
 /// under the [`DescriptorSet::bind_image`](crate::DescriptorSet::bind_image) documentation.
-pub struct GpuImage<'fw, P>(GenericImage<'fw, P>);
+pub struct GpuImage<'fw, P> {
+    fw: &'fw Framework,
+    texture: wgpu::Texture,
+    size: wgpu::Extent3d,
+    full_view: wgpu::TextureView,
+    pixel: PhantomData<P>,
+}
 
 /// 2D-image of homogeneous pixels.
 ///
@@ -136,7 +149,13 @@ pub struct GpuImage<'fw, P>(GenericImage<'fw, P>);
 ///
 /// More information about its shader representation is
 /// under the [`DescriptorSet::bind_const_image`](crate::DescriptorSet::bind_const_image) documentation.
-pub struct GpuConstImage<'fw, P>(GenericImage<'fw, P>);
+pub struct GpuConstImage<'fw, P> {
+    fw: &'fw Framework,
+    texture: wgpu::Texture,
+    size: wgpu::Extent3d,
+    full_view: wgpu::TextureView,
+    pixel: PhantomData<P>,
+}
 
 /// Represents a shader.
 ///

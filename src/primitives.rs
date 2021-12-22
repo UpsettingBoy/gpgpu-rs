@@ -16,10 +16,98 @@
 //! ## GpuConstImage
 //! Intended for read-only (in th shader) images on the GPU.
 
+use crate::Framework;
+
 pub mod buffers;
-pub mod generic_buffer;
-pub mod generic_image;
-pub mod image;
+pub mod images;
+
+/// Interface to get information, create and decompose GPU allocated buffers.
+pub trait BufOps<'fw, T>
+where
+    T: bytemuck::Pod,
+{
+    // ----------- Information fns -----------
+
+    /// Returns the number of elements the buffer can hold.
+    fn capacity(&self) -> u64 {
+        self.size() / std::mem::size_of::<T>() as u64
+    }
+
+    /// Returns the number of bytes of the buffer.
+    fn size(&self) -> u64;
+
+    /// Returns a [`wgpu::BindingResource`] of all the elements in the buffer.
+    fn as_binding_resource(&self) -> wgpu::BindingResource {
+        self.as_gpu_buffer().as_entire_binding()
+    }
+
+    /// Returns the [`wgpu::Buffer`] that handles the GPU data of the buffer.
+    fn as_gpu_buffer(&self) -> &wgpu::Buffer;
+
+    // ----------- Creation fns --------------
+
+    /// Constructs a new zeroed buffer with the specified capacity.
+    ///
+    /// The buffer will be able to hold exactly `capacity` elements.
+    fn with_capacity(fw: &'fw Framework, capacity: u64) -> Self;
+
+    /// Constructs a new buffer from a slice.
+    ///
+    /// The buffer `capacity` will be the `slice` length.
+    fn from_slice(fw: &'fw Framework, slice: &[T]) -> Self;
+
+    /// Constructs a new buffer from a [`wgpu::Buffer`] and its byte `size`.
+    ///
+    /// # Safety
+    /// If any of the following conditions are not satisfied, the buffer will
+    /// panic at any time during its usage.
+    /// - `size` needs to be less than or equal to the `buf` creation size.
+    /// - `size` needs to be multiple of the `T` size.
+    fn from_gpu_parts(fw: &'fw Framework, buf: wgpu::Buffer, size: u64) -> Self;
+
+    // --------- Decomposition fns -------------
+
+    /// Decomposes a buffer into a [`wgpu::Buffer`] and its byte `size`.
+    fn into_gpu_parts(self) -> (wgpu::Buffer, u64);
+}
+
+/// Interface to get information, create and decompose GPU allocated images.
+pub trait ImgOps<'fw> {
+    // --------- Information fns --------------
+
+    /// Returns a [`wgpu::BindingResource`] of the image.
+    fn as_binding_resource(&self) -> wgpu::BindingResource;
+
+    /// Returns the [`wgpu::Texture`] that handles the GPU image.
+    fn as_gpu_texture(&self) -> &wgpu::Texture;
+
+    /// Returns a [`wgpu::Extent3d`] of the image. Convenience function.
+    fn get_wgpu_extent3d(&self) -> wgpu::Extent3d;
+
+    /// Returns the width and height of the image.
+    fn dimensions(&self) -> (u32, u32);
+
+    // ----------- Creation fns ---------------
+
+    /// Constructs an empty image with the desired `width` and `height`.
+    fn new(fw: &'fw Framework, width: u32, height: u32) -> Self;
+
+    /// Construct a new image from a bytes source `data` and its `width` and `height`.
+    ///
+    /// If `data` doesn't fit the image perfectly, it panics.
+    fn from_bytes(fw: &'fw Framework, data: &[u8], width: u32, height: u32) -> Self;
+
+    fn from_gpu_parts(
+        fw: &'fw Framework,
+        texture: wgpu::Texture,
+        dimensions: wgpu::Extent3d,
+    ) -> Self;
+
+    // -------- Decomposition fns -------------
+
+    /// Decomposes an image into a [`wgpu::Texture`] and its [`wgpu::Extent3d`].
+    fn into_gpu_parts(self) -> (wgpu::Texture, wgpu::Extent3d);
+}
 
 /// Gives some information about the pixel format.
 pub trait PixelInfo {
