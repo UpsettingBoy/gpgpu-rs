@@ -82,6 +82,7 @@ pub mod primitives;
 pub struct Framework {
     device: Arc<wgpu::Device>,
     queue: wgpu::Queue,
+    adapter: wgpu::Adapter,
 }
 
 #[derive(PartialEq, Eq)]

@@ -48,6 +48,25 @@ impl Framework {
             std::thread::sleep(polling_time);
         });
 
-        Self { device, queue }
+        Self {
+            device,
+            queue,
+            adapter,
+        }
+    }
+
+    /// Gets info about the adapter that created this [`Framework`].
+    pub fn info(&self) -> wgpu::AdapterInfo {
+        self.adapter.get_info()
+    }
+
+    /// Gets the features that may be used with this [`Framework`].
+    pub fn features(&self) -> wgpu::Features {
+        self.device.features()
+    }
+
+    /// Gets the limits of this [`Framework`].
+    pub fn limits(&self) -> wgpu::Limits {
+        self.device.limits()
     }
 }
