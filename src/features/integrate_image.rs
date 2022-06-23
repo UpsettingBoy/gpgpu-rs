@@ -226,20 +226,25 @@ where
     }
 }
 
-pub(crate) fn bytes_to_primitive_vec<P>(mut bytes: Vec<u8>) -> Vec<P::Subpixel>
+pub(self) fn bytes_to_primitive_vec<P>(mut bytes: Vec<u8>) -> Vec<P::Subpixel>
 where
     P: image::Pixel,
     P::Subpixel: bytemuck::Pod,
 {
     // Fit vector to min possible size
     bytes.shrink_to_fit();
-    assert_eq!(bytes.len(), bytes.capacity()); // Since `Vec::shrink_to_fit` cannot assure that the inner vector memory is
-                                               // exactly its theorical min, we panic if that happened.
+    // Since `Vec::shrink_to_fit` cannot assure that the inner vector memory is
+    // exactly its theorical min, we panic if that happened.
+    assert_eq!(
+        bytes.len(),
+        bytes.capacity(),
+        "Vector capacity after shrink still different than its length."
+    );
 
     // Original memory won't be dropped. No copy of `bytes` needed 😁
     let mut man_drop = std::mem::ManuallyDrop::new(bytes);
 
-    // `bytemuck` will do the aligment and cast for us.
+    // `bytemuck` will do the alignment and cast for us.
     let (_, new_type, _) = bytemuck::pod_align_to_mut(&mut man_drop);
     let ptr = new_type.as_mut_ptr();
 
