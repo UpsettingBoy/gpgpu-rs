@@ -177,7 +177,7 @@ where
         let staging_size = (padded_bytes_per_row * self.size.height) as usize;
 
         let staging = self.fw.device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("GpuImage::read staging and copy"),
+            label: Some("GpuImage::read"),
             size: staging_size as u64,
             usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
@@ -187,7 +187,7 @@ where
             .fw
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("GenericImage::read_async"),
+                label: Some("GpuImage::read"),
             });
 
         let copy_texture = wgpu::ImageCopyTexture {
@@ -216,7 +216,7 @@ where
             &staging.slice(..),
         )
         .await
-        .unwrap();
+        .map_err(super::buffers::BufferError::AsyncMapError)?;
 
         let bytes_read: usize = download
             .chunks(padded_bytes_per_row as usize)
@@ -286,7 +286,8 @@ where
             wgpu::ImageDataLayout {
                 offset: 0,
                 bytes_per_row: Some(
-                    NonZeroU32::new(P::byte_size() as u32 * self.size.width).unwrap(),
+                    NonZeroU32::new(P::byte_size() as u32 * self.size.width)
+                        .expect("Could not create a NonZeroU32."),
                 ),
                 rows_per_image: None,
             },
@@ -458,7 +459,8 @@ where
             wgpu::ImageDataLayout {
                 offset: 0,
                 bytes_per_row: Some(
-                    NonZeroU32::new(P::byte_size() as u32 * self.size.width).unwrap(),
+                    NonZeroU32::new(P::byte_size() as u32 * self.size.width)
+                        .expect("Could not create a NonZeroU32."),
                 ),
                 rows_per_image: None,
             },

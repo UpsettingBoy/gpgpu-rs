@@ -17,21 +17,22 @@ homepage = "https://www.github.com/UpsettingBoy/gpgpu-rs"
 bytemuck = "1.7"
 cfg-if = "1.0"
 futures = { version = "0.3", default-features = false, features = ["executor"] }
-image = { version = "0.23", default-features = false, optional = true }
+image = { version = "0.24", default-features = false, optional = true }
 wgpu = { version = "0.12", features = ["spirv"] }
 ndarray = { version = "0.15", default-features = false, features = [
     "std",
 ], optional = true }
 thiserror = "1.0"
+log = { version = "0.4", default-features = false }
 
 [dev-dependencies]
-image = { version = "0.23.14", default-features = false, features = [
+image = { version = "0.24.2", default-features = false, features = [
     "jpeg",
     "png",
 ] }
 lazy_static = "1.4.0"
 nokhwa = { version = "0.9.1", features = ["input-v4l", "input-msmf"] }
-minifb = "0.20.0"
+minifb = "0.23.0"
 
 [features]
 integrate-image = ["image"]
