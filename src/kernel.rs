@@ -199,7 +199,7 @@ impl Shader {
 
         let shader = fw
             .device
-            .create_shader_module(&wgpu::ShaderModuleDescriptor {
+            .create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: name,
                 source,
             });
@@ -213,7 +213,7 @@ impl Shader {
         let shader_name = path.as_ref().to_str();
 
         Ok(Self(fw.device.create_shader_module(
-            &wgpu::ShaderModuleDescriptor {
+            wgpu::ShaderModuleDescriptor {
                 label: shader_name,
                 source: wgpu::ShaderSource::Wgsl(Cow::Owned(source_string)),
             },
@@ -313,7 +313,7 @@ impl<'fw> Kernel<'fw> {
             }
 
             cpass.insert_debug_marker(&self.entry_point);
-            cpass.dispatch(x, y, z);
+            cpass.dispatch_workgroups(x, y, z);
         }
 
         self.fw.queue.submit(Some(encoder.finish()));

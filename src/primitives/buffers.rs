@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use thiserror::Error;
-use wgpu::util::DeviceExt;
+use wgpu::{util::DeviceExt, MapMode};
 
 use crate::{GpuBuffer, GpuUniformBuffer};
 
@@ -99,14 +99,16 @@ where
             output_size
         };
 
-        let download = wgpu::util::DownloadBuffer::read_buffer(
-            &self.fw.device,
-            &self.fw.queue,
-            &self.buf.slice(..download_size as u64),
-        )
-        .await?;
+        let download = self.buf.slice(..download_size as u64);
 
-        buf.copy_from_slice(bytemuck::cast_slice(&download));
+        let (tx, rx) = futures::channel::oneshot::channel();
+        download.map_async(MapMode::Read, |result| {
+            tx.send(result).expect("GpuBuffer reading error!");
+        });
+        rx.await
+            .expect("GpuBuffer futures::channel::oneshot error")?;
+
+        buf.copy_from_slice(bytemuck::cast_slice(&download.get_mapped_range()));
 
         Ok(download_size)
     }
