@@ -179,7 +179,9 @@ where
         let staging = self.fw.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("GpuImage::read staging and copy"),
             size: staging_size as u64,
-            usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
+            usage: wgpu::BufferUsages::COPY_SRC
+                | wgpu::BufferUsages::COPY_DST
+                | wgpu::BufferUsages::MAP_READ,
             mapped_at_creation: false,
         });
 

@@ -8,10 +8,13 @@ use crate::{GpuBuffer, GpuUniformBuffer};
 use super::BufOps;
 
 // TODO https://github.com/bitflags/bitflags/issues/180
+// TODO Unsure wether MAP_READ and MAP_WRITE should only be present on certain buffers
 const GPU_BUFFER_USAGES: wgpu::BufferUsages = wgpu::BufferUsages::from_bits_truncate(
     wgpu::BufferUsages::STORAGE.bits()
         | wgpu::BufferUsages::COPY_SRC.bits()
-        | wgpu::BufferUsages::COPY_DST.bits(),
+        | wgpu::BufferUsages::COPY_DST.bits()
+        | wgpu::BufferUsages::MAP_READ.bits()
+        | wgpu::BufferUsages::MAP_WRITE.bits(),
 );
 const GPU_UNIFORM_USAGES: wgpu::BufferUsages = wgpu::BufferUsages::from_bits_truncate(
     wgpu::BufferUsages::UNIFORM.bits() | wgpu::BufferUsages::COPY_DST.bits(),
