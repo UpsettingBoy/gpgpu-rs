@@ -3,7 +3,8 @@
 ![Crates.io](https://img.shields.io/crates/l/gpgpu?style=flat-square)
 ![Crates.io](https://img.shields.io/crates/v/gpgpu?style=flat-square)
 [![docs.rs](https://img.shields.io/static/v1?label=docs.rs&message=read&color=brightgreen&style=flat-square)](https://docs.rs/gpgpu)
-<!-- cargo-rdme start -->
+
+<!-- cargo-sync-readme start -->
 
 An experimental async GPU compute library based on [`wgpu`](https://github.com/gfx-rs/wgpu).
 It is meant to be used alongside `wgpu` if desired.
@@ -58,18 +59,19 @@ The shader is written in [WGSL](https://gpuweb.github.io/gpuweb/wgsl/)
 ```rust
 // Vector type definition. Used for both input and output
 struct Vector {
-    data: [[stride(4)]] array<u32>;
-};
+    data: array<u32>,
+}
 
 // A, B and C vectors
-[[group(0), binding(0)]] var<storage, read>  a: Vector;
-[[group(0), binding(1)]] var<storage, read>  b: Vector;
-[[group(0), binding(2)]] var<storage, read_write> c: Vector;
+@group(0) @binding(0) var<storage, read>  a: Vector;
+@group(0) @binding(1) var<storage, read>  b: Vector;
+@group(0) @binding(2) var<storage, read_write> c: Vector;
 
-[[stage(compute), workgroup_size(1)]]
-fn main([[builtin(global_invocation_id)]] global_id: vec3<u32>) {
+@compute @workgroup_size(1)
+fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     c.data[global_id.x] = a.data[global_id.x] * b.data[global_id.x];
 }
 ```
 
-<!-- cargo-rdme end -->
+
+<!-- cargo-sync-readme end -->

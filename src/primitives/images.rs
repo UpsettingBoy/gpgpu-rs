@@ -1,9 +1,9 @@
 use std::marker::PhantomData;
 
 use thiserror::Error;
-use wgpu::util::DeviceExt;
+use wgpu::{util::DeviceExt, MapMode};
 
-use crate::{GpuConstImage, GpuImage};
+use crate::{primitives::buffers, GpuConstImage, GpuImage};
 
 use super::{ImgOps, PixelInfo};
 
@@ -177,9 +177,11 @@ where
         let staging_size = (padded_bytes_per_row * self.size.height) as usize;
 
         let staging = self.fw.device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("GpuImage::read staging and copy"),
+            label: Some("GpuImage::read"),
             size: staging_size as u64,
-            usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
+            usage: wgpu::BufferUsages::COPY_SRC
+                | wgpu::BufferUsages::COPY_DST
+                | wgpu::BufferUsages::MAP_READ,
             mapped_at_creation: false,
         });
 
@@ -187,7 +189,7 @@ where
             .fw
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("GenericImage::read_async"),
+                label: Some("GpuImage::read"),
             });
 
         let copy_texture = wgpu::ImageCopyTexture {
@@ -210,15 +212,18 @@ where
 
         self.fw.queue.submit(Some(encoder.finish()));
 
-        let download = wgpu::util::DownloadBuffer::read_buffer(
-            &self.fw.device,
-            &self.fw.queue,
-            &staging.slice(..),
-        )
-        .await
-        .unwrap();
+        let download = staging.slice(..);
+
+        let (tx, rx) = futures::channel::oneshot::channel();
+        download.map_async(MapMode::Read, |result| {
+            tx.send(result).expect("GpuImage reading error!");
+        });
+        rx.await
+            .expect("GpuBuffer futures::channel::oneshot error")
+            .map_err(|e| ImageOutputError::BufferError(buffers::BufferError::AsyncMapError(e)))?;
 
         let bytes_read: usize = download
+            .get_mapped_range()
             .chunks(padded_bytes_per_row as usize)
             .zip(buf.chunks_mut(unpadded_bytes_per_row as usize))
             .map(|(src, dest)| {
@@ -286,7 +291,8 @@ where
             wgpu::ImageDataLayout {
                 offset: 0,
                 bytes_per_row: Some(
-                    NonZeroU32::new(P::byte_size() as u32 * self.size.width).unwrap(),
+                    NonZeroU32::new(P::byte_size() as u32 * self.size.width)
+                        .expect("Could not create a NonZeroU32."),
                 ),
                 rows_per_image: None,
             },
@@ -458,7 +464,8 @@ where
             wgpu::ImageDataLayout {
                 offset: 0,
                 bytes_per_row: Some(
-                    NonZeroU32::new(P::byte_size() as u32 * self.size.width).unwrap(),
+                    NonZeroU32::new(P::byte_size() as u32 * self.size.width)
+                        .expect("Could not create a NonZeroU32."),
                 ),
                 rows_per_image: None,
             },

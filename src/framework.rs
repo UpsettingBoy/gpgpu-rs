@@ -9,6 +9,12 @@ impl Default for Framework {
             .unwrap_or(wgpu::PowerPreference::HighPerformance);
         let instance = wgpu::Instance::new(backend);
 
+        log::debug!(
+            "Requesting device with {:#?} and {:#?}",
+            backend,
+            power_preference
+        );
+
         futures::executor::block_on(async {
             let adapter = instance
                 .request_adapter(&wgpu::RequestAdapterOptions {
@@ -16,7 +22,7 @@ impl Default for Framework {
                     ..Default::default()
                 })
                 .await
-                .unwrap();
+                .expect("Failed at adapter creation.");
 
             Self::new(adapter, Duration::from_millis(10)).await
         })
@@ -32,13 +38,21 @@ impl Framework {
             .request_device(
                 &wgpu::DeviceDescriptor {
                     label: None,
-                    features: wgpu::Features::empty(),
-                    limits: adapter.limits(), // Bye WebGL2 support :(
+                    features: adapter.features(), // Change this to allow proper WebGL2 support (in the future™️).
+                    limits: adapter.limits(),     // Bye WebGL2 support :(
                 },
                 None,
             )
             .await
-            .unwrap();
+            .expect("Failed at device creation.");
+
+        let info = adapter.get_info();
+        log::info!(
+            "Using {} ({}) - {:#?}.",
+            info.name,
+            info.device,
+            info.backend
+        );
 
         let device = Arc::new(device);
         let polling_device = Arc::clone(&device);
@@ -48,6 +62,25 @@ impl Framework {
             std::thread::sleep(polling_time);
         });
 
-        Self { device, queue }
+        Self {
+            device,
+            queue,
+            adapter,
+        }
+    }
+
+    /// Gets info about the adapter that created this [`Framework`].
+    pub fn info(&self) -> wgpu::AdapterInfo {
+        self.adapter.get_info()
+    }
+
+    /// Gets the features that may be used with this [`Framework`].
+    pub fn features(&self) -> wgpu::Features {
+        self.device.features()
+    }
+
+    /// Gets the limits of this [`Framework`].
+    pub fn limits(&self) -> wgpu::Limits {
+        self.device.limits()
     }
 }

@@ -199,7 +199,7 @@ impl Shader {
 
         let shader = fw
             .device
-            .create_shader_module(&wgpu::ShaderModuleDescriptor {
+            .create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: name,
                 source,
             });
@@ -213,7 +213,7 @@ impl Shader {
         let shader_name = path.as_ref().to_str();
 
         Ok(Self(fw.device.create_shader_module(
-            &wgpu::ShaderModuleDescriptor {
+            wgpu::ShaderModuleDescriptor {
                 label: shader_name,
                 source: wgpu::ShaderSource::Wgsl(Cow::Owned(source_string)),
             },
@@ -245,7 +245,7 @@ impl<'fw> Kernel<'fw> {
         let mut sets = Vec::new();
 
         // Unwraping of descriptors from program
-        for desc in &program.descriptors {
+        for (set_id, desc) in program.descriptors.iter().enumerate() {
             let set_layout = fw
                 .device
                 .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -258,6 +258,8 @@ impl<'fw> Kernel<'fw> {
                 layout: &set_layout,
                 entries: &desc.binds,
             });
+
+            log::debug!("Binding set = {} with {:#?}", set_id, &desc.binds);
 
             layouts.push(set_layout);
             sets.push(set);
@@ -313,7 +315,7 @@ impl<'fw> Kernel<'fw> {
             }
 
             cpass.insert_debug_marker(&self.entry_point);
-            cpass.dispatch(x, y, z);
+            cpass.dispatch_workgroups(x, y, z);
         }
 
         self.fw.queue.submit(Some(encoder.finish()));
