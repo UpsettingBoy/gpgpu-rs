@@ -1,17 +1,20 @@
 use std::marker::PhantomData;
 
 use thiserror::Error;
-use wgpu::util::DeviceExt;
+use wgpu::{util::DeviceExt, MapMode};
 
 use crate::{GpuBuffer, GpuUniformBuffer};
 
 use super::BufOps;
 
 // TODO https://github.com/bitflags/bitflags/issues/180
+// TODO Unsure wether MAP_READ and MAP_WRITE should only be present on certain buffers
 const GPU_BUFFER_USAGES: wgpu::BufferUsages = wgpu::BufferUsages::from_bits_truncate(
     wgpu::BufferUsages::STORAGE.bits()
         | wgpu::BufferUsages::COPY_SRC.bits()
-        | wgpu::BufferUsages::COPY_DST.bits(),
+        | wgpu::BufferUsages::COPY_DST.bits()
+        | wgpu::BufferUsages::MAP_READ.bits()
+        | wgpu::BufferUsages::MAP_WRITE.bits(),
 );
 const GPU_UNIFORM_USAGES: wgpu::BufferUsages = wgpu::BufferUsages::from_bits_truncate(
     wgpu::BufferUsages::UNIFORM.bits() | wgpu::BufferUsages::COPY_DST.bits(),
@@ -99,14 +102,16 @@ where
             output_size
         };
 
-        let download = wgpu::util::DownloadBuffer::read_buffer(
-            &self.fw.device,
-            &self.fw.queue,
-            &self.buf.slice(..download_size as u64),
-        )
-        .await?;
+        let download = self.buf.slice(..download_size as u64);
 
-        buf.copy_from_slice(bytemuck::cast_slice(&download));
+        let (tx, rx) = futures::channel::oneshot::channel();
+        download.map_async(MapMode::Read, |result| {
+            tx.send(result).expect("GpuBuffer reading error!");
+        });
+        rx.await
+            .expect("GpuBuffer futures::channel::oneshot error")?;
+
+        buf.copy_from_slice(bytemuck::cast_slice(&download.get_mapped_range()));
 
         Ok(download_size)
     }

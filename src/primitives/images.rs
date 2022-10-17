@@ -1,9 +1,9 @@
 use std::marker::PhantomData;
 
 use thiserror::Error;
-use wgpu::util::DeviceExt;
+use wgpu::{util::DeviceExt, MapMode};
 
-use crate::{GpuConstImage, GpuImage};
+use crate::{primitives::buffers, GpuConstImage, GpuImage};
 
 use super::{ImgOps, PixelInfo};
 
@@ -179,7 +179,9 @@ where
         let staging = self.fw.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("GpuImage::read"),
             size: staging_size as u64,
-            usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
+            usage: wgpu::BufferUsages::COPY_SRC
+                | wgpu::BufferUsages::COPY_DST
+                | wgpu::BufferUsages::MAP_READ,
             mapped_at_creation: false,
         });
 
@@ -210,15 +212,18 @@ where
 
         self.fw.queue.submit(Some(encoder.finish()));
 
-        let download = wgpu::util::DownloadBuffer::read_buffer(
-            &self.fw.device,
-            &self.fw.queue,
-            &staging.slice(..),
-        )
-        .await
-        .map_err(super::buffers::BufferError::AsyncMapError)?;
+        let download = staging.slice(..);
+
+        let (tx, rx) = futures::channel::oneshot::channel();
+        download.map_async(MapMode::Read, |result| {
+            tx.send(result).expect("GpuImage reading error!");
+        });
+        rx.await
+            .expect("GpuBuffer futures::channel::oneshot error")
+            .map_err(|e| ImageOutputError::BufferError(buffers::BufferError::AsyncMapError(e)))?;
 
         let bytes_read: usize = download
+            .get_mapped_range()
             .chunks(padded_bytes_per_row as usize)
             .zip(buf.chunks_mut(unpadded_bytes_per_row as usize))
             .map(|(src, dest)| {
