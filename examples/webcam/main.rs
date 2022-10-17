@@ -4,7 +4,7 @@ use gpgpu::{
     primitives::pixels::Rgba8UintNorm, BufOps, DescriptorSet, Framework, GpuConstImage, GpuImage,
     GpuUniformBuffer, ImgOps,
 };
-use image::buffer::ConvertBuffer;
+
 use minifb::{Key, Window, WindowOptions};
 use nokhwa::{Camera, CameraFormat, Resolution};
 
@@ -68,8 +68,11 @@ fn main() {
     while window.is_open() && !window.is_key_down(Key::Escape) {
         let fps = std::time::Instant::now();
 
-        let cam_buf = camera.frame().unwrap(); // Obtain cam current frame
-        gpu_input.write_image_buffer(&cam_buf.convert()).unwrap(); // Upload cam frame into the cam frame texture
+        // Adapted for new (using image 0.24) nokhwa version
+        let cam_raw = camera.frame().unwrap();
+        let cam_buf = image::DynamicImage::ImageRgb8(cam_raw).into_rgba8(); // Obtain cam current frame
+
+        gpu_input.write_image_buffer(&cam_buf).unwrap(); // Upload cam frame into the cam frame texture
         buf_time.write(&[time.elapsed().as_secs_f32()]).unwrap(); // Upload elapsed time into elapsed time buffer
 
         kernel.enqueue(WIDTH as u32 / 32, HEIGHT as u32 / 31, 1);
