@@ -219,6 +219,20 @@ impl Shader {
             },
         )))
     }
+
+    /// Initialises a [`Shader`] from a `WGSL` string.
+    pub fn from_wgsl_string(
+        fw: &Framework,
+        source: String,
+        name: Option<&str>,
+    ) -> std::io::Result<Self> {
+        Ok(Self(fw.device.create_shader_module(
+            wgpu::ShaderModuleDescriptor {
+                label: name,
+                source: wgpu::ShaderSource::Wgsl(Cow::Owned(source)),
+            },
+        )))
+    }
 }
 
 impl<'sha, 'res> Program<'sha, 'res> {
