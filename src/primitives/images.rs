@@ -72,6 +72,7 @@ where
             sample_count: 1,
             format,
             usage: GPU_IMAGE_USAGES,
+            view_formats: &[],
         });
 
         let full_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
@@ -104,6 +105,7 @@ where
                 sample_count: 1,
                 format,
                 usage: GPU_IMAGE_USAGES,
+                view_formats: &[],
             },
             data,
         );
@@ -349,6 +351,7 @@ where
             sample_count: 1,
             format,
             usage: GPU_CONST_IMAGE_USAGES,
+            view_formats: &[],
         });
 
         let full_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
@@ -381,6 +384,7 @@ where
                 sample_count: 1,
                 format,
                 usage: GPU_CONST_IMAGE_USAGES,
+                view_formats: &[],
             },
             data,
         );

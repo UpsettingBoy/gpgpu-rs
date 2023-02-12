@@ -66,7 +66,7 @@
 //! ```
 //!
 
-use std::{marker::PhantomData, sync::Arc};
+use std::marker::PhantomData;
 
 #[cfg(feature = "integrate-ndarray")]
 pub use features::integrate_ndarray::GpuArray;
@@ -80,7 +80,7 @@ pub mod primitives;
 /// Entry point of `gpgpu`. A [`Framework`] must be created
 /// first as all GPU primitives needs it to be created.
 pub struct Framework {
-    device: Arc<wgpu::Device>,
+    device: wgpu::Device,
     queue: wgpu::Queue,
     adapter: wgpu::Adapter,
 }

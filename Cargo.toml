@@ -2,13 +2,13 @@
 authors = ["Jerónimo Sánchez <jeronimosg@hotmail.es>"]
 categories = ["concurrency", "science"]
 description = "Simple WIP GPGPU framework built on top of wgpu"
-edition = "2018"
+edition = "2021"
 keywords = ["gpgpu", "compute", "opencl", "cuda"]
 license = "EUPL-1.2"
 name = "gpgpu"
 repository = "https://www.github.com/UpsettingBoy/gpgpu-rs"
 resolver = "2"
-version = "0.2.0"
+version = "0.3.0"
 homepage = "https://www.github.com/UpsettingBoy/gpgpu-rs"
 
 
@@ -17,7 +17,7 @@ bytemuck = "1.7"
 cfg-if = "1.0"
 futures = { version = "0.3", default-features = false, features = ["executor"] }
 image = { version = "0.23", default-features = false, optional = true }
-wgpu = { version = "0.14", features = ["spirv"] }
+wgpu = { version = "0.15", features = ["spirv"] }
 ndarray = { version = "0.15", default-features = false, features = [
     "std",
 ], optional = true }

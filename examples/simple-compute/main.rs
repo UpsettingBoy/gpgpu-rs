@@ -32,7 +32,7 @@ fn main() {
 
     // Execution of the kernel. It needs 3 dimmensions, x y and z.
     // Since we are using single-dim vectors, only x is required.
-    kernel.enqueue(size as u32, 1, 1);
+    kernel.enqueue(size, 1, 1);
 
     // After the kernel execution, we can read the results from the GPU.
     let gpu_result = gpu_vec_c.read_vec_blocking().unwrap();

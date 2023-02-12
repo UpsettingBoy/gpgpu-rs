@@ -102,7 +102,7 @@ where
             output_size
         };
 
-        let download = self.buf.slice(..download_size as u64);
+        let download = self.buf.slice(..download_size);
 
         let (tx, rx) = futures::channel::oneshot::channel();
         download.map_async(MapMode::Read, |result| {
