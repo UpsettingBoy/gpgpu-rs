@@ -3,9 +3,7 @@ use std::marker::PhantomData;
 use thiserror::Error;
 use wgpu::{util::DeviceExt, MapMode};
 
-use crate::{GpuBuffer, GpuUniformBuffer};
-
-use super::BufOps;
+use crate::{future::GpuMapFuture, primitives::BufOps, GpuBuffer, GpuUniformBuffer};
 
 // TODO https://github.com/bitflags/bitflags/issues/180
 // TODO Unsure wether MAP_READ and MAP_WRITE should only be present on certain buffers
@@ -22,7 +20,7 @@ const GPU_UNIFORM_USAGES: wgpu::BufferUsages = wgpu::BufferUsages::from_bits_tru
 
 pub type BufferResult<T> = Result<T, BufferError>;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Clone)]
 pub enum BufferError {
     #[error(transparent)]
     AsyncMapError(#[from] wgpu::BufferAsyncError),
@@ -33,10 +31,10 @@ where
     T: bytemuck::Pod,
 {
     fn size(&self) -> u64 {
-        self.size
+        self.buf.size()
     }
 
-    fn as_gpu_buffer(&self) -> &wgpu::Buffer {
+    fn as_wgpu_buffer(&self) -> &wgpu::Buffer {
         &self.buf
     }
 
@@ -52,13 +50,11 @@ where
         Self {
             fw,
             buf,
-            size,
             marker: PhantomData,
         }
     }
 
     fn from_slice(fw: &'fw crate::Framework, slice: &[T]) -> Self {
-        let size = (slice.len() * std::mem::size_of::<T>()) as u64;
         let buf = fw
             .device
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -70,22 +66,20 @@ where
         Self {
             fw,
             buf,
-            size,
             marker: PhantomData,
         }
     }
 
-    fn from_gpu_parts(fw: &'fw crate::Framework, buf: wgpu::Buffer, size: u64) -> Self {
+    fn from_wgpu_buffer(fw: &'fw crate::Framework, buf: wgpu::Buffer) -> Self {
         Self {
             fw,
             buf,
-            size,
             marker: PhantomData,
         }
     }
 
-    fn into_gpu_parts(self) -> (wgpu::Buffer, u64) {
-        (self.buf, self.size)
+    fn into_wgpu_buffer(self) -> wgpu::Buffer {
+        self.buf
     }
 }
 
@@ -96,24 +90,18 @@ where
     /// Pulls some elements from the [`GpuBuffer`] into `buf`, returning how many elements were read.
     pub async fn read(&self, buf: &mut [T]) -> BufferResult<u64> {
         let output_size = (buf.len() * std::mem::size_of::<T>()) as u64;
-        let download_size = if output_size > self.size {
-            self.size
+        let read_size = if output_size > self.size() {
+            self.size()
         } else {
             output_size
         };
 
-        let download = self.buf.slice(..download_size);
+        let buf_slice = self.buf.slice(..read_size);
 
-        let (tx, rx) = futures::channel::oneshot::channel();
-        download.map_async(MapMode::Read, |result| {
-            tx.send(result).expect("GpuBuffer reading error!");
-        });
-        rx.await
-            .expect("GpuBuffer futures::channel::oneshot error")?;
+        GpuMapFuture::new(&self.fw.device, buf_slice, MapMode::Read).await?;
+        buf.copy_from_slice(bytemuck::cast_slice(&buf_slice.get_mapped_range()));
 
-        buf.copy_from_slice(bytemuck::cast_slice(&download.get_mapped_range()));
-
-        Ok(download_size)
+        Ok(read_size)
     }
 
     /// Pulls all the elements from the [`GpuBuffer`] into a [`Vec`].
@@ -135,31 +123,22 @@ where
         futures::executor::block_on(self.read_vec())
     }
 
-    /// Writes a buffer into this [`GpuBuffer`], returning how many elements were written. The operation is instantly offloaded.
+    /// Attempts to write a slice into this [`GpuBuffer`], returning how many elements were written.
     ///
     /// This function will attempt to write the entire contents of `buf` unless its capacity
     /// exceeds the one of the source buffer, in which case `GpuBuffer::capacity()` elements are written.
-    pub fn write(&self, buf: &[T]) -> BufferResult<u64> {
+    pub async fn write(&self, buf: &[T]) -> BufferResult<u64> {
         let input_size = (buf.len() * std::mem::size_of::<T>()) as u64;
-        let upload_size = if input_size > self.size {
-            self.size
+        let write_size = if input_size > self.size() {
+            self.size()
         } else {
             input_size
         };
 
-        self.fw
-            .queue
-            .write_buffer(&self.buf, 0, bytemuck::cast_slice(buf));
+        let write_slice = self.buf.slice(..write_size);
+        GpuMapFuture::new(&self.fw.device, write_slice, MapMode::Write).await?;
 
-        let encoder = self
-            .fw
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("GpuBuffer::write"),
-            });
-        self.fw.queue.submit(Some(encoder.finish()));
-
-        Ok(upload_size)
+        Ok(write_size)
     }
 }
 
@@ -168,10 +147,10 @@ where
     T: bytemuck::Pod,
 {
     fn size(&self) -> u64 {
-        self.size
+        self.buf.size()
     }
 
-    fn as_gpu_buffer(&self) -> &wgpu::Buffer {
+    fn as_wgpu_buffer(&self) -> &wgpu::Buffer {
         &self.buf
     }
 
@@ -188,13 +167,11 @@ where
         Self {
             fw,
             buf,
-            size,
             marker: PhantomData,
         }
     }
 
     fn from_slice(fw: &'fw crate::Framework, slice: &[T]) -> Self {
-        let size = (slice.len() * std::mem::size_of::<T>()) as u64;
         let buf = fw
             .device
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -206,22 +183,20 @@ where
         Self {
             fw,
             buf,
-            size,
             marker: PhantomData,
         }
     }
 
-    fn from_gpu_parts(fw: &'fw crate::Framework, buf: wgpu::Buffer, size: u64) -> Self {
+    fn from_wgpu_buffer(fw: &'fw crate::Framework, buf: wgpu::Buffer) -> Self {
         Self {
             fw,
             buf,
-            size,
             marker: PhantomData,
         }
     }
 
-    fn into_gpu_parts(self) -> (wgpu::Buffer, u64) {
-        (self.buf, self.size)
+    fn into_wgpu_buffer(self) -> wgpu::Buffer {
+        self.buf
     }
 }
 
@@ -229,29 +204,24 @@ impl<'fw, T> GpuUniformBuffer<'fw, T>
 where
     T: bytemuck::Pod,
 {
-    /// Writes a buffer into this [`GpuUniformBuffer`], returning how many elements were written. The operation is instantly offloaded.
+    /// Attempts to write a slice into this [`GpuUniformBuffer`], returning how many elements were written.
     ///
     /// This function will attempt to write the entire contents of `buf` unless its capacity
-    /// exceeds the one of the source buffer, in which case `GpuBuffer::capacity()` elements are written.
-    pub fn write(&self, buf: &[T]) -> BufferResult<u64> {
+    /// exceeds the one of the source buffer, in which case `GpuUniformBuffer::capacity()` elements are written.
+    pub async fn write(&self, buf: &[T]) -> BufferResult<u64> {
         let input_size = (buf.len() * std::mem::size_of::<T>()) as u64;
-        let upload_size = if input_size > self.size {
-            self.size
+        let upload_size = if input_size > self.size() {
+            self.size()
         } else {
             input_size
         };
 
-        self.fw
-            .queue
-            .write_buffer(&self.buf, 0, bytemuck::cast_slice(buf));
+        let buf_slice = self.buf.slice(..upload_size);
+        GpuMapFuture::new(&self.fw.device, buf_slice, MapMode::Write).await?;
 
-        let encoder = self
-            .fw
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("GpuUniformBuffer::write"),
-            });
-        self.fw.queue.submit(Some(encoder.finish()));
+        buf_slice
+            .get_mapped_range_mut()
+            .copy_from_slice(bytemuck::cast_slice(buf));
 
         Ok(upload_size)
     }

@@ -23,6 +23,7 @@ ndarray = { version = "0.15", default-features = false, features = [
 ], optional = true }
 thiserror = "1.0"
 log = { version = "0.4", default-features = false }
+parking_lot = "0.12.1"
 
 [dev-dependencies]
 image = { version = "0.23.14", default-features = false, features = [
@@ -30,7 +31,7 @@ image = { version = "0.23.14", default-features = false, features = [
     "png",
 ] }
 lazy_static = "1.4.0"
-nokhwa = { version = "0.9.4", features = ["input-v4l", "input-msmf"] }
+nokhwa = { version = "0.10.3", features = ["input-v4l", "input-msmf"] }
 minifb = "0.23.0"
 
 [features]

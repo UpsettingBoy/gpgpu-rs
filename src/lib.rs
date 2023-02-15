@@ -74,6 +74,7 @@ pub use primitives::{BufOps, ImgOps};
 
 pub mod features;
 pub mod framework;
+pub mod future;
 pub mod kernel;
 pub mod primitives;
 
@@ -84,6 +85,12 @@ pub struct Framework {
     queue: wgpu::Queue,
     adapter: wgpu::Adapter,
 }
+
+// type GpuAccess = Arc<GpuAccessInner>;
+// struct GpuAccessInner {
+//     device: wgpu::Device,
+//     queue: wgpu::Queue,
+// }
 
 #[derive(PartialEq, Eq)]
 pub enum GpuBufferUsage {
@@ -101,17 +108,18 @@ pub enum GpuBufferUsage {
     ReadWrite,
 }
 
-/// Vector of contiguous homogeneous elements on GPU memory.
+/// Non-growing vector of contiguous homogeneous elements on GPU memory.
 /// Its elements must implement [`bytemuck::Pod`].
 ///
 /// Equivalent to OpenCL's Buffer objects.
 ///
 /// More information about its shader representation is
 /// under the [`DescriptorSet::bind_buffer`](crate::DescriptorSet::bind_buffer) documentation.
+// TODO Split into staging and device buffers
+// TODO Unmap buffer from memory once dropped. Check wgpu again. They require some unmapping.
 pub struct GpuBuffer<'fw, T> {
     fw: &'fw Framework,
     buf: wgpu::Buffer,
-    size: u64,
     marker: PhantomData<T>,
 }
 
@@ -126,7 +134,6 @@ pub struct GpuBuffer<'fw, T> {
 pub struct GpuUniformBuffer<'fw, T> {
     fw: &'fw Framework,
     buf: wgpu::Buffer,
-    size: u64,
     marker: PhantomData<T>,
 }
 

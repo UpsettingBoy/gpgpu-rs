@@ -51,12 +51,12 @@ where
         futures::executor::block_on(self.read())
     }
 
-    pub fn write(&self, array: ndarray::ArrayView<T, D>) -> ArrayResult<u64> {
+    pub async fn write<'st>(&self, array: ndarray::ArrayView<'st, T, D>) -> ArrayResult<u64> {
         let slice: Result<&[T], _> = array
             .as_slice_memory_order()
             .ok_or(NdarrayError::ArrayNotContiguous);
 
-        Ok(self.0.write(slice?)?)
+        Ok(self.0.write(slice?).await?)
     }
 
     pub fn to_gpu_buffer(self) -> GpuBuffer<'fw, T> {

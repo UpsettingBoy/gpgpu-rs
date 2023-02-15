@@ -33,16 +33,16 @@ where
         self.size() / std::mem::size_of::<T>() as u64
     }
 
-    /// Returns the number of bytes of the buffer.
+    /// Returns the byte size of the buffer.
     fn size(&self) -> u64;
 
     /// Returns a [`wgpu::BindingResource`] of all the elements in the buffer.
     fn as_binding_resource(&self) -> wgpu::BindingResource {
-        self.as_gpu_buffer().as_entire_binding()
+        self.as_wgpu_buffer().as_entire_binding()
     }
 
-    /// Returns the [`wgpu::Buffer`] that handles the GPU data of the buffer.
-    fn as_gpu_buffer(&self) -> &wgpu::Buffer;
+    /// Returns the [`wgpu::Buffer`] that handles this buffer.
+    fn as_wgpu_buffer(&self) -> &wgpu::Buffer;
 
     // ----------- Creation fns --------------
 
@@ -56,19 +56,13 @@ where
     /// The buffer `capacity` will be the `slice` length.
     fn from_slice(fw: &'fw Framework, slice: &[T]) -> Self;
 
-    /// Constructs a new buffer from a [`wgpu::Buffer`] and its byte `size`.
-    ///
-    /// # Safety
-    /// If any of the following conditions are not satisfied, the buffer will
-    /// panic at any time during its usage.
-    /// - `size` needs to be less than or equal to the `buf` creation size.
-    /// - `size` needs to be multiple of the `T` size.
-    fn from_gpu_parts(fw: &'fw Framework, buf: wgpu::Buffer, size: u64) -> Self;
+    /// Constructs a new buffer from a [`wgpu::Buffer`].
+    fn from_wgpu_buffer(fw: &'fw Framework, buf: wgpu::Buffer) -> Self;
 
     // --------- Decomposition fns -------------
 
     /// Decomposes a buffer into a [`wgpu::Buffer`] and its byte `size`.
-    fn into_gpu_parts(self) -> (wgpu::Buffer, u64);
+    fn into_wgpu_buffer(self) -> wgpu::Buffer;
 }
 
 /// Interface to get information, create and decompose GPU allocated images.
