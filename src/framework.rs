@@ -1,8 +1,13 @@
-use std::{sync::Arc, time::Duration};
+use std::{marker::PhantomData, sync::Arc, time::Duration};
+
+use unique_type::Unique;
 
 use crate::Framework;
 
-impl Default for Framework {
+impl<Tag> Default for Framework<Tag>
+where
+    Tag: Unique,
+{
     fn default() -> Self {
         let backend = wgpu::util::backend_bits_from_env().unwrap_or(wgpu::Backends::PRIMARY);
         let power_preference = wgpu::util::power_preference_from_env()
@@ -29,7 +34,10 @@ impl Default for Framework {
     }
 }
 
-impl Framework {
+impl<Tag> Framework<Tag>
+where
+    Tag: Unique,
+{
     /// Creates a new [`Framework`] instance from a [`wgpu::Adapter`] and a `polling_time`.
     ///
     /// Use this method when there are multiple GPUs in use or when a [`wgpu::Surface`] is required.
@@ -66,6 +74,7 @@ impl Framework {
             device,
             queue,
             adapter,
+            _tag: PhantomData,
         }
     }
 

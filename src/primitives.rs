@@ -16,15 +16,18 @@
 //! ## GpuConstImage
 //! Intended for read-only (in th shader) images on the GPU.
 
+use unique_type::Unique;
+
 use crate::Framework;
 
 pub mod buffers;
 pub mod images;
 
 /// Interface to get information, create and decompose GPU allocated buffers.
-pub trait BufOps<'fw, T>
+pub trait BufOps<'fw, T, Tag>
 where
     T: bytemuck::Pod,
+    Tag: Unique,
 {
     // ----------- Information fns -----------
 
@@ -49,12 +52,12 @@ where
     /// Constructs a new zeroed buffer with the specified capacity.
     ///
     /// The buffer will be able to hold exactly `capacity` elements.
-    fn with_capacity(fw: &'fw Framework, capacity: u64) -> Self;
+    fn with_capacity(fw: &'fw Framework<Tag>, capacity: u64) -> Self;
 
     /// Constructs a new buffer from a slice.
     ///
     /// The buffer `capacity` will be the `slice` length.
-    fn from_slice(fw: &'fw Framework, slice: &[T]) -> Self;
+    fn from_slice(fw: &'fw Framework<Tag>, slice: &[T]) -> Self;
 
     /// Constructs a new buffer from a [`wgpu::Buffer`] and its byte `size`.
     ///
@@ -63,7 +66,7 @@ where
     /// panic at any time during its usage.
     /// - `size` needs to be less than or equal to the `buf` creation size.
     /// - `size` needs to be multiple of the `T` size.
-    fn from_gpu_parts(fw: &'fw Framework, buf: wgpu::Buffer, size: u64) -> Self;
+    fn from_gpu_parts(fw: &'fw Framework<Tag>, buf: wgpu::Buffer, size: u64) -> Self;
 
     // --------- Decomposition fns -------------
 
@@ -72,7 +75,10 @@ where
 }
 
 /// Interface to get information, create and decompose GPU allocated images.
-pub trait ImgOps<'fw> {
+pub trait ImgOps<'fw, Tag>
+where
+    Tag: Unique,
+{
     // --------- Information fns --------------
 
     /// Returns a [`wgpu::BindingResource`] of the image.
@@ -90,15 +96,15 @@ pub trait ImgOps<'fw> {
     // ----------- Creation fns ---------------
 
     /// Constructs an empty image with the desired `width` and `height`.
-    fn new(fw: &'fw Framework, width: u32, height: u32) -> Self;
+    fn new(fw: &'fw Framework<Tag>, width: u32, height: u32) -> Self;
 
     /// Construct a new image from a bytes source `data` and its `width` and `height`.
     ///
     /// If `data` doesn't fit the image perfectly, it panics.
-    fn from_bytes(fw: &'fw Framework, data: &[u8], width: u32, height: u32) -> Self;
+    fn from_bytes(fw: &'fw Framework<Tag>, data: &[u8], width: u32, height: u32) -> Self;
 
     fn from_gpu_parts(
-        fw: &'fw Framework,
+        fw: &'fw Framework<Tag>,
         texture: wgpu::Texture,
         dimensions: wgpu::Extent3d,
     ) -> Self;

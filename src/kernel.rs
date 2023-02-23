@@ -1,5 +1,7 @@
 use std::{borrow::Cow, path::Path};
 
+use unique_type::Unique;
+
 use crate::{
     primitives::{BufOps, ImgOps, PixelInfo},
     DescriptorSet, Framework, GpuBuffer, GpuBufferUsage, GpuConstImage, GpuImage, GpuUniformBuffer,
@@ -30,9 +32,13 @@ impl<'res> DescriptorSet<'res> {
     ///     uvec3 c;
     /// };
     /// ```
-    pub fn bind_uniform_buffer<T>(mut self, uniform_buf: &'res GpuUniformBuffer<T>) -> Self
+    pub fn bind_uniform_buffer<T, Tag>(
+        mut self,
+        uniform_buf: &'res GpuUniformBuffer<T, Tag>,
+    ) -> Self
     where
         T: bytemuck::Pod,
+        Tag: Unique,
     {
         let bind_id = self.set_layout.len() as u32;
 
@@ -76,9 +82,14 @@ impl<'res> DescriptorSet<'res> {
     ///     int data[];
     /// };
     /// ```
-    pub fn bind_buffer<T>(mut self, storage_buf: &'res GpuBuffer<T>, usage: GpuBufferUsage) -> Self
+    pub fn bind_buffer<T, Tag>(
+        mut self,
+        storage_buf: &'res GpuBuffer<T, Tag>,
+        usage: GpuBufferUsage,
+    ) -> Self
     where
         T: bytemuck::Pod,
+        Tag: Unique,
     {
         let bind_id = self.set_layout.len() as u32;
 
@@ -118,7 +129,11 @@ impl<'res> DescriptorSet<'res> {
     /// ```glsl
     /// layout (set=0, binding=0, rgba8uint) uimage2D myStorageImg;
     /// ```
-    pub fn bind_image<P: PixelInfo>(mut self, img: &'res GpuImage<P>) -> Self {
+    pub fn bind_image<P, Tag>(mut self, img: &'res GpuImage<P, Tag>) -> Self
+    where
+        P: PixelInfo,
+        Tag: Unique,
+    {
         let bind_id = self.set_layout.len() as u32;
 
         let bind_entry = wgpu::BindGroupLayoutEntry {
@@ -155,9 +170,10 @@ impl<'res> DescriptorSet<'res> {
     /// ```glsl
     /// layout (set=0, binding=0) utexture2D myTexture;
     /// ```
-    pub fn bind_const_image<P>(mut self, img: &'res GpuConstImage<P>) -> Self
+    pub fn bind_const_image<P, Tag>(mut self, img: &'res GpuConstImage<P, Tag>) -> Self
     where
         P: PixelInfo,
+        Tag: Unique,
     {
         let bind_id = self.set_layout.len() as u32;
 
@@ -186,7 +202,10 @@ impl<'res> DescriptorSet<'res> {
 
 impl Shader {
     /// Initialises a [`Shader`] from a SPIR-V file.
-    pub fn from_spirv_file(fw: &Framework, path: impl AsRef<Path>) -> std::io::Result<Self> {
+    pub fn from_spirv_file<Tag>(
+        fw: &Framework<Tag>,
+        path: impl AsRef<Path>,
+    ) -> std::io::Result<Self> {
         let bytes = std::fs::read(&path)?;
         let shader_name = path.as_ref().to_str();
 
@@ -194,7 +213,7 @@ impl Shader {
     }
 
     /// Initialises a [`Shader`] from SPIR-V bytes with an optional `name`.
-    pub fn from_spirv_bytes(fw: &Framework, bytes: &[u8], name: Option<&str>) -> Self {
+    pub fn from_spirv_bytes<Tag>(fw: &Framework<Tag>, bytes: &[u8], name: Option<&str>) -> Self {
         let source = wgpu::util::make_spirv(bytes);
 
         let shader = fw
@@ -208,7 +227,10 @@ impl Shader {
     }
 
     /// Initialises a [`Shader`] from a `WGSL` file.
-    pub fn from_wgsl_file(fw: &Framework, path: impl AsRef<Path>) -> std::io::Result<Self> {
+    pub fn from_wgsl_file<Tag>(
+        fw: &Framework<Tag>,
+        path: impl AsRef<Path>,
+    ) -> std::io::Result<Self> {
         let source_string = std::fs::read_to_string(&path)?;
         let shader_name = path.as_ref().to_str();
 
@@ -221,8 +243,8 @@ impl Shader {
     }
 
     /// Initialises a [`Shader`] from a `WGSL` string.
-    pub fn from_wgsl_string(
-        fw: &Framework,
+    pub fn from_wgsl_string<Tag>(
+        fw: &Framework<Tag>,
         source: String,
         name: Option<&str>,
     ) -> std::io::Result<Self> {
@@ -252,9 +274,9 @@ impl<'sha, 'res> Program<'sha, 'res> {
     }
 }
 
-impl<'fw> Kernel<'fw> {
+impl<'fw, Tag> Kernel<'fw, Tag> {
     /// Creates a [`Kernel`] from a [`Program`].
-    pub fn new<'sha, 'res>(fw: &'fw Framework, program: Program<'sha, 'res>) -> Self {
+    pub fn new<'sha, 'res>(fw: &'fw Framework<Tag>, program: Program<'sha, 'res>) -> Self {
         let mut layouts = Vec::new();
         let mut sets = Vec::new();
 

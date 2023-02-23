@@ -7,6 +7,7 @@ use crate::{
 };
 
 use image::ImageBuffer;
+use unique_type::Unique;
 
 /// Contains information about the `image::ImageBuffer` -> `gpgpu::GpuImage` or `gpgpu::GpuConstImage` images conversion.
 pub trait ImageToGpgpu {
@@ -56,16 +57,17 @@ image_to_gpgpu_impl! {
 
 type PixelContainer<P> = Vec<<<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel>;
 
-impl<'fw, Pixel> GpuImage<'fw, Pixel>
+impl<'fw, Pixel, Tag> GpuImage<'fw, Pixel, Tag>
 where
     Pixel: image::Pixel + ImageToGpgpu + 'static,
     Pixel::Subpixel: bytemuck::Pod,
+    Tag: Unique,
 {
     /// Constructs a new [`GpuImage`] from a [`image::ImageBuffer`].
     pub fn from_image_buffer<Container>(
-        fw: &'fw crate::Framework,
+        fw: &'fw crate::Framework<Tag>,
         img: &ImageBuffer<Pixel, Container>,
-    ) -> GpuImage<'fw, Pixel::GpgpuPixel>
+    ) -> GpuImage<'fw, Pixel::GpgpuPixel, Tag>
     where
         Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
     {
@@ -80,9 +82,9 @@ where
 
     /// Constructs a new normalised [`GpuImage`] from a [`image::ImageBuffer`].
     pub fn from_image_buffer_normalised<Container>(
-        fw: &'fw crate::Framework,
+        fw: &'fw crate::Framework<Tag>,
         img: &ImageBuffer<Pixel, Container>,
-    ) -> GpuImage<'fw, Pixel::NormGpgpuPixel>
+    ) -> GpuImage<'fw, Pixel::NormGpgpuPixel, Tag>
     where
         Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
     {
@@ -96,16 +98,17 @@ where
     }
 }
 
-impl<'fw, Pixel> GpuConstImage<'fw, Pixel>
+impl<'fw, Pixel, Tag> GpuConstImage<'fw, Pixel, Tag>
 where
     Pixel: image::Pixel + ImageToGpgpu + 'static,
     Pixel::Subpixel: bytemuck::Pod,
+    Tag: Unique,
 {
     /// Constructs a new [`GpuConstImage`] from a [`image::ImageBuffer`].
     pub fn from_image_buffer<Container>(
-        fw: &'fw crate::Framework,
+        fw: &'fw crate::Framework<Tag>,
         img: &ImageBuffer<Pixel, Container>,
-    ) -> GpuConstImage<'fw, Pixel::GpgpuPixel>
+    ) -> GpuConstImage<'fw, Pixel::GpgpuPixel, Tag>
     where
         Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
     {
@@ -120,9 +123,9 @@ where
 
     /// Constructs a new normalised [`GpuConstImage`] from a [`image::ImageBuffer`].
     pub fn from_image_buffer_normalised<Container>(
-        fw: &'fw crate::Framework,
+        fw: &'fw crate::Framework<Tag>,
         img: &ImageBuffer<Pixel, Container>,
-    ) -> GpuConstImage<'fw, Pixel::NormGpgpuPixel>
+    ) -> GpuConstImage<'fw, Pixel::NormGpgpuPixel, Tag>
     where
         Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
     {
@@ -136,10 +139,11 @@ where
     }
 }
 
-impl<'fw, P> GpuImage<'fw, P>
+impl<'fw, P, Tag> GpuImage<'fw, P, Tag>
 where
     P: PixelInfo + GpgpuToImage,
     <<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel: bytemuck::Pod,
+    Tag: Unique,
 {
     /// Pulls some elements from the [`GpuImage`] into buf, returning how many pixels were read.
     pub async fn read_into_image_buffer(
@@ -205,7 +209,7 @@ where
     }
 }
 
-impl<'fw, P> GpuConstImage<'fw, P>
+impl<'fw, P, Tag> GpuConstImage<'fw, P, Tag>
 where
     P: PixelInfo + GpgpuToImage,
     <<P as GpgpuToImage>::ImgPixel as image::Pixel>::Subpixel: bytemuck::Pod,

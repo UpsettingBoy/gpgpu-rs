@@ -1,4 +1,5 @@
 use thiserror::Error;
+use unique_type::Unique;
 
 use crate::{primitives::buffers::BufferError, BufOps, DescriptorSet, GpuBuffer, GpuBufferUsage};
 
@@ -20,15 +21,16 @@ pub enum ArrayError {
 
 pub type ArrayResult<T> = Result<T, ArrayError>;
 
-pub struct GpuArray<'fw, T, D>(GpuBuffer<'fw, T>, D);
+pub struct GpuArray<'fw, T, D, Tag>(GpuBuffer<'fw, T, Tag>, D);
 
-impl<'fw, T, D> GpuArray<'fw, T, D>
+impl<'fw, T, D, Tag> GpuArray<'fw, T, D, Tag>
 where
     T: bytemuck::Pod,
     D: ndarray::Dimension,
+    Tag: Unique,
 {
     pub fn from_array(
-        fw: &'fw crate::Framework,
+        fw: &'fw crate::Framework<Tag>,
         array: ndarray::ArrayView<T, D>,
     ) -> ArrayResult<Self> {
         let slice: Result<&[T], _> = array
@@ -59,16 +61,21 @@ where
         Ok(self.0.write(slice?)?)
     }
 
-    pub fn to_gpu_buffer(self) -> GpuBuffer<'fw, T> {
+    pub fn to_gpu_buffer(self) -> GpuBuffer<'fw, T, Tag> {
         self.0
     }
 }
 
 impl<'res> DescriptorSet<'res> {
-    pub fn bind_array<T, D>(mut self, array: &'res GpuArray<T, D>, access: GpuBufferUsage) -> Self
+    pub fn bind_array<T, D, Tag>(
+        mut self,
+        array: &'res GpuArray<T, D, Tag>,
+        access: GpuBufferUsage,
+    ) -> Self
     where
         T: bytemuck::Pod,
         D: ndarray::Dimension,
+        Tag: Unique,
     {
         let bind_id = self.set_layout.len() as u32;
 

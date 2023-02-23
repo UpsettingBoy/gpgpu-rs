@@ -2,7 +2,7 @@ use gpgpu::BufOps;
 
 // Simple compute example that multiplies 2 vectors A and B, storing the result in a vector C.
 fn main() {
-    let fw = gpgpu::Framework::default(); // Framework initialization.
+    let fw = gpgpu::Framework::<unique_type::new!()>::default(); // Framework initialization.
 
     let shader = gpgpu::Shader::from_wgsl_file(&fw, "examples/simple-compute/shader.wgsl").unwrap(); // Shader loading.
 

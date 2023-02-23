@@ -1,6 +1,7 @@
 use std::marker::PhantomData;
 
 use thiserror::Error;
+use unique_type::Unique;
 use wgpu::{util::DeviceExt, MapMode};
 
 use crate::{GpuBuffer, GpuUniformBuffer};
@@ -28,9 +29,10 @@ pub enum BufferError {
     AsyncMapError(#[from] wgpu::BufferAsyncError),
 }
 
-impl<'fw, T> BufOps<'fw, T> for GpuBuffer<'fw, T>
+impl<'fw, T, Tag> BufOps<'fw, T, Tag> for GpuBuffer<'fw, T, Tag>
 where
     T: bytemuck::Pod,
+    Tag: Unique,
 {
     fn size(&self) -> u64 {
         self.size
@@ -40,7 +42,7 @@ where
         &self.buf
     }
 
-    fn with_capacity(fw: &'fw crate::Framework, capacity: u64) -> Self {
+    fn with_capacity(fw: &'fw crate::Framework<Tag>, capacity: u64) -> Self {
         let size = capacity * std::mem::size_of::<T>() as u64;
         let buf = fw.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("GpuBuffer::with_capacity"),
@@ -57,7 +59,7 @@ where
         }
     }
 
-    fn from_slice(fw: &'fw crate::Framework, slice: &[T]) -> Self {
+    fn from_slice(fw: &'fw crate::Framework<Tag>, slice: &[T]) -> Self {
         let size = (slice.len() * std::mem::size_of::<T>()) as u64;
         let buf = fw
             .device
@@ -75,7 +77,7 @@ where
         }
     }
 
-    fn from_gpu_parts(fw: &'fw crate::Framework, buf: wgpu::Buffer, size: u64) -> Self {
+    fn from_gpu_parts(fw: &'fw crate::Framework<Tag>, buf: wgpu::Buffer, size: u64) -> Self {
         Self {
             fw,
             buf,
@@ -89,9 +91,10 @@ where
     }
 }
 
-impl<'fw, T> GpuBuffer<'fw, T>
+impl<'fw, T, Tag> GpuBuffer<'fw, T, Tag>
 where
     T: bytemuck::Pod,
+    Tag: Unique,
 {
     /// Pulls some elements from the [`GpuBuffer`] into `buf`, returning how many elements were read.
     pub async fn read(&self, buf: &mut [T]) -> BufferResult<u64> {
@@ -163,9 +166,10 @@ where
     }
 }
 
-impl<'fw, T> BufOps<'fw, T> for GpuUniformBuffer<'fw, T>
+impl<'fw, T, Tag> BufOps<'fw, T, Tag> for GpuUniformBuffer<'fw, T, Tag>
 where
     T: bytemuck::Pod,
+    Tag: Unique,
 {
     fn size(&self) -> u64 {
         self.size
@@ -175,7 +179,7 @@ where
         &self.buf
     }
 
-    fn with_capacity(fw: &'fw crate::Framework, capacity: u64) -> Self {
+    fn with_capacity(fw: &'fw crate::Framework<Tag>, capacity: u64) -> Self {
         let size = capacity * std::mem::size_of::<T>() as u64;
 
         let buf = fw.device.create_buffer(&wgpu::BufferDescriptor {
@@ -193,7 +197,7 @@ where
         }
     }
 
-    fn from_slice(fw: &'fw crate::Framework, slice: &[T]) -> Self {
+    fn from_slice(fw: &'fw crate::Framework<Tag>, slice: &[T]) -> Self {
         let size = (slice.len() * std::mem::size_of::<T>()) as u64;
         let buf = fw
             .device
@@ -211,7 +215,7 @@ where
         }
     }
 
-    fn from_gpu_parts(fw: &'fw crate::Framework, buf: wgpu::Buffer, size: u64) -> Self {
+    fn from_gpu_parts(fw: &'fw crate::Framework<Tag>, buf: wgpu::Buffer, size: u64) -> Self {
         Self {
             fw,
             buf,
@@ -225,7 +229,7 @@ where
     }
 }
 
-impl<'fw, T> GpuUniformBuffer<'fw, T>
+impl<'fw, T, Tag> GpuUniformBuffer<'fw, T, Tag>
 where
     T: bytemuck::Pod,
 {

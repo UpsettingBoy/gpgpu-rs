@@ -1,6 +1,7 @@
 use std::marker::PhantomData;
 
 use thiserror::Error;
+use unique_type::Unique;
 use wgpu::{util::DeviceExt, MapMode};
 
 use crate::{primitives::buffers, GpuConstImage, GpuImage};
@@ -35,9 +36,10 @@ pub enum ImageInputError {
     NotIntegerRowNumber,
 }
 
-impl<'fw, P> ImgOps<'fw> for GpuImage<'fw, P>
+impl<'fw, P, Tag> ImgOps<'fw, Tag> for GpuImage<'fw, P, Tag>
 where
     P: PixelInfo,
+    Tag: Unique,
 {
     fn as_binding_resource(&self) -> wgpu::BindingResource {
         wgpu::BindingResource::TextureView(&self.full_view)
@@ -55,7 +57,7 @@ where
         (self.size.width, self.size.height)
     }
 
-    fn new(fw: &'fw crate::Framework, width: u32, height: u32) -> Self {
+    fn new(fw: &'fw crate::Framework<Tag>, width: u32, height: u32) -> Self {
         let size = wgpu::Extent3d {
             width,
             height,
@@ -85,7 +87,7 @@ where
         }
     }
 
-    fn from_bytes(fw: &'fw crate::Framework, data: &[u8], width: u32, height: u32) -> Self {
+    fn from_bytes(fw: &'fw crate::Framework<Tag>, data: &[u8], width: u32, height: u32) -> Self {
         let size = wgpu::Extent3d {
             width,
             height,
@@ -129,7 +131,7 @@ where
     /// - `T` needs to be the exact same codification `texture` is.
     /// - `dimensions` needs to have the exact `width` and `height` of `texture` and `depth_or_array_layers = 1`
     fn from_gpu_parts(
-        fw: &'fw crate::Framework,
+        fw: &'fw crate::Framework<Tag>,
         texture: wgpu::Texture,
         dimensions: wgpu::Extent3d,
     ) -> Self {
@@ -149,9 +151,10 @@ where
     }
 }
 
-impl<'fw, P> GpuImage<'fw, P>
+impl<'fw, P, Tag> GpuImage<'fw, P, Tag>
 where
     P: PixelInfo,
+    Tag: Unique,
 {
     /// Pulls some elements from the [`GpuImage`] into `buf`, returning how many pixels were read.
     pub async fn read(&self, buf: &mut [u8]) -> Result<usize, ImageOutputError> {
@@ -312,9 +315,10 @@ where
     }
 }
 
-impl<'fw, P> ImgOps<'fw> for GpuConstImage<'fw, P>
+impl<'fw, P, Tag> ImgOps<'fw, Tag> for GpuConstImage<'fw, P, Tag>
 where
     P: PixelInfo,
+    Tag: Unique,
 {
     fn as_binding_resource(&self) -> wgpu::BindingResource {
         wgpu::BindingResource::TextureView(&self.full_view)
@@ -332,7 +336,7 @@ where
         (self.size.width, self.size.height)
     }
 
-    fn new(fw: &'fw crate::Framework, width: u32, height: u32) -> Self {
+    fn new(fw: &'fw crate::Framework<Tag>, width: u32, height: u32) -> Self {
         let size = wgpu::Extent3d {
             width,
             height,
@@ -362,7 +366,7 @@ where
         }
     }
 
-    fn from_bytes(fw: &'fw crate::Framework, data: &[u8], width: u32, height: u32) -> Self {
+    fn from_bytes(fw: &'fw crate::Framework<Tag>, data: &[u8], width: u32, height: u32) -> Self {
         let size = wgpu::Extent3d {
             width,
             height,
@@ -405,7 +409,7 @@ where
     /// - `T` needs to be the exact same codification `texture` is.
     /// - `dimensions` needs to have the exact `width` and `height` of `texture` and `depth_or_array_layers = 1`
     fn from_gpu_parts(
-        fw: &'fw crate::Framework,
+        fw: &'fw crate::Framework<Tag>,
         texture: wgpu::Texture,
         dimensions: wgpu::Extent3d,
     ) -> Self {
@@ -425,7 +429,7 @@ where
     }
 }
 
-impl<'fw, P> GpuConstImage<'fw, P>
+impl<'fw, P, Tag> GpuConstImage<'fw, P, Tag>
 where
     P: PixelInfo,
 {

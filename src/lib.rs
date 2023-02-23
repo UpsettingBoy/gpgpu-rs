@@ -79,10 +79,11 @@ pub mod primitives;
 
 /// Entry point of `gpgpu`. A [`Framework`] must be created
 /// first as all GPU primitives needs it to be created.
-pub struct Framework {
+pub struct Framework<Tag> {
     device: Arc<wgpu::Device>,
     queue: wgpu::Queue,
     adapter: wgpu::Adapter,
+    _tag: PhantomData<Tag>,
 }
 
 #[derive(PartialEq, Eq)]
@@ -108,8 +109,8 @@ pub enum GpuBufferUsage {
 ///
 /// More information about its shader representation is
 /// under the [`DescriptorSet::bind_buffer`](crate::DescriptorSet::bind_buffer) documentation.
-pub struct GpuBuffer<'fw, T> {
-    fw: &'fw Framework,
+pub struct GpuBuffer<'fw, T, Tag> {
+    fw: &'fw Framework<Tag>,
     buf: wgpu::Buffer,
     size: u64,
     marker: PhantomData<T>,
@@ -123,8 +124,8 @@ pub struct GpuBuffer<'fw, T> {
 ///
 /// More information about its shader representation is
 /// under the [`DescriptorSet::bind_uniform_buffer`](crate::DescriptorSet::bind_uniform_buffer) documentation.
-pub struct GpuUniformBuffer<'fw, T> {
-    fw: &'fw Framework,
+pub struct GpuUniformBuffer<'fw, T, Tag> {
+    fw: &'fw Framework<Tag>,
     buf: wgpu::Buffer,
     size: u64,
     marker: PhantomData<T>,
@@ -136,8 +137,8 @@ pub struct GpuUniformBuffer<'fw, T> {
 ///
 /// More information about its shader representation is
 /// under the [`DescriptorSet::bind_image`](crate::DescriptorSet::bind_image) documentation.
-pub struct GpuImage<'fw, P> {
-    fw: &'fw Framework,
+pub struct GpuImage<'fw, P, Tag> {
+    fw: &'fw Framework<Tag>,
     texture: wgpu::Texture,
     size: wgpu::Extent3d,
     full_view: wgpu::TextureView,
@@ -150,8 +151,8 @@ pub struct GpuImage<'fw, P> {
 ///
 /// More information about its shader representation is
 /// under the [`DescriptorSet::bind_const_image`](crate::DescriptorSet::bind_const_image) documentation.
-pub struct GpuConstImage<'fw, P> {
-    fw: &'fw Framework,
+pub struct GpuConstImage<'fw, P, Tag> {
+    fw: &'fw Framework<Tag>,
     texture: wgpu::Texture,
     size: wgpu::Extent3d,
     full_view: wgpu::TextureView,
@@ -180,8 +181,8 @@ pub struct DescriptorSet<'res> {
 /// Used to enqueue the execution of a shader with the bidings provided.
 ///
 /// Equivalent to OpenCL's Kernel.
-pub struct Kernel<'fw> {
-    fw: &'fw Framework,
+pub struct Kernel<'fw, Tag> {
+    fw: &'fw Framework<Tag>,
     pipeline: wgpu::ComputePipeline,
     sets: Vec<wgpu::BindGroup>,
     entry_point: String,
