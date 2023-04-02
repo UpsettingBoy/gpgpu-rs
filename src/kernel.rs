@@ -7,6 +7,11 @@ use crate::{
 };
 
 impl<'res> DescriptorSet<'res> {
+    pub fn set_id(mut self, id: u32) -> Self {
+        self.set_id = id;
+        self
+    }
+
     /// Binds a [`GpuUniformBuffer`] as a uniform buffer in the shader.
     ///
     /// ### Example WGSL syntax:
@@ -259,7 +264,9 @@ impl<'fw> Kernel<'fw> {
         let mut sets = Vec::new();
 
         // Unwraping of descriptors from program
-        for (set_id, desc) in program.descriptors.iter().enumerate() {
+        for desc in program.descriptors.iter() {
+            let set_id = desc.set_id;
+
             let set_layout = fw
                 .device
                 .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -276,7 +283,7 @@ impl<'fw> Kernel<'fw> {
             log::debug!("Binding set = {} with {:#?}", set_id, &desc.binds);
 
             layouts.push(set_layout);
-            sets.push(set);
+            sets.push((set_id, set));
         }
 
         // Compute pipeline bindings
@@ -324,8 +331,8 @@ impl<'fw> Kernel<'fw> {
 
             cpass.set_pipeline(&self.pipeline);
 
-            for (id_set, set) in self.sets.iter().enumerate() {
-                cpass.set_bind_group(id_set as u32, set, &[]);
+            for (id_set, set) in self.sets.iter() {
+                cpass.set_bind_group(*id_set as u32, set, &[]);
             }
 
             cpass.insert_debug_marker(&self.entry_point);

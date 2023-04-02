@@ -173,6 +173,7 @@ pub struct Program<'sha, 'res> {
 /// Contains a binding group of resources.
 #[derive(Default, Clone)]
 pub struct DescriptorSet<'res> {
+    set_id: u32,
     set_layout: Vec<wgpu::BindGroupLayoutEntry>,
     binds: Vec<wgpu::BindGroupEntry<'res>>,
 }
@@ -183,6 +184,6 @@ pub struct DescriptorSet<'res> {
 pub struct Kernel<'fw> {
     fw: &'fw Framework,
     pipeline: wgpu::ComputePipeline,
-    sets: Vec<wgpu::BindGroup>,
+    sets: Vec<(u32, wgpu::BindGroup)>,
     entry_point: String,
 }
