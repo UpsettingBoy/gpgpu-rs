@@ -7,9 +7,12 @@ use crate::{
 };
 
 impl<'res> DescriptorSet<'res> {
-    pub fn set_id(mut self, id: u32) -> Self {
-        self.set_id = id;
-        self
+    pub fn new(id: u32) -> Self {
+        Self {
+            set_id: id,
+            set_layout: vec![],
+            binds: vec![],
+        }
     }
 
     /// Binds a [`GpuUniformBuffer`] as a uniform buffer in the shader.
