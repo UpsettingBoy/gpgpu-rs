@@ -1,6 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
-use crate::Framework;
+use crate::{BindGroupLayoutBuilder, Framework};
 
 impl Default for Framework {
     fn default() -> Self {
@@ -63,6 +63,7 @@ impl Framework {
         });
 
         Self {
+            bind_group_layouts: vec![],
             device,
             queue,
             adapter,
@@ -82,5 +83,23 @@ impl Framework {
     /// Gets the limits of this [`Framework`].
     pub fn limits(&self) -> wgpu::Limits {
         self.device.limits()
+    }
+
+    /// Adds a new bind group layout
+    pub fn set_bind_group_layouts(
+        mut self,
+        bind_group_layout: Vec<BindGroupLayoutBuilder>,
+    ) -> Self {
+        self.bind_group_layouts = bind_group_layout
+            .iter()
+            .map(|bind_group_layout| {
+                self.device
+                    .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                        label: None,
+                        entries: &bind_group_layout.entries,
+                    })
+            })
+            .collect::<Vec<_>>();
+        self
     }
 }

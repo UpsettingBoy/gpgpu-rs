@@ -1,8 +1,8 @@
 use std::io::Write;
 
 use gpgpu::{
-    primitives::pixels::Rgba8UintNorm, BufOps, DescriptorSet, Framework, GpuConstImage, GpuImage,
-    GpuUniformBuffer, ImgOps,
+    primitives::pixels::Rgba8UintNorm, BindGroupLayoutBuilder, BufOps, DescriptorSet, Framework,
+    GpuConstImage, GpuImage, GpuUniformBuffer, ImgOps,
 };
 
 use minifb::{Key, Window, WindowOptions};
@@ -12,7 +12,10 @@ const WIDTH: usize = 1280;
 const HEIGHT: usize = 720;
 
 fn main() {
-    let fw = Framework::default();
+    let fw = Framework::default().set_bind_group_layouts(vec![BindGroupLayoutBuilder::new()
+        .add_const_image::<Rgba8UintNorm>()
+        .add_image::<Rgba8UintNorm>()
+        .add_uniform_buffer()]);
 
     // Camera initilization. Config may not work if not same cam as the Thinkpad T480 one.
     // Change parameters accordingly

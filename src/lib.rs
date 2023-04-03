@@ -70,6 +70,7 @@ use std::{marker::PhantomData, sync::Arc};
 
 #[cfg(feature = "integrate-ndarray")]
 pub use features::integrate_ndarray::GpuArray;
+use primitives::PixelInfo;
 pub use primitives::{BufOps, ImgOps};
 
 pub mod features;
@@ -80,12 +81,13 @@ pub mod primitives;
 /// Entry point of `gpgpu`. A [`Framework`] must be created
 /// first as all GPU primitives needs it to be created.
 pub struct Framework {
+    bind_group_layouts: Vec<wgpu::BindGroupLayout>,
     device: Arc<wgpu::Device>,
     queue: wgpu::Queue,
     adapter: wgpu::Adapter,
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub enum GpuBufferUsage {
     /// Read-only object.
     /// ### Example WGSL syntax:
@@ -171,10 +173,9 @@ pub struct Program<'sha, 'res> {
 }
 
 /// Contains a binding group of resources.
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct DescriptorSet<'res> {
     set_id: u32,
-    set_layout: Vec<wgpu::BindGroupLayoutEntry>,
     binds: Vec<wgpu::BindGroupEntry<'res>>,
 }
 
@@ -186,4 +187,102 @@ pub struct Kernel<'fw> {
     pipeline: wgpu::ComputePipeline,
     sets: Vec<(u32, wgpu::BindGroup)>,
     entry_point: String,
+}
+
+pub struct BindGroupLayoutBuilder {
+    entries: Vec<wgpu::BindGroupLayoutEntry>,
+    bind_id: u32,
+}
+
+impl BindGroupLayoutBuilder {
+    pub fn new() -> Self {
+        Self {
+            entries: vec![],
+            bind_id: 0,
+        }
+    }
+
+    pub fn add_buffer(mut self, usage: GpuBufferUsage) -> Self {
+        self.entries.push(wgpu::BindGroupLayoutEntry {
+            binding: self.bind_id,
+            visibility: wgpu::ShaderStages::COMPUTE,
+            ty: wgpu::BindingType::Buffer {
+                has_dynamic_offset: false,
+                min_binding_size: None,
+                ty: wgpu::BufferBindingType::Storage {
+                    read_only: usage == GpuBufferUsage::ReadOnly,
+                },
+            },
+            count: None,
+        });
+
+        self.bind_id += 1;
+        self
+    }
+
+    pub fn add_uniform_buffer(mut self) -> Self {
+        self.entries.push(wgpu::BindGroupLayoutEntry {
+            binding: self.bind_id,
+            visibility: wgpu::ShaderStages::COMPUTE,
+            ty: wgpu::BindingType::Buffer {
+                has_dynamic_offset: false,
+                min_binding_size: None,
+                ty: wgpu::BufferBindingType::Uniform,
+            },
+            count: None,
+        });
+
+        self.bind_id += 1;
+        self
+    }
+
+    pub fn add_image<P: PixelInfo>(mut self) -> Self {
+        self.entries.push(wgpu::BindGroupLayoutEntry {
+            binding: self.bind_id,
+            visibility: wgpu::ShaderStages::COMPUTE,
+            ty: wgpu::BindingType::StorageTexture {
+                access: wgpu::StorageTextureAccess::WriteOnly,
+                format: P::wgpu_format(),
+                view_dimension: wgpu::TextureViewDimension::D2,
+            },
+            count: None,
+        });
+
+        self.bind_id += 1;
+        self
+    }
+
+    pub fn add_const_image<P: PixelInfo>(mut self) -> Self {
+        self.entries.push(wgpu::BindGroupLayoutEntry {
+            binding: self.bind_id,
+            visibility: wgpu::ShaderStages::COMPUTE,
+            ty: wgpu::BindingType::Texture {
+                sample_type: P::wgpu_texture_sample(),
+                multisampled: false,
+                view_dimension: wgpu::TextureViewDimension::D2,
+            },
+            count: None,
+        });
+
+        self.bind_id += 1;
+        self
+    }
+
+    pub fn add_array(mut self, access: GpuBufferUsage) -> Self {
+        self.entries.push(wgpu::BindGroupLayoutEntry {
+            binding: self.bind_id,
+            visibility: wgpu::ShaderStages::COMPUTE,
+            ty: wgpu::BindingType::Buffer {
+                has_dynamic_offset: false,
+                min_binding_size: None,
+                ty: wgpu::BufferBindingType::Storage {
+                    read_only: access == GpuBufferUsage::ReadOnly,
+                },
+            },
+            count: None,
+        });
+
+        self.bind_id += 1;
+        self
+    }
 }

@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use crate::{primitives::buffers::BufferError, BufOps, DescriptorSet, GpuBuffer, GpuBufferUsage};
+use crate::{primitives::buffers::BufferError, BufOps, DescriptorSet, GpuBuffer};
 
 #[derive(Error, Debug)]
 pub enum NdarrayError {
@@ -65,32 +65,18 @@ where
 }
 
 impl<'res> DescriptorSet<'res> {
-    pub fn bind_array<T, D>(mut self, array: &'res GpuArray<T, D>, access: GpuBufferUsage) -> Self
+    pub fn bind_array<T, D>(mut self, array: &'res GpuArray<T, D>) -> Self
     where
         T: bytemuck::Pod,
         D: ndarray::Dimension,
     {
-        let bind_id = self.set_layout.len() as u32;
-
-        let bind_entry = wgpu::BindGroupLayoutEntry {
-            binding: bind_id,
-            visibility: wgpu::ShaderStages::COMPUTE,
-            ty: wgpu::BindingType::Buffer {
-                has_dynamic_offset: false,
-                min_binding_size: None,
-                ty: wgpu::BufferBindingType::Storage {
-                    read_only: access == GpuBufferUsage::ReadOnly,
-                },
-            },
-            count: None,
-        };
+        let bind_id = self.binds.len() as u32;
 
         let bind = wgpu::BindGroupEntry {
             binding: bind_id,
             resource: array.0.as_binding_resource(),
         };
 
-        self.set_layout.push(bind_entry);
         self.binds.push(bind);
 
         self

@@ -1,8 +1,12 @@
-use gpgpu::{primitives::pixels::Rgba8Uint, ImgOps};
+use gpgpu::{primitives::pixels::Rgba8Uint, BindGroupLayoutBuilder, ImgOps};
 
 // This example simply mirrors an image.
 fn main() {
-    let fw = gpgpu::Framework::default();
+    let fw = gpgpu::Framework::default()
+        .set_bind_group_layouts(vec![BindGroupLayoutBuilder::new()
+            .add_const_image::<Rgba8Uint>()
+            .add_image::<Rgba8Uint>()]);
+
     let shader = gpgpu::Shader::from_wgsl_file(&fw, "examples/mirror-image/shader.wgsl").unwrap();
 
     let dynamic_img = image::open("examples/mirror-image/monke.jpg").unwrap(); // RGB8 image ...

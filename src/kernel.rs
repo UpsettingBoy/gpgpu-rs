@@ -2,15 +2,14 @@ use std::{borrow::Cow, path::Path};
 
 use crate::{
     primitives::{BufOps, ImgOps, PixelInfo},
-    DescriptorSet, Framework, GpuBuffer, GpuBufferUsage, GpuConstImage, GpuImage, GpuUniformBuffer,
-    Kernel, Program, Shader,
+    DescriptorSet, Framework, GpuBuffer, GpuConstImage, GpuImage, GpuUniformBuffer, Kernel,
+    Program, Shader,
 };
 
 impl<'res> DescriptorSet<'res> {
     pub fn new(id: u32) -> Self {
         Self {
             set_id: id,
-            set_layout: vec![],
             binds: vec![],
         }
     }
@@ -42,25 +41,13 @@ impl<'res> DescriptorSet<'res> {
     where
         T: bytemuck::Pod,
     {
-        let bind_id = self.set_layout.len() as u32;
-
-        let bind_entry = wgpu::BindGroupLayoutEntry {
-            binding: bind_id,
-            visibility: wgpu::ShaderStages::COMPUTE,
-            ty: wgpu::BindingType::Buffer {
-                has_dynamic_offset: false,
-                min_binding_size: None,
-                ty: wgpu::BufferBindingType::Uniform,
-            },
-            count: None,
-        };
+        let bind_id = self.binds.len() as u32;
 
         let bind = wgpu::BindGroupEntry {
             binding: bind_id,
             resource: uniform_buf.as_binding_resource(),
         };
 
-        self.set_layout.push(bind_entry);
         self.binds.push(bind);
 
         self
@@ -84,31 +71,17 @@ impl<'res> DescriptorSet<'res> {
     ///     int data[];
     /// };
     /// ```
-    pub fn bind_buffer<T>(mut self, storage_buf: &'res GpuBuffer<T>, usage: GpuBufferUsage) -> Self
+    pub fn bind_buffer<T>(mut self, storage_buf: &'res GpuBuffer<T>) -> Self
     where
         T: bytemuck::Pod,
     {
-        let bind_id = self.set_layout.len() as u32;
-
-        let bind_entry = wgpu::BindGroupLayoutEntry {
-            binding: bind_id,
-            visibility: wgpu::ShaderStages::COMPUTE,
-            ty: wgpu::BindingType::Buffer {
-                has_dynamic_offset: false,
-                min_binding_size: None,
-                ty: wgpu::BufferBindingType::Storage {
-                    read_only: usage == GpuBufferUsage::ReadOnly,
-                },
-            },
-            count: None,
-        };
+        let bind_id = self.binds.len() as u32;
 
         let bind = wgpu::BindGroupEntry {
             binding: bind_id,
             resource: storage_buf.as_binding_resource(),
         };
 
-        self.set_layout.push(bind_entry);
         self.binds.push(bind);
 
         self
@@ -127,25 +100,13 @@ impl<'res> DescriptorSet<'res> {
     /// layout (set=0, binding=0, rgba8uint) uimage2D myStorageImg;
     /// ```
     pub fn bind_image<P: PixelInfo>(mut self, img: &'res GpuImage<P>) -> Self {
-        let bind_id = self.set_layout.len() as u32;
-
-        let bind_entry = wgpu::BindGroupLayoutEntry {
-            binding: bind_id,
-            visibility: wgpu::ShaderStages::COMPUTE,
-            ty: wgpu::BindingType::StorageTexture {
-                access: wgpu::StorageTextureAccess::WriteOnly,
-                format: P::wgpu_format(),
-                view_dimension: wgpu::TextureViewDimension::D2,
-            },
-            count: None,
-        };
+        let bind_id = self.binds.len() as u32;
 
         let bind = wgpu::BindGroupEntry {
             binding: bind_id,
             resource: img.as_binding_resource(),
         };
 
-        self.set_layout.push(bind_entry);
         self.binds.push(bind);
 
         self
@@ -167,25 +128,13 @@ impl<'res> DescriptorSet<'res> {
     where
         P: PixelInfo,
     {
-        let bind_id = self.set_layout.len() as u32;
-
-        let bind_entry = wgpu::BindGroupLayoutEntry {
-            binding: bind_id,
-            visibility: wgpu::ShaderStages::COMPUTE,
-            ty: wgpu::BindingType::Texture {
-                sample_type: P::wgpu_texture_sample(),
-                multisampled: false,
-                view_dimension: wgpu::TextureViewDimension::D2,
-            },
-            count: None,
-        };
+        let bind_id = self.binds.len() as u32;
 
         let bind = wgpu::BindGroupEntry {
             binding: bind_id,
             resource: img.as_binding_resource(),
         };
 
-        self.set_layout.push(bind_entry);
         self.binds.push(bind);
 
         self
@@ -263,35 +212,29 @@ impl<'sha, 'res> Program<'sha, 'res> {
 impl<'fw> Kernel<'fw> {
     /// Creates a [`Kernel`] from a [`Program`].
     pub fn new<'sha, 'res>(fw: &'fw Framework, program: Program<'sha, 'res>) -> Self {
-        let mut layouts = Vec::new();
         let mut sets = Vec::new();
 
         // Unwraping of descriptors from program
         for desc in program.descriptors.iter() {
             let set_id = desc.set_id;
 
-            let set_layout = fw
-                .device
-                .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                    label: None,
-                    entries: &desc.set_layout,
-                });
-
             let set = fw.device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: None,
-                layout: &set_layout,
+                layout: &fw.bind_group_layouts[set_id as usize],
                 entries: &desc.binds,
             });
 
             log::debug!("Binding set = {} with {:#?}", set_id, &desc.binds);
 
-            layouts.push(set_layout);
             sets.push((set_id, set));
         }
 
-        // Compute pipeline bindings
-        let group_layouts = layouts.iter().collect::<Vec<_>>();
+        let mut group_layouts = vec![];
+        for bind_group_layout in fw.bind_group_layouts.iter() {
+            group_layouts.push(bind_group_layout)
+        }
 
+        // Compute pipeline bindings
         let pipeline_layout = fw
             .device
             .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {

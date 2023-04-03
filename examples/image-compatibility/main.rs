@@ -1,8 +1,12 @@
-use gpgpu::{primitives::pixels::Rgba8Uint, ImgOps};
+use gpgpu::{primitives::pixels::Rgba8Uint, BindGroupLayoutBuilder, ImgOps};
 
 // This example simply mirrors an image using the image crate compatibility feature.
 fn main() {
-    let fw = gpgpu::Framework::default();
+    let fw = gpgpu::Framework::default()
+        .set_bind_group_layouts(vec![BindGroupLayoutBuilder::new()
+            .add_const_image::<Rgba8Uint>()
+            .add_image::<Rgba8Uint>()]);
+
     let shader =
         gpgpu::Shader::from_wgsl_file(&fw, "examples/image-compatibility/shader.wgsl").unwrap();
 

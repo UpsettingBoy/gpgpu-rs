@@ -1,8 +1,14 @@
-use gpgpu::BufOps;
+use gpgpu::{BindGroupLayoutBuilder, BufOps};
 
 // Simple compute example that multiplies 2 square arrays (matrixes)  A and B, storing the result in another array C using ndarray.
 fn main() {
-    let fw = gpgpu::Framework::default();
+    let fw = gpgpu::Framework::default().set_bind_group_layouts(vec![
+        BindGroupLayoutBuilder::new().add_uniform_buffer(),
+        BindGroupLayoutBuilder::new()
+            .add_array(gpgpu::GpuBufferUsage::ReadOnly)
+            .add_array(gpgpu::GpuBufferUsage::ReadOnly)
+            .add_array(gpgpu::GpuBufferUsage::ReadWrite),
+    ]);
 
     let shader = gpgpu::Shader::from_wgsl_file(&fw, "examples/ndarray/shader.wgsl").unwrap();
 
@@ -20,9 +26,9 @@ fn main() {
     let desc_0 = gpgpu::DescriptorSet::new(0).bind_uniform_buffer(&gpu_arrays_len); // Descriptor set of arrays dimensions.
 
     let desc_1 = gpgpu::DescriptorSet::new(1) // Descriptor set of all the arrays
-        .bind_array(&gpu_array_a, gpgpu::GpuBufferUsage::ReadOnly)
-        .bind_array(&gpu_array_b, gpgpu::GpuBufferUsage::ReadOnly)
-        .bind_array(&gpu_array_c, gpgpu::GpuBufferUsage::ReadWrite);
+        .bind_array(&gpu_array_a)
+        .bind_array(&gpu_array_b)
+        .bind_array(&gpu_array_c);
 
     let program = gpgpu::Program::new(&shader, "main_fn_2")
         .add_descriptor_set(desc_0)

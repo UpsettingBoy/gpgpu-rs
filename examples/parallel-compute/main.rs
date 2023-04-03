@@ -1,11 +1,17 @@
 use std::sync::Arc;
 
-use gpgpu::BufOps;
+use gpgpu::{BindGroupLayoutBuilder, BufOps};
 
 // Framework is required to be static because of std::thread::spawn lifetime requirements.
 // By using crossbeam ScopedThreads this could be avoided.
 lazy_static::lazy_static! {
-    static ref FW: gpgpu::Framework = gpgpu::Framework::default();
+    static ref FW: gpgpu::Framework =
+        gpgpu::Framework::default().set_bind_group_layouts(vec![
+            BindGroupLayoutBuilder::new()
+                .add_buffer(gpgpu::GpuBufferUsage::ReadOnly)
+                .add_buffer(gpgpu::GpuBufferUsage::ReadOnly)
+                .add_buffer(gpgpu::GpuBufferUsage::ReadWrite),
+        ]);
 }
 
 fn main() {
@@ -32,9 +38,9 @@ fn main() {
             let local_output_buffer = gpgpu::GpuBuffer::<u32>::with_capacity(&FW, size as u64);
 
             let desc = gpgpu::DescriptorSet::new(0)
-                .bind_buffer(&local_shader_input_buffer, gpgpu::GpuBufferUsage::ReadOnly)
-                .bind_buffer(&local_input_buffer, gpgpu::GpuBufferUsage::ReadOnly)
-                .bind_buffer(&local_output_buffer, gpgpu::GpuBufferUsage::ReadWrite);
+                .bind_buffer(&local_shader_input_buffer)
+                .bind_buffer(&local_input_buffer)
+                .bind_buffer(&local_output_buffer);
             let program = gpgpu::Program::new(&local_shader, "main").add_descriptor_set(desc);
 
             gpgpu::Kernel::new(&FW, program).enqueue(size / 32, 1, 1);

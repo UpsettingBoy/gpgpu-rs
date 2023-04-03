@@ -1,8 +1,13 @@
-use gpgpu::BufOps;
+use gpgpu::{BindGroupLayoutBuilder, BufOps};
 
 // Simple compute example that multiplies 2 vectors A and B, storing the result in a vector C.
 fn main() {
-    let fw = gpgpu::Framework::default(); // Framework initialization.
+    // Framework initialization.
+    let fw =
+        gpgpu::Framework::default().set_bind_group_layouts(vec![BindGroupLayoutBuilder::new()
+            .add_buffer(gpgpu::GpuBufferUsage::ReadOnly)
+            .add_buffer(gpgpu::GpuBufferUsage::ReadOnly)
+            .add_buffer(gpgpu::GpuBufferUsage::ReadWrite)]);
 
     let shader = gpgpu::Shader::from_wgsl_file(&fw, "examples/simple-compute/shader.wgsl").unwrap(); // Shader loading.
 
@@ -19,9 +24,9 @@ fn main() {
     // We have to tell the GPU how the data is sent. Take a look at the shader (mult.wgsl).
     // The boolean indicates wether the vector is read-only or not.
     let bindings = gpgpu::DescriptorSet::new(0) // Group 0
-        .bind_buffer(&gpu_vec_a, gpgpu::GpuBufferUsage::ReadOnly) // Binding 0
-        .bind_buffer(&gpu_vec_b, gpgpu::GpuBufferUsage::ReadOnly) // Binding 1
-        .bind_buffer(&gpu_vec_c, gpgpu::GpuBufferUsage::ReadWrite); // Binding 2. read_write in shader. No write-only yet.
+        .bind_buffer(&gpu_vec_a) // Binding 0
+        .bind_buffer(&gpu_vec_b) // Binding 1
+        .bind_buffer(&gpu_vec_c); // Binding 2. read_write in shader. No write-only yet.
 
     // Match a shader entry point with its descriptor (the bindings).
     // A program represents a function on a GPU with an already set of inputs and outputs following a layout (the variable `bindings` above).
