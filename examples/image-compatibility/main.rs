@@ -15,7 +15,7 @@ fn main() {
     let input_img = gpgpu::GpuConstImage::from_image_buffer(&fw, &rgba); // Input
     let output_img = gpgpu::GpuImage::<Rgba8Uint>::new(&fw, width, height); // Output
 
-    let desc = gpgpu::DescriptorSet::default()
+    let desc = gpgpu::DescriptorSet::new(0)
         .bind_const_image(&input_img)
         .bind_image(&output_img);
     let program = gpgpu::Program::new(&shader, "main").add_descriptor_set(desc);

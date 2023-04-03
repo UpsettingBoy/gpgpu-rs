@@ -17,9 +17,9 @@ fn main() {
     let gpu_array_b = gpgpu::GpuArray::from_array(&fw, src_view).unwrap(); // Array B
     let gpu_array_c = gpgpu::GpuArray::from_array(&fw, ndarray::Array::zeros(dims).view()).unwrap(); // Array C: result storage
 
-    let desc_0 = gpgpu::DescriptorSet::default().bind_uniform_buffer(&gpu_arrays_len); // Descriptor set of arrays dimensions.
+    let desc_0 = gpgpu::DescriptorSet::new(0).bind_uniform_buffer(&gpu_arrays_len); // Descriptor set of arrays dimensions.
 
-    let desc_1 = gpgpu::DescriptorSet::default() // Descriptor set of all the arrays
+    let desc_1 = gpgpu::DescriptorSet::new(1) // Descriptor set of all the arrays
         .bind_array(&gpu_array_a, gpgpu::GpuBufferUsage::ReadOnly)
         .bind_array(&gpu_array_b, gpgpu::GpuBufferUsage::ReadOnly)
         .bind_array(&gpu_array_c, gpgpu::GpuBufferUsage::ReadWrite);

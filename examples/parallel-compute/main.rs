@@ -31,7 +31,7 @@ fn main() {
             let local_input_buffer = gpgpu::GpuBuffer::from_slice(&FW, &local_cpu_data);
             let local_output_buffer = gpgpu::GpuBuffer::<u32>::with_capacity(&FW, size as u64);
 
-            let desc = gpgpu::DescriptorSet::default()
+            let desc = gpgpu::DescriptorSet::new(0)
                 .bind_buffer(&local_shader_input_buffer, gpgpu::GpuBufferUsage::ReadOnly)
                 .bind_buffer(&local_input_buffer, gpgpu::GpuBufferUsage::ReadOnly)
                 .bind_buffer(&local_output_buffer, gpgpu::GpuBufferUsage::ReadWrite);

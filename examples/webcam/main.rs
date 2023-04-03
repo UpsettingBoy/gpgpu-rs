@@ -50,7 +50,7 @@ fn main() {
 
     let shader = gpgpu::Shader::from_wgsl_file(&fw, "examples/webcam/shader.wgsl").unwrap();
 
-    let desc = DescriptorSet::default()
+    let desc = DescriptorSet::new(0)
         .bind_const_image(&gpu_input)
         .bind_image(&gpu_output)
         .bind_uniform_buffer(&buf_time);

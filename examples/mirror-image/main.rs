@@ -17,7 +17,7 @@ fn main() {
     // Write input image into the GPU
     input_img.write(&rgba).unwrap();
 
-    let desc = gpgpu::DescriptorSet::default()
+    let desc = gpgpu::DescriptorSet::new(0)
         .bind_const_image(&input_img)
         .bind_image(&output_img);
     let program = gpgpu::Program::new(&shader, "main").add_descriptor_set(desc);
