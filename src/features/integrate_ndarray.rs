@@ -65,13 +65,16 @@ where
 }
 
 impl<'res> DescriptorSet<'res> {
-    pub fn bind_array<T, D>(mut self, array: &'res GpuArray<T, D>, access: GpuBufferUsage) -> Self
+    pub fn bind_array<T, D>(
+        mut self,
+        array: &'res GpuArray<T, D>,
+        access: GpuBufferUsage,
+        bind_id: u32,
+    ) -> Self
     where
         T: bytemuck::Pod,
         D: ndarray::Dimension,
     {
-        let bind_id = self.set_layout.len() as u32;
-
         let bind_entry = wgpu::BindGroupLayoutEntry {
             binding: bind_id,
             visibility: wgpu::ShaderStages::COMPUTE,
