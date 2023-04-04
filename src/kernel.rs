@@ -30,12 +30,14 @@ impl<'res> DescriptorSet<'res> {
     ///     uvec3 c;
     /// };
     /// ```
-    pub fn bind_uniform_buffer<T>(mut self, uniform_buf: &'res GpuUniformBuffer<T>) -> Self
+    pub fn bind_uniform_buffer<T>(
+        mut self,
+        uniform_buf: &'res GpuUniformBuffer<T>,
+        bind_id: u32,
+    ) -> Self
     where
         T: bytemuck::Pod,
     {
-        let bind_id = self.set_layout.len() as u32;
-
         let bind_entry = wgpu::BindGroupLayoutEntry {
             binding: bind_id,
             visibility: wgpu::ShaderStages::COMPUTE,
@@ -76,12 +78,15 @@ impl<'res> DescriptorSet<'res> {
     ///     int data[];
     /// };
     /// ```
-    pub fn bind_buffer<T>(mut self, storage_buf: &'res GpuBuffer<T>, usage: GpuBufferUsage) -> Self
+    pub fn bind_buffer<T>(
+        mut self,
+        storage_buf: &'res GpuBuffer<T>,
+        usage: GpuBufferUsage,
+        bind_id: u32,
+    ) -> Self
     where
         T: bytemuck::Pod,
     {
-        let bind_id = self.set_layout.len() as u32;
-
         let bind_entry = wgpu::BindGroupLayoutEntry {
             binding: bind_id,
             visibility: wgpu::ShaderStages::COMPUTE,
@@ -118,9 +123,7 @@ impl<'res> DescriptorSet<'res> {
     /// ```glsl
     /// layout (set=0, binding=0, rgba8uint) uimage2D myStorageImg;
     /// ```
-    pub fn bind_image<P: PixelInfo>(mut self, img: &'res GpuImage<P>) -> Self {
-        let bind_id = self.set_layout.len() as u32;
-
+    pub fn bind_image<P: PixelInfo>(mut self, img: &'res GpuImage<P>, bind_id: u32) -> Self {
         let bind_entry = wgpu::BindGroupLayoutEntry {
             binding: bind_id,
             visibility: wgpu::ShaderStages::COMPUTE,
@@ -155,12 +158,10 @@ impl<'res> DescriptorSet<'res> {
     /// ```glsl
     /// layout (set=0, binding=0) utexture2D myTexture;
     /// ```
-    pub fn bind_const_image<P>(mut self, img: &'res GpuConstImage<P>) -> Self
+    pub fn bind_const_image<P>(mut self, img: &'res GpuConstImage<P>, bind_id: u32) -> Self
     where
         P: PixelInfo,
     {
-        let bind_id = self.set_layout.len() as u32;
-
         let bind_entry = wgpu::BindGroupLayoutEntry {
             binding: bind_id,
             visibility: wgpu::ShaderStages::COMPUTE,

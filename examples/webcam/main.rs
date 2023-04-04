@@ -51,9 +51,9 @@ fn main() {
     let shader = gpgpu::Shader::from_wgsl_file(&fw, "examples/webcam/shader.wgsl").unwrap();
 
     let desc = DescriptorSet::default()
-        .bind_const_image(&gpu_input)
-        .bind_image(&gpu_output)
-        .bind_uniform_buffer(&buf_time);
+        .bind_const_image(&gpu_input, 0)
+        .bind_image(&gpu_output, 1)
+        .bind_uniform_buffer(&buf_time, 2);
     let program = gpgpu::Program::new(&shader, "main").add_descriptor_set(desc);
 
     let kernel = gpgpu::Kernel::new(&fw, program);

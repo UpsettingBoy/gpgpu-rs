@@ -32,9 +32,13 @@ fn main() {
             let local_output_buffer = gpgpu::GpuBuffer::<u32>::with_capacity(&FW, size as u64);
 
             let desc = gpgpu::DescriptorSet::default()
-                .bind_buffer(&local_shader_input_buffer, gpgpu::GpuBufferUsage::ReadOnly)
-                .bind_buffer(&local_input_buffer, gpgpu::GpuBufferUsage::ReadOnly)
-                .bind_buffer(&local_output_buffer, gpgpu::GpuBufferUsage::ReadWrite);
+                .bind_buffer(
+                    &local_shader_input_buffer,
+                    gpgpu::GpuBufferUsage::ReadOnly,
+                    0,
+                )
+                .bind_buffer(&local_input_buffer, gpgpu::GpuBufferUsage::ReadOnly, 1)
+                .bind_buffer(&local_output_buffer, gpgpu::GpuBufferUsage::ReadWrite, 2);
             let program = gpgpu::Program::new(&local_shader, "main").add_descriptor_set(desc);
 
             gpgpu::Kernel::new(&FW, program).enqueue(size / 32, 1, 1);

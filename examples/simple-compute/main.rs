@@ -19,9 +19,9 @@ fn main() {
     // We have to tell the GPU how the data is sent. Take a look at the shader (mult.wgsl).
     // The boolean indicates wether the vector is read-only or not.
     let bindings = gpgpu::DescriptorSet::default() // Group 0
-        .bind_buffer(&gpu_vec_a, gpgpu::GpuBufferUsage::ReadOnly) // Binding 0
-        .bind_buffer(&gpu_vec_b, gpgpu::GpuBufferUsage::ReadOnly) // Binding 1
-        .bind_buffer(&gpu_vec_c, gpgpu::GpuBufferUsage::ReadWrite); // Binding 2. read_write in shader. No write-only yet.
+        .bind_buffer(&gpu_vec_a, gpgpu::GpuBufferUsage::ReadOnly, 0) // Binding 0
+        .bind_buffer(&gpu_vec_b, gpgpu::GpuBufferUsage::ReadOnly, 1) // Binding 1
+        .bind_buffer(&gpu_vec_c, gpgpu::GpuBufferUsage::ReadWrite, 2); // Binding 2. read_write in shader. No write-only yet.
 
     // Match a shader entry point with its descriptor (the bindings).
     // A program represents a function on a GPU with an already set of inputs and outputs following a layout (the variable `bindings` above).

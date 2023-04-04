@@ -16,8 +16,8 @@ fn main() {
     let output_img = gpgpu::GpuImage::<Rgba8Uint>::new(&fw, width, height); // Output
 
     let desc = gpgpu::DescriptorSet::default()
-        .bind_const_image(&input_img)
-        .bind_image(&output_img);
+        .bind_const_image(&input_img, 0)
+        .bind_image(&output_img, 1);
     let program = gpgpu::Program::new(&shader, "main").add_descriptor_set(desc);
 
     gpgpu::Kernel::new(&fw, program).enqueue(width / 32, height / 32, 1); // Since the kernel workgroup size is (32,32,1) dims are divided
