@@ -81,6 +81,7 @@ pub mod descriptor_set;
 pub mod features;
 pub mod framework;
 pub mod kernel;
+pub mod layout;
 pub mod primitives;
 pub mod program;
 pub mod shader;
