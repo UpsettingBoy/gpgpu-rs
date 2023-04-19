@@ -66,24 +66,24 @@
 //! ```
 //!
 
-use std::{marker::PhantomData, sync::Arc};
+use std::marker::PhantomData;
 
+pub use descriptor_set::DescriptorSet;
 #[cfg(feature = "integrate-ndarray")]
 pub use features::integrate_ndarray::GpuArray;
+pub use framework::Framework;
+pub use kernel::Kernel;
 pub use primitives::{BufOps, ImgOps};
+pub use program::Program;
+pub use shader::Shader;
 
+pub mod descriptor_set;
 pub mod features;
 pub mod framework;
 pub mod kernel;
 pub mod primitives;
-
-/// Entry point of `gpgpu`. A [`Framework`] must be created
-/// first as all GPU primitives needs it to be created.
-pub struct Framework {
-    device: Arc<wgpu::Device>,
-    queue: wgpu::Queue,
-    adapter: wgpu::Adapter,
-}
+pub mod program;
+pub mod shader;
 
 #[derive(PartialEq, Eq)]
 pub enum GpuBufferUsage {
@@ -156,33 +156,4 @@ pub struct GpuConstImage<'fw, P> {
     size: wgpu::Extent3d,
     full_view: wgpu::TextureView,
     pixel: PhantomData<P>,
-}
-
-/// Represents a shader.
-///
-/// It's just a wrapper around [`wgpu::ShaderModule`].
-pub struct Shader(wgpu::ShaderModule);
-
-/// Represents an entry point with its bindings on a [`Shader`].
-pub struct Program<'sha, 'res> {
-    shader: &'sha Shader,
-    entry_point: String,
-    descriptors: Vec<DescriptorSet<'res>>,
-}
-
-/// Contains a binding group of resources.
-#[derive(Default, Clone)]
-pub struct DescriptorSet<'res> {
-    set_layout: Vec<wgpu::BindGroupLayoutEntry>,
-    binds: Vec<wgpu::BindGroupEntry<'res>>,
-}
-
-/// Used to enqueue the execution of a shader with the bidings provided.
-///
-/// Equivalent to OpenCL's Kernel.
-pub struct Kernel<'fw> {
-    fw: &'fw Framework,
-    pipeline: wgpu::ComputePipeline,
-    sets: Vec<wgpu::BindGroup>,
-    entry_point: String,
 }

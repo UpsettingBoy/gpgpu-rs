@@ -1,6 +1,12 @@
 use std::{sync::Arc, time::Duration};
 
-use crate::Framework;
+/// Entry point of `gpgpu`. A [`Framework`] must be created
+/// first as all GPU primitives needs it to be created.
+pub struct Framework {
+    pub(crate) device: Arc<wgpu::Device>,
+    pub(crate) queue: wgpu::Queue,
+    pub(crate) adapter: wgpu::Adapter,
+}
 
 impl Default for Framework {
     fn default() -> Self {
