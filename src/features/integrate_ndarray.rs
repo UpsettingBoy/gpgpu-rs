@@ -70,12 +70,12 @@ impl SetLayout {
     }
 }
 
-impl SetBindings {
-    pub fn add_array<'res, T, D>(mut self, bind_id: u32, arr: &'res GpuArray<T, D>) -> Self
+impl<'res> SetBindings<'res> {
+    pub fn add_array<T, D>(self, bind_id: u32, arr: &'res GpuArray<T, D>) -> Self
     where
         T: bytemuck::Pod,
         D: ndarray::Dimension,
     {
-        self.add_buffer(bind_id, arr.0)
+        self.add_buffer(bind_id, &arr.0)
     }
 }

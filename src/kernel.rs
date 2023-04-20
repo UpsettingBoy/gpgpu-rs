@@ -79,6 +79,10 @@ impl<'fw, 'a> Kernel<'fw, 'a> {
                 label: Some("Kernel::enqueue"),
             });
 
+        if bindings.len() != self.layouts.len() {
+            panic!("The amount of layouts must match the amount of the binding groups")
+        }
+
         let bind_groups = bindings
             .iter()
             .zip(self.layouts.iter())
