@@ -8,7 +8,7 @@ pub struct Kernel<'fw, 'a> {
     pipeline: wgpu::ComputePipeline,
     entry_types: Vec<Vec<EntryType>>,
     layouts: Vec<wgpu::BindGroupLayout>,
-    entry_point: &'a str,
+    function_name: &'a str,
 }
 
 impl<'fw, 'a> Kernel<'fw, 'a> {
@@ -16,7 +16,7 @@ impl<'fw, 'a> Kernel<'fw, 'a> {
     pub fn new<'sha, 'res>(
         fw: &'fw Framework,
         shader: &'sha Shader,
-        entry_point: &'a str,
+        function_name: &'a str,
         layouts: Vec<SetLayout>,
     ) -> Self {
         let entry_types = layouts
@@ -55,7 +55,7 @@ impl<'fw, 'a> Kernel<'fw, 'a> {
             .create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
                 label: None,
                 module: &shader.0,
-                entry_point,
+                entry_point: function_name,
                 layout: Some(&pipeline_layout),
             });
 
@@ -64,7 +64,7 @@ impl<'fw, 'a> Kernel<'fw, 'a> {
             pipeline,
             entry_types,
             layouts,
-            entry_point,
+            function_name,
         }
     }
 
@@ -98,7 +98,7 @@ impl<'fw, 'a> Kernel<'fw, 'a> {
             cpass.set_bind_group(bind_id as u32, &binds, &[])
         }
 
-        cpass.insert_debug_marker(&self.entry_point);
+        cpass.insert_debug_marker(self.function_name);
         cpass.dispatch_workgroups(x, y, z)
     }
 }
