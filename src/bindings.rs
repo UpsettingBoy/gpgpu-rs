@@ -7,7 +7,7 @@ pub struct SetBindings<'res> {
 }
 
 impl<'res> SetBindings<'res> {
-    pub fn add_buffer<T>(&mut self, bind_id: u32, buffer: &'res GpuBuffer<T>)
+    pub fn add_buffer<T>(mut self, bind_id: u32, buffer: &'res GpuBuffer<T>) -> Self
     where
         T: bytemuck::Pod,
     {
@@ -17,10 +17,12 @@ impl<'res> SetBindings<'res> {
         };
 
         self.bindings.push(bind);
-        self.entry_type.push(EntryType::Buffer)
+        self.entry_type.push(EntryType::Buffer);
+
+        self
     }
 
-    pub fn add_uniform_buffer<T>(&mut self, bind_id: u32, buffer: &'res GpuUniformBuffer<T>)
+    pub fn add_uniform_buffer<T>(mut self, bind_id: u32, buffer: &'res GpuUniformBuffer<T>) -> Self
     where
         T: bytemuck::Pod,
     {
@@ -30,27 +32,37 @@ impl<'res> SetBindings<'res> {
         };
 
         self.bindings.push(bind);
-        self.entry_type.push(EntryType::Uniform)
+        self.entry_type.push(EntryType::Uniform);
+
+        self
     }
 
-    pub fn add_image<P: PixelInfo>(&mut self, bind_id: u32, img: &'res GpuImage<P>) {
+    pub fn add_image<P: PixelInfo>(mut self, bind_id: u32, img: &'res GpuImage<P>) -> Self {
         let bind = wgpu::BindGroupEntry {
             binding: bind_id,
             resource: img.as_binding_resource(),
         };
 
         self.bindings.push(bind);
-        self.entry_type.push(EntryType::Image)
+        self.entry_type.push(EntryType::Image);
+
+        self
     }
 
-    pub fn add_const_image<P: PixelInfo>(&mut self, bind_id: u32, img: &'res GpuConstImage<P>) {
+    pub fn add_const_image<P: PixelInfo>(
+        mut self,
+        bind_id: u32,
+        img: &'res GpuConstImage<P>,
+    ) -> Self {
         let bind = wgpu::BindGroupEntry {
             binding: bind_id,
             resource: img.as_binding_resource(),
         };
 
         self.bindings.push(bind);
-        self.entry_type.push(EntryType::ConstImage)
+        self.entry_type.push(EntryType::ConstImage);
+
+        self
     }
 
     pub(crate) fn into_bind_group<'fw, 'la>(

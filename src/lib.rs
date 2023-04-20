@@ -68,6 +68,7 @@
 
 use std::marker::PhantomData;
 
+pub use bindings::SetBindings;
 #[cfg(feature = "integrate-ndarray")]
 pub use features::integrate_ndarray::GpuArray;
 pub use framework::Framework;
