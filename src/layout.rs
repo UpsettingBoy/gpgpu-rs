@@ -8,7 +8,13 @@ pub struct SetLayout {
 
 /// Creates a new [SetLayout]
 ///
-/// Usage:
+/// Types:
+/// * UniformBuffer: Use it for uniforms
+/// * Buffer: Use it for buffers or arrays
+/// * ConstImage: Use it for images that cannot be changed
+/// * Image: Use it for images that can be changed
+///
+/// Example:
 /// ```
 /// use gpgpu::{new_set_layout, primitives::pixels::Rgba8Uint, BufOps};
 /// new_set_layout!(

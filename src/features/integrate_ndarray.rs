@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use crate::{primitives::buffers::BufferError, BufOps, DescriptorSet, GpuBuffer, GpuBufferUsage};
+use crate::{primitives::buffers::BufferError, *};
 
 #[derive(Error, Debug)]
 pub enum NdarrayError {
@@ -64,38 +64,18 @@ where
     }
 }
 
-impl<'res> DescriptorSet<'res> {
-    pub fn bind_array<T, D>(
-        mut self,
-        array: &'res GpuArray<T, D>,
-        access: GpuBufferUsage,
-        bind_id: u32,
-    ) -> Self
+impl SetLayout {
+    pub fn add_array(&mut self, bind_id: u32, usage: GpuBufferUsage) {
+        self.add_buffer(bind_id, usage)
+    }
+}
+
+impl SetBindings {
+    pub fn add_array<'res, T, D>(mut self, bind_id: u32, arr: &'res GpuArray<T, D>) -> Self
     where
         T: bytemuck::Pod,
         D: ndarray::Dimension,
     {
-        let bind_entry = wgpu::BindGroupLayoutEntry {
-            binding: bind_id,
-            visibility: wgpu::ShaderStages::COMPUTE,
-            ty: wgpu::BindingType::Buffer {
-                has_dynamic_offset: false,
-                min_binding_size: None,
-                ty: wgpu::BufferBindingType::Storage {
-                    read_only: access == GpuBufferUsage::ReadOnly,
-                },
-            },
-            count: None,
-        };
-
-        let bind = wgpu::BindGroupEntry {
-            binding: bind_id,
-            resource: array.0.as_binding_resource(),
-        };
-
-        self.set_layout.push(bind_entry);
-        self.binds.push(bind);
-
-        self
+        self.add_buffer(bind_id, arr.0)
     }
 }
