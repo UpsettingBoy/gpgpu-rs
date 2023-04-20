@@ -21,25 +21,24 @@ use crate::Framework;
 pub mod buffers;
 pub mod images;
 
+/// Signifies that this struct can be turned into a [`wgpu::BindingResource`]
+pub trait AsBindingResource {
+    fn as_binding_resource(&self) -> wgpu::BindingResource;
+}
+
 /// Interface to get information, create and decompose GPU allocated buffers.
-pub trait BufOps<'fw, T>
-where
-    T: bytemuck::Pod,
-{
+pub trait BufOps<'fw> {
+    type T: bytemuck::Pod;
+
     // ----------- Information fns -----------
 
     /// Returns the number of elements the buffer can hold.
     fn capacity(&self) -> u64 {
-        self.size() / std::mem::size_of::<T>() as u64
+        self.size() / std::mem::size_of::<Self::T>() as u64
     }
 
     /// Returns the number of bytes of the buffer.
     fn size(&self) -> u64;
-
-    /// Returns a [`wgpu::BindingResource`] of all the elements in the buffer.
-    fn as_binding_resource(&self) -> wgpu::BindingResource {
-        self.as_gpu_buffer().as_entire_binding()
-    }
 
     /// Returns the [`wgpu::Buffer`] that handles the GPU data of the buffer.
     fn as_gpu_buffer(&self) -> &wgpu::Buffer;
@@ -54,7 +53,7 @@ where
     /// Constructs a new buffer from a slice.
     ///
     /// The buffer `capacity` will be the `slice` length.
-    fn from_slice(fw: &'fw Framework, slice: &[T]) -> Self;
+    fn from_slice(fw: &'fw Framework, slice: &[Self::T]) -> Self;
 
     /// Constructs a new buffer from a [`wgpu::Buffer`] and its byte `size`.
     ///
@@ -71,12 +70,20 @@ where
     fn into_gpu_parts(self) -> (wgpu::Buffer, u64);
 }
 
-/// Interface to get information, create and decompose GPU allocated images.
-pub trait ImgOps<'fw> {
-    // --------- Information fns --------------
+impl<'fw, B> AsBindingResource for B
+where
+    B: BufOps<'fw>,
+{
+    /// Returns a [`wgpu::BindingResource`] of all the elements in the buffer.
+    fn as_binding_resource(&self) -> wgpu::BindingResource {
+        self.as_gpu_buffer().as_entire_binding()
+    }
+}
 
-    /// Returns a [`wgpu::BindingResource`] of the image.
-    fn as_binding_resource(&self) -> wgpu::BindingResource;
+/// Interface to get information, create and decompose GPU allocated images.
+/// Must implement [`AsBindingResource`]
+pub trait ImgOps<'fw>: AsBindingResource {
+    // --------- Information fns --------------
 
     /// Returns the [`wgpu::Texture`] that handles the GPU image.
     fn as_gpu_texture(&self) -> &wgpu::Texture;

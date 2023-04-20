@@ -28,10 +28,12 @@ pub enum BufferError {
     AsyncMapError(#[from] wgpu::BufferAsyncError),
 }
 
-impl<'fw, T> BufOps<'fw, T> for GpuBuffer<'fw, T>
+impl<'fw, T> BufOps<'fw> for GpuBuffer<'fw, T>
 where
     T: bytemuck::Pod,
 {
+    type T = T;
+
     fn size(&self) -> u64 {
         self.size
     }
@@ -163,10 +165,12 @@ where
     }
 }
 
-impl<'fw, T> BufOps<'fw, T> for GpuUniformBuffer<'fw, T>
+impl<'fw, T> BufOps<'fw> for GpuUniformBuffer<'fw, T>
 where
     T: bytemuck::Pod,
 {
+    type T = T;
+
     fn size(&self) -> u64 {
         self.size
     }

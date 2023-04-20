@@ -5,7 +5,7 @@ use wgpu::{util::DeviceExt, MapMode};
 
 use crate::{primitives::buffers, GpuConstImage, GpuImage};
 
-use super::{ImgOps, PixelInfo};
+use super::{AsBindingResource, ImgOps, PixelInfo};
 
 // TODO https://github.com/bitflags/bitflags/issues/180
 const GPU_IMAGE_USAGES: wgpu::TextureUsages = wgpu::TextureUsages::from_bits_truncate(
@@ -35,14 +35,19 @@ pub enum ImageInputError {
     NotIntegerRowNumber,
 }
 
-impl<'fw, P> ImgOps<'fw> for GpuImage<'fw, P>
+impl<'fw, P> AsBindingResource for GpuImage<'fw, P>
 where
     P: PixelInfo,
 {
     fn as_binding_resource(&self) -> wgpu::BindingResource {
         wgpu::BindingResource::TextureView(&self.full_view)
     }
+}
 
+impl<'fw, P> ImgOps<'fw> for GpuImage<'fw, P>
+where
+    P: PixelInfo,
+{
     fn as_gpu_texture(&self) -> &wgpu::Texture {
         &self.texture
     }
@@ -312,14 +317,19 @@ where
     }
 }
 
-impl<'fw, P> ImgOps<'fw> for GpuConstImage<'fw, P>
+impl<'fw, P> AsBindingResource for GpuConstImage<'fw, P>
 where
     P: PixelInfo,
 {
     fn as_binding_resource(&self) -> wgpu::BindingResource {
         wgpu::BindingResource::TextureView(&self.full_view)
     }
+}
 
+impl<'fw, P> ImgOps<'fw> for GpuConstImage<'fw, P>
+where
+    P: PixelInfo,
+{
     fn as_gpu_texture(&self) -> &wgpu::Texture {
         &self.texture
     }
