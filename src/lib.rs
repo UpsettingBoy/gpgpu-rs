@@ -68,24 +68,20 @@
 
 use std::marker::PhantomData;
 
-pub use descriptor_set::DescriptorSet;
 #[cfg(feature = "integrate-ndarray")]
 pub use features::integrate_ndarray::GpuArray;
 pub use framework::Framework;
 pub use kernel::Kernel;
 pub use layout::SetLayout;
 pub use primitives::{BufOps, ImgOps};
-pub use program::Program;
 pub use shader::Shader;
 
 pub mod bindings;
-pub mod descriptor_set;
 pub mod features;
 pub mod framework;
 pub mod kernel;
 pub mod layout;
 pub mod primitives;
-pub mod program;
 pub mod shader;
 
 mod entry_type;
