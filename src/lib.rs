@@ -73,10 +73,12 @@ pub use descriptor_set::DescriptorSet;
 pub use features::integrate_ndarray::GpuArray;
 pub use framework::Framework;
 pub use kernel::Kernel;
+pub use layout::SetLayout;
 pub use primitives::{BufOps, ImgOps};
 pub use program::Program;
 pub use shader::Shader;
 
+pub mod bindings;
 pub mod descriptor_set;
 pub mod features;
 pub mod framework;
