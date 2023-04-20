@@ -6,18 +6,12 @@ pub struct SetBindings<'res> {
 }
 
 impl<'res> SetBindings<'res> {
-    pub fn new(bindings: Vec<(u32, &'res dyn AsBindingResource)>) -> Self {
-        let mut out = Self::default();
+    pub fn add_entry<T: AsBindingResource>(&mut self, bind_id: u32, bind: &'res T) {
+        let bind = wgpu::BindGroupEntry {
+            binding: bind_id,
+            resource: bind.as_binding_resource(),
+        };
 
-        for (bind_id, entry) in bindings {
-            let bind = wgpu::BindGroupEntry {
-                binding: bind_id,
-                resource: entry.as_binding_resource(),
-            };
-
-            out.bindings.push(bind)
-        }
-
-        out
+        self.bindings.push(bind)
     }
 }
