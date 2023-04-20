@@ -88,17 +88,21 @@ impl<'fw, 'a> Kernel<'fw, 'a> {
             })
             .collect::<Vec<_>>();
 
-        let mut cpass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
-            label: Some("Kernel::enqueue"),
-        });
+        {
+            let mut cpass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                label: Some("Kernel::enqueue"),
+            });
 
-        cpass.set_pipeline(&self.pipeline);
+            cpass.set_pipeline(&self.pipeline);
 
-        for (bind_id, binds) in bind_groups.iter().enumerate() {
-            cpass.set_bind_group(bind_id as u32, &binds, &[])
+            for (bind_id, binds) in bind_groups.iter().enumerate() {
+                cpass.set_bind_group(bind_id as u32, &binds, &[])
+            }
+
+            cpass.insert_debug_marker(self.function_name);
+            cpass.dispatch_workgroups(x, y, z);
         }
 
-        cpass.insert_debug_marker(self.function_name);
-        cpass.dispatch_workgroups(x, y, z)
+        self.fw.queue.submit(Some(encoder.finish()));
     }
 }
