@@ -52,4 +52,16 @@ impl<'res> SetBindings<'res> {
         self.bindings.push(bind);
         self.entry_type.push(EntryType::ConstImage)
     }
+
+    pub(crate) fn into_bind_group<'fw, 'la>(
+        &self,
+        fw: &'fw Framework,
+        layout: &'la wgpu::BindGroupLayout,
+    ) -> wgpu::BindGroup {
+        fw.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: None,
+            layout,
+            entries: &self.bindings,
+        })
+    }
 }
