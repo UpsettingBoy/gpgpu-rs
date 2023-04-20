@@ -3,8 +3,21 @@ use gpgpu::BufOps;
 // Simple compute example that multiplies 2 square arrays (matrixes)  A and B, storing the result in another array C using ndarray.
 fn main() {
     let fw = gpgpu::Framework::default();
-
     let shader = gpgpu::Shader::from_wgsl_file(&fw, "examples/ndarray/shader.wgsl").unwrap();
+
+    let kernel = gpgpu::Kernel::new(
+        &fw,
+        &shader,
+        "main_fn_2",
+        vec![
+            gpgpu::new_set_layout!(0: UniformBuffer),
+            gpgpu::new_set_layout!(
+                0: Buffer(gpgpu::GpuBufferUsage::ReadOnly),
+                1: Buffer(gpgpu::GpuBufferUsage::ReadOnly),
+                2: Buffer(gpgpu::GpuBufferUsage::ReadWrite)
+            ),
+        ],
+    );
 
     let dims = (3200, 3200); // X and Y dimensions. Must be multiple of the enqueuing dimensions
 
@@ -17,20 +30,21 @@ fn main() {
     let gpu_array_b = gpgpu::GpuArray::from_array(&fw, src_view).unwrap(); // Array B
     let gpu_array_c = gpgpu::GpuArray::from_array(&fw, ndarray::Array::zeros(dims).view()).unwrap(); // Array C: result storage
 
-    let desc_0 = gpgpu::DescriptorSet::default().bind_uniform_buffer(&gpu_arrays_len, 0); // Descriptor set of arrays dimensions.
+    let binds_0 = gpgpu::SetBindings::default().add_uniform_buffer(0, &gpu_arrays_len); // Bindings of arrays dimensions.
 
-    let desc_1 = gpgpu::DescriptorSet::default() // Descriptor set of all the arrays
-        .bind_array(&gpu_array_a, gpgpu::GpuBufferUsage::ReadOnly, 0)
-        .bind_array(&gpu_array_b, gpgpu::GpuBufferUsage::ReadOnly, 1)
-        .bind_array(&gpu_array_c, gpgpu::GpuBufferUsage::ReadWrite, 2);
+    let binds_1 = gpgpu::SetBindings::default()
+        .add_array(0, &gpu_array_a)
+        .add_array(1, &gpu_array_b)
+        .add_array(2, &gpu_array_c);
 
-    let program = gpgpu::Program::new(&shader, "main_fn_2")
-        .add_descriptor_set(desc_0)
-        .add_descriptor_set(desc_1);
-
-    gpgpu::Kernel::new(&fw, program)
+    kernel
         // .enqueue((dims.0 * dims.1) as u32, 1, 1); // Kernel main_fn 1. Enqueuing in a single dimension
-        .enqueue(dims.0 as u32 / 32, dims.1 as u32 / 32, 1); // Kernel main_fn 2. Enqueuing in x and y dimensions (array dimensions are needed)
+        .run(
+            vec![binds_0, binds_1],
+            dims.0 as u32 / 32,
+            dims.1 as u32 / 32,
+            1,
+        ); // Kernel main_fn 2. Enqueuing in x and y dimensions (array dimensions are needed)
 
     let array_output = gpu_array_c.read_blocking().unwrap();
 

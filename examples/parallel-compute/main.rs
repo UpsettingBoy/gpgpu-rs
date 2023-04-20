@@ -13,6 +13,17 @@ fn main() {
         gpgpu::Shader::from_wgsl_file(&FW, "examples/parallel-compute/shader.wgsl").unwrap(),
     );
 
+    let kernel = Arc::new(gpgpu::Kernel::new(
+        &FW,
+        &shader,
+        "main",
+        vec![gpgpu::new_set_layout!(
+            0: Buffer(gpgpu::GpuBufferUsage::ReadOnly),
+            1: Buffer(gpgpu::GpuBufferUsage::ReadOnly),
+            2: Buffer(gpgpu::GpuBufferUsage::ReadWrite)
+        )],
+    ));
+
     let threading = 4; // Threading level
     let size = 32000; // Must be multiple of 32
 
@@ -21,8 +32,8 @@ fn main() {
 
     let mut handles = Vec::with_capacity(threading);
     for _ in 0..threading {
-        let local_shader = shader.clone();
         let local_shader_input_buffer = shader_input_buffer.clone();
+        let kernel = kernel.clone();
 
         // Threads spawn
         let handle = std::thread::spawn(move || {
@@ -31,17 +42,12 @@ fn main() {
             let local_input_buffer = gpgpu::GpuBuffer::from_slice(&FW, &local_cpu_data);
             let local_output_buffer = gpgpu::GpuBuffer::<u32>::with_capacity(&FW, size as u64);
 
-            let desc = gpgpu::DescriptorSet::default()
-                .bind_buffer(
-                    &local_shader_input_buffer,
-                    gpgpu::GpuBufferUsage::ReadOnly,
-                    0,
-                )
-                .bind_buffer(&local_input_buffer, gpgpu::GpuBufferUsage::ReadOnly, 1)
-                .bind_buffer(&local_output_buffer, gpgpu::GpuBufferUsage::ReadWrite, 2);
-            let program = gpgpu::Program::new(&local_shader, "main").add_descriptor_set(desc);
+            let binds = gpgpu::SetBindings::default()
+                .add_buffer(0, &local_shader_input_buffer)
+                .add_buffer(1, &local_input_buffer)
+                .add_buffer(2, &local_output_buffer);
 
-            gpgpu::Kernel::new(&FW, program).enqueue(size / 32, 1, 1);
+            kernel.run(vec![binds], size / 32, 1, 1);
 
             local_output_buffer.read_vec_blocking().unwrap()
         });

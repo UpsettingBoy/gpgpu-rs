@@ -5,6 +5,16 @@ fn main() {
     let fw = gpgpu::Framework::default();
     let shader = gpgpu::Shader::from_wgsl_file(&fw, "examples/mirror-image/shader.wgsl").unwrap();
 
+    let kernel = gpgpu::Kernel::new(
+        &fw,
+        &shader,
+        "main",
+        vec![gpgpu::new_set_layout!(
+            0: ConstImage<Rgba8Uint>,
+            1: Image<Rgba8Uint>
+        )],
+    );
+
     let dynamic_img = image::open("examples/mirror-image/monke.jpg").unwrap(); // RGB8 image ...
     let rgba = dynamic_img.into_rgba8(); // ... converted to RGBA8
 
@@ -17,12 +27,11 @@ fn main() {
     // Write input image into the GPU
     input_img.write(&rgba).unwrap();
 
-    let desc = gpgpu::DescriptorSet::default()
-        .bind_const_image(&input_img, 0)
-        .bind_image(&output_img, 1);
-    let program = gpgpu::Program::new(&shader, "main").add_descriptor_set(desc);
+    let binds = gpgpu::SetBindings::default()
+        .add_const_image(0, &input_img)
+        .add_image(1, &output_img);
 
-    gpgpu::Kernel::new(&fw, program).enqueue(width / 32, height / 32, 1); // Since the kernel workgroup size is (32, 32, 1) dims are divided
+    kernel.run(vec![binds], width / 32, height / 32, 1); // Since the kernel workgroup size is (32, 32, 1) dims are divided
 
     let output_bytes = output_img.read_vec_blocking().unwrap();
     image::save_buffer(

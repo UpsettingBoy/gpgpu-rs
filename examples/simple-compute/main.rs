@@ -6,6 +6,20 @@ fn main() {
 
     let shader = gpgpu::Shader::from_wgsl_file(&fw, "examples/simple-compute/shader.wgsl").unwrap(); // Shader loading.
 
+    // Creation of a kernel. This represents the current function that will be executed
+    let kernel = gpgpu::Kernel::new(
+        &fw,
+        &shader,
+        "main", // The kernel needs the name function to be executed
+        // We have to tell the GPU how the layout of the data with SetLayout
+        // We create SetLayout using the new_set_layout macro
+        vec![gpgpu::new_set_layout!(
+            0: Buffer(gpgpu::GpuBufferUsage::ReadOnly),
+            1: Buffer(gpgpu::GpuBufferUsage::ReadOnly),
+            2: Buffer(gpgpu::GpuBufferUsage::ReadWrite)
+        )],
+    );
+
     let size = 10000; // Size of the vectors
 
     let data_a = (0..size).into_iter().collect::<Vec<u32>>(); // Vector A data. 0, 1, 2, ..., 9999 (size - 1).
@@ -16,23 +30,14 @@ fn main() {
     let gpu_vec_b = gpgpu::GpuBuffer::from_slice(&fw, &data_b); // Input vector B.
     let gpu_vec_c = gpgpu::GpuBuffer::with_capacity(&fw, size as u64); // Output vector C. Empty.
 
-    // We have to tell the GPU how the data is sent. Take a look at the shader (mult.wgsl).
-    // The boolean indicates wether the vector is read-only or not.
-    let bindings = gpgpu::DescriptorSet::default() // Group 0
-        .bind_buffer(&gpu_vec_a, gpgpu::GpuBufferUsage::ReadOnly, 0) // Binding 0
-        .bind_buffer(&gpu_vec_b, gpgpu::GpuBufferUsage::ReadOnly, 1) // Binding 1
-        .bind_buffer(&gpu_vec_c, gpgpu::GpuBufferUsage::ReadWrite, 2); // Binding 2. read_write in shader. No write-only yet.
-
-    // Match a shader entry point with its descriptor (the bindings).
-    // A program represents a function on a GPU with an already set of inputs and outputs following a layout (the variable `bindings` above).
-    let program = gpgpu::Program::new(&shader, "main").add_descriptor_set(bindings);
-
-    // Creation of a kernel. This represents the `program` function and its `enqueuing` parameters,
-    let kernel = gpgpu::Kernel::new(&fw, program);
+    let bindings = gpgpu::SetBindings::default()
+        .add_buffer(0, &gpu_vec_a)
+        .add_buffer(1, &gpu_vec_b)
+        .add_buffer(2, &gpu_vec_c);
 
     // Execution of the kernel. It needs 3 dimmensions, x y and z.
     // Since we are using single-dim vectors, only x is required.
-    kernel.enqueue(size as u32, 1, 1);
+    kernel.run(vec![bindings], size as u32, 1, 1);
 
     // After the kernel execution, we can read the results from the GPU.
     let gpu_result = gpu_vec_c.read_vec_blocking().unwrap();

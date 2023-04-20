@@ -1,8 +1,8 @@
 use std::io::Write;
 
 use gpgpu::{
-    primitives::pixels::Rgba8UintNorm, BufOps, DescriptorSet, Framework, GpuConstImage, GpuImage,
-    GpuUniformBuffer, ImgOps,
+    new_set_layout, primitives::pixels::Rgba8UintNorm, BufOps, DescriptorSet, Framework,
+    GpuConstImage, GpuImage, GpuUniformBuffer, ImgOps,
 };
 
 use minifb::{Key, Window, WindowOptions};
@@ -13,6 +13,18 @@ const HEIGHT: usize = 720;
 
 fn main() {
     let fw = Framework::default();
+    let shader = gpgpu::Shader::from_wgsl_file(&fw, "examples/webcam/shader.wgsl").unwrap();
+
+    let kernel = gpgpu::Kernel::new(
+        &fw,
+        &shader,
+        "main",
+        vec![new_set_layout! {
+            0: ConstImage<Rgba8UintNorm>,
+            1: Image<Rgba8UintNorm>,
+            2: UniformBuffer,
+        }],
+    );
 
     // Camera initilization. Config may not work if not same cam as the Thinkpad T480 one.
     // Change parameters accordingly
@@ -48,15 +60,10 @@ fn main() {
 
     let gpu_output = GpuImage::<Rgba8UintNorm>::new(&fw, WIDTH as u32, HEIGHT as u32); // Shader output
 
-    let shader = gpgpu::Shader::from_wgsl_file(&fw, "examples/webcam/shader.wgsl").unwrap();
-
-    let desc = DescriptorSet::default()
-        .bind_const_image(&gpu_input, 0)
-        .bind_image(&gpu_output, 1)
-        .bind_uniform_buffer(&buf_time, 2);
-    let program = gpgpu::Program::new(&shader, "main").add_descriptor_set(desc);
-
-    let kernel = gpgpu::Kernel::new(&fw, program);
+    let binds = gpgpu::SetBindings::default()
+        .add_const(0, &gpu_input)
+        .add_image(1, &gpu_output)
+        .add_uniform_buffer(2, &buf_time);
 
     let time = std::time::Instant::now();
 
@@ -75,7 +82,7 @@ fn main() {
         gpu_input.write_image_buffer(&cam_buf).unwrap(); // Upload cam frame into the cam frame texture
         buf_time.write(&[time.elapsed().as_secs_f32()]).unwrap(); // Upload elapsed time into elapsed time buffer
 
-        kernel.enqueue(WIDTH as u32 / 32, HEIGHT as u32 / 31, 1);
+        kernel.run(binds, WIDTH as u32 / 32, HEIGHT as u32 / 31, 1);
 
         gpu_output
             .read_blocking(bytemuck::cast_slice_mut(&mut frame_buffer))
