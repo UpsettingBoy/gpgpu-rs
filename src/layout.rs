@@ -1,8 +1,9 @@
-use crate::{primitives::PixelInfo, GpuBufferUsage};
+use crate::{entry_type::EntryType, primitives::PixelInfo, GpuBufferUsage};
 
 #[derive(Default, Clone)]
 pub struct SetLayout {
     pub(crate) layout_entry: Vec<wgpu::BindGroupLayoutEntry>,
+    pub(crate) entry_type: Vec<EntryType>,
 }
 
 /// Creates a new [SetLayout]
@@ -57,7 +58,8 @@ impl SetLayout {
             count: None,
         };
 
-        self.layout_entry.push(entry)
+        self.layout_entry.push(entry);
+        self.entry_type.push(EntryType::Buffer)
     }
 
     pub fn add_uniform_buffer(&mut self, bind_id: u32) {
@@ -72,7 +74,8 @@ impl SetLayout {
             count: None,
         };
 
-        self.layout_entry.push(entry)
+        self.layout_entry.push(entry);
+        self.entry_type.push(EntryType::Uniform)
     }
 
     pub fn add_image<P: PixelInfo>(&mut self, bind_id: u32) {
@@ -87,7 +90,8 @@ impl SetLayout {
             count: None,
         };
 
-        self.layout_entry.push(entry)
+        self.layout_entry.push(entry);
+        self.entry_type.push(EntryType::Image)
     }
 
     pub fn add_const_image<P: PixelInfo>(&mut self, bind_id: u32) {
@@ -102,6 +106,7 @@ impl SetLayout {
             count: None,
         };
 
-        self.layout_entry.push(entry)
+        self.layout_entry.push(entry);
+        self.entry_type.push(EntryType::ConstImage)
     }
 }

@@ -88,6 +88,8 @@ pub mod primitives;
 pub mod program;
 pub mod shader;
 
+mod entry_type;
+
 #[derive(PartialEq, Eq)]
 pub enum GpuBufferUsage {
     /// Read-only object.
