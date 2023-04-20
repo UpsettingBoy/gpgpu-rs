@@ -68,10 +68,10 @@ impl<'fw, 'a> Kernel<'fw, 'a> {
         }
     }
 
-    /// Enqueues the execution of this [`Kernel`] onto the GPU.
+    /// executes this [`Kernel`] with the give bindings.
     ///
     /// [`Kernel`] will dispatch `x`, `y` and `z` workgroups per dimension.
-    pub fn enqueue(&self, bindings: Vec<SetBindings>, x: u32, y: u32, z: u32) {
+    pub fn run(&self, bindings: Vec<SetBindings>, x: u32, y: u32, z: u32) {
         let mut encoder = self
             .fw
             .device
