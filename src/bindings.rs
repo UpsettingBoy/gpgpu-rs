@@ -57,7 +57,19 @@ impl<'res> SetBindings<'res> {
         &self,
         fw: &'fw Framework,
         layout: &'la wgpu::BindGroupLayout,
+        entry_types: Vec<EntryType>,
     ) -> wgpu::BindGroup {
+        // TODO: Make custom error struct/enum
+        if self.entry_type.len() != entry_types.len() {
+            panic!("SetBindings must have the same layout as SetLayout")
+        }
+
+        for entry_type in self.entry_type.iter().zip(entry_types.iter()) {
+            if entry_type.0 != entry_type.1 {
+                panic!("SetBindings do not have the same entry type as SetLayout")
+            }
+        }
+
         fw.device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: None,
             layout,
