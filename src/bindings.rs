@@ -57,7 +57,7 @@ impl<'res> SetBindings<'res> {
         &self,
         fw: &'fw Framework,
         layout: &'la wgpu::BindGroupLayout,
-        entry_types: Vec<EntryType>,
+        entry_types: &Vec<EntryType>,
     ) -> wgpu::BindGroup {
         // TODO: Make custom error struct/enum
         if self.entry_type.len() != entry_types.len() {
