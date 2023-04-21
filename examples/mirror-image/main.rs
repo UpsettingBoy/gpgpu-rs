@@ -31,7 +31,7 @@ fn main() {
         .add_const_image(0, &input_img)
         .add_image(1, &output_img);
 
-    kernel.run(vec![binds], width / 32, height / 32, 1); // Since the kernel workgroup size is (32, 32, 1) dims are divided
+    kernel.run(&fw, vec![binds], width / 32, height / 32, 1); // Since the kernel workgroup size is (32, 32, 1) dims are divided
 
     let output_bytes = output_img.read_vec_blocking().unwrap();
     image::save_buffer(

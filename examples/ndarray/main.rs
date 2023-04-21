@@ -40,6 +40,7 @@ fn main() {
     kernel
         // .enqueue((dims.0 * dims.1) as u32, 1, 1); // Kernel main_fn 1. Enqueuing in a single dimension
         .run(
+            &fw,
             vec![binds_0, binds_1],
             dims.0 as u32 / 32,
             dims.1 as u32 / 32,

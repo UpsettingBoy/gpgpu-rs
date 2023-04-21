@@ -82,7 +82,7 @@ fn main() {
         gpu_input.write_image_buffer(&cam_buf).unwrap(); // Upload cam frame into the cam frame texture
         buf_time.write(&[time.elapsed().as_secs_f32()]).unwrap(); // Upload elapsed time into elapsed time buffer
 
-        kernel.run(binds, WIDTH as u32 / 32, HEIGHT as u32 / 31, 1);
+        kernel.run(&fw, binds, WIDTH as u32 / 32, HEIGHT as u32 / 31, 1);
 
         gpu_output
             .read_blocking(bytemuck::cast_slice_mut(&mut frame_buffer))

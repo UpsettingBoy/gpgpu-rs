@@ -47,7 +47,7 @@ fn main() {
                 .add_buffer(1, &local_input_buffer)
                 .add_buffer(2, &local_output_buffer);
 
-            kernel.run(vec![binds], size / 32, 1, 1);
+            kernel.run(&FW, vec![binds], size / 32, 1, 1);
 
             local_output_buffer.read_vec_blocking().unwrap()
         });
