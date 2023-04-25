@@ -16,13 +16,35 @@ and follow the [examples](https://github.com/UpsettingBoy/gpgpu-rs/tree/dev/exam
 Small program that multiplies 2 vectors A and B; and stores the
 result in another vector C.
 ## Rust program
-```rust
-    use gpgpu::*;
+```
+use gpgpu::*;
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Framework initialization
     let fw = Framework::default();
 
-    // Original CPU data
+    // Shader load from SPIR-V binary file
+    let shader = Shader::from_spirv_file(&fw, "<SPIR-V shader path>")?;
+    //  or from a WGSL source file
+    let shader = Shader::from_wgsl_file(&fw, "<WGSL shader path>")?;    
+
+    // Create the kernel. This represents the function that will be executed
+    let kernel = Kernel::new(
+        &fw,
+        &shader,
+        // This is the name of the function that will be executed
+        "main",
+        // We send a list of SetLayout's, which defines what type of data will be sent and
+        // how it is layed out. Each SetLayout corresponds to a group in the shader code
+        // It is highly recommended that you use the new_set_layout macro to generate SetLayout
+        vec![new_set_layout! {
+            0: Buffer(GpuBufferUsage::ReadOnly)
+            1: Buffer(GpuBufferUsage::ReadOnly)
+            2: Buffer(GpuBufferUsage::ReadWrite)
+        }]
+    );
+
+    // Original
     let cpu_data = (0..10000).into_iter().collect::<Vec<u32>>();
 
     // GPU buffer creation
@@ -30,20 +52,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let buf_b = GpuBuffer::from_slice(&fw, &cpu_data);       // Input
     let buf_c = GpuBuffer::<u32>::with_capacity(&fw, cpu_data.len() as u64);  // Output
 
-    // Shader load from SPIR-V binary file
-    let shader = Shader::from_spirv_file(&fw, "<SPIR-V shader path>")?;
-    //  or from a WGSL source file
-    let shader = Shader::from_wgsl_file(&fw, "<WGSL shader path>")?;    
+    // We create the bindings which wil bind the data
+    // The layout and type of data has been defined in the creation of the kernel
+    let bindings = gpgpu::SetBindings::default()
+        .add_buffer(0, &gpu_vec_a)
+        .add_buffer(1, &gpu_vec_b)
+        .add_buffer(2, &gpu_vec_c);
 
-    // Descriptor set and program creation
-    let desc = DescriptorSet::default()
-        .bind_buffer(&buf_a, GpuBufferUsage::ReadOnly)
-        .bind_buffer(&buf_b, GpuBufferUsage::ReadOnly)
-        .bind_buffer(&buf_c, GpuBufferUsage::ReadWrite);
-    let program = Program::new(&shader, "main").add_descriptor_set(desc); // Entry point
-
-    // Kernel creation and enqueuing
-    Kernel::new(&fw, program).enqueue(cpu_data.len() as u32, 1, 1); // Enqueuing, not very optimus 😅
+    // We execute the kernel with the given data
+    // We then specify how many workgroups will be dispatched per dimension
+    kernel.run(&fw, vec![binds], cpu_data.len() as u32, 1, 1);
 
     let output = buf_c.read_vec_blocking()?;                        // Read back C from GPU
     for (a, b) in cpu_data.into_iter().zip(output) {
