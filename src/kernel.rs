@@ -12,7 +12,7 @@ pub struct Kernel<'a> {
 
 impl<'a> Kernel<'a> {
     /// Creates a [`Kernel`] from a [`Program`].
-    pub fn new<'sha, 'res, 'fw>(
+    pub fn new<'sha, 'fw>(
         fw: &'fw Framework,
         shader: &'sha Shader,
         function_name: &'a str,
@@ -69,7 +69,7 @@ impl<'a> Kernel<'a> {
     /// executes this [`Kernel`] with the give bindings.
     ///
     /// [`Kernel`] will dispatch `x`, `y` and `z` workgroups per dimension.
-    pub fn run<'fw>(&self, fw: &'fw Framework, bindings: Vec<SetBindings>, x: u32, y: u32, z: u32) {
+    pub fn run(&self, fw: &Framework, bindings: Vec<SetBindings>, x: u32, y: u32, z: u32) {
         let mut encoder = fw
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -84,7 +84,7 @@ impl<'a> Kernel<'a> {
             .iter()
             .zip(self.layouts.iter())
             .zip(self.entry_types.iter())
-            .map(|((binding, layout), entry_type)| binding.into_bind_group(fw, layout, entry_type))
+            .map(|((binding, layout), entry_type)| binding.to_bind_group(fw, layout, entry_type))
             .collect::<Vec<_>>();
 
         {
@@ -95,7 +95,7 @@ impl<'a> Kernel<'a> {
             cpass.set_pipeline(&self.pipeline);
 
             for (bind_id, binds) in bind_groups.iter().enumerate() {
-                cpass.set_bind_group(bind_id as u32, &binds, &[])
+                cpass.set_bind_group(bind_id as u32, binds, &[])
             }
 
             cpass.insert_debug_marker(self.function_name);

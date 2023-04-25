@@ -122,10 +122,10 @@ impl<'res> SetBindings<'res> {
         self
     }
 
-    pub(crate) fn into_bind_group<'fw, 'la>(
+    pub(crate) fn to_bind_group(
         &self,
-        fw: &'fw Framework,
-        layout: &'la wgpu::BindGroupLayout,
+        fw: &Framework,
+        layout: &wgpu::BindGroupLayout,
         entry_types: &Vec<EntryType>,
     ) -> wgpu::BindGroup {
         // TODO: Make custom error struct/enum
