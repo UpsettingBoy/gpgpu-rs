@@ -179,8 +179,7 @@ where
         let staging = self.fw.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("GpuImage::read"),
             size: staging_size as u64,
-            usage: wgpu::BufferUsages::COPY_SRC
-                | wgpu::BufferUsages::COPY_DST,
+            usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
 
@@ -217,10 +216,10 @@ where
             &self.fw.queue,
             &staging.slice(..),
             move |result| {
-                tx.send(result).unwrap_or_else(|_| panic!("Failed to download buffer."));
-            }
+                tx.send(result)
+                    .unwrap_or_else(|_| panic!("Failed to download buffer."));
+            },
         );
-        self.fw.device.poll(wgpu::Maintain::Wait);
         let download = rx.await.unwrap().unwrap();
 
         let bytes_read: usize = download

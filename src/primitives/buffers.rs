@@ -12,7 +12,7 @@ use super::BufOps;
 const GPU_BUFFER_USAGES: wgpu::BufferUsages = wgpu::BufferUsages::from_bits_truncate(
     wgpu::BufferUsages::STORAGE.bits()
         | wgpu::BufferUsages::COPY_SRC.bits()
-        | wgpu::BufferUsages::COPY_DST.bits()
+        | wgpu::BufferUsages::COPY_DST.bits(),
 );
 const GPU_UNIFORM_USAGES: wgpu::BufferUsages = wgpu::BufferUsages::from_bits_truncate(
     wgpu::BufferUsages::UNIFORM.bits() | wgpu::BufferUsages::COPY_DST.bits(),
@@ -106,10 +106,10 @@ where
             &self.fw.queue,
             &self.buf.slice(..download_size as u64),
             move |result| {
-                tx.send(result).unwrap_or_else(|_| panic!("Failed to download buffer."));
-            }
+                tx.send(result)
+                    .unwrap_or_else(|_| panic!("Failed to download buffer."));
+            },
         );
-        self.fw.device.poll(wgpu::Maintain::Wait);
         let download = rx.await.unwrap().unwrap();
 
         buf.copy_from_slice(bytemuck::cast_slice(&download));
