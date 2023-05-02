@@ -158,6 +158,24 @@ pub struct GpuConstImage<'fw, P> {
     pixel: PhantomData<P>,
 }
 
+pub enum SamplerWrapMode {
+    ClampToEdge = 0,
+    Repeat = 1,
+    MirrorRepeat = 2,
+    ClampToBorder = 3,
+}
+
+pub enum SamplerFilterMode {
+    Nearest = 0,
+    Linear = 1,
+}
+
+pub struct Sampler<'fw> {
+    fw: &'fw Framework,
+    sampler: wgpu::Sampler,
+    filter_mode: SamplerFilterMode,
+}
+
 /// Represents a shader.
 ///
 /// It's just a wrapper around [`wgpu::ShaderModule`].
