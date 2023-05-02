@@ -180,8 +180,7 @@ where
             label: Some("GpuImage::read"),
             size: staging_size as u64,
             usage: wgpu::BufferUsages::COPY_SRC
-                | wgpu::BufferUsages::COPY_DST
-                | wgpu::BufferUsages::MAP_READ,
+                | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
 
@@ -212,18 +211,19 @@ where
 
         self.fw.queue.submit(Some(encoder.finish()));
 
-        let download = staging.slice(..);
-
         let (tx, rx) = futures::channel::oneshot::channel();
-        download.map_async(MapMode::Read, |result| {
-            tx.send(result).expect("GpuImage reading error!");
-        });
-        rx.await
-            .expect("GpuBuffer futures::channel::oneshot error")
-            .map_err(|e| ImageOutputError::BufferError(buffers::BufferError::AsyncMapError(e)))?;
+        wgpu::util::DownloadBuffer::read_buffer(
+            &self.fw.device,
+            &self.fw.queue,
+            &staging.slice(..),
+            move |result| {
+                tx.send(result).unwrap_or_else(|_| panic!("Failed to download buffer."));
+            }
+        );
+        self.fw.device.poll(wgpu::Maintain::Wait);
+        let download = rx.await.unwrap().unwrap();
 
         let bytes_read: usize = download
-            .get_mapped_range()
             .chunks(padded_bytes_per_row as usize)
             .zip(buf.chunks_mut(unpadded_bytes_per_row as usize))
             .map(|(src, dest)| {
