@@ -12,9 +12,7 @@ use super::BufOps;
 const GPU_BUFFER_USAGES: wgpu::BufferUsages = wgpu::BufferUsages::from_bits_truncate(
     wgpu::BufferUsages::STORAGE.bits()
         | wgpu::BufferUsages::COPY_SRC.bits()
-        | wgpu::BufferUsages::COPY_DST.bits()
-        | wgpu::BufferUsages::MAP_READ.bits()
-        | wgpu::BufferUsages::MAP_WRITE.bits(),
+        | wgpu::BufferUsages::COPY_DST.bits(),
 );
 const GPU_UNIFORM_USAGES: wgpu::BufferUsages = wgpu::BufferUsages::from_bits_truncate(
     wgpu::BufferUsages::UNIFORM.bits() | wgpu::BufferUsages::COPY_DST.bits(),
@@ -102,16 +100,19 @@ where
             output_size
         };
 
-        let download = self.buf.slice(..download_size as u64);
-
         let (tx, rx) = futures::channel::oneshot::channel();
-        download.map_async(MapMode::Read, |result| {
-            tx.send(result).expect("GpuBuffer reading error!");
-        });
-        rx.await
-            .expect("GpuBuffer futures::channel::oneshot error")?;
+        wgpu::util::DownloadBuffer::read_buffer(
+            &self.fw.device,
+            &self.fw.queue,
+            &self.buf.slice(..download_size as u64),
+            move |result| {
+                tx.send(result)
+                    .unwrap_or_else(|_| panic!("Failed to download buffer."));
+            },
+        );
+        let download = rx.await.unwrap().unwrap();
 
-        buf.copy_from_slice(bytemuck::cast_slice(&download.get_mapped_range()));
+        buf.copy_from_slice(bytemuck::cast_slice(&download));
 
         Ok(download_size)
     }
