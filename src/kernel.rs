@@ -183,6 +183,12 @@ impl<'res> DescriptorSet<'res> {
         self
     }
 
+    /// Binds a [`Sampler`] as a sampler object in the shader.
+    /// ### Example WGSL syntax:
+    /// ```ignore
+    /// [[group(0), binding(0)]]
+    /// var mySampler : sampler;
+    /// ```
     pub fn bind_sampler(mut self, sampler: &'res crate::Sampler) -> Self {
         let bind_id = self.set_layout.len() as u32;
 

@@ -1,12 +1,9 @@
 use crate::Sampler;
 
-pub fn create_sampler(fw: &crate::Framework) -> wgpu::Sampler {
-    fw.device.create_sampler(&Default::default())
-}
-
-impl<'fw> Sampler<'fw> {
+impl Sampler {
+    /// Creates a new [`Sampler`] using the given wrap and filter mode.
     pub fn new(
-        fw: &'fw crate::Framework,
+        fw: &crate::Framework,
         wrap_mode: crate::SamplerWrapMode,
         filter_mode: crate::SamplerFilterMode,
     ) -> Self {
@@ -35,7 +32,6 @@ impl<'fw> Sampler<'fw> {
             border_color: None,
         });
         Self {
-            fw,
             sampler,
             filter_mode,
         }
