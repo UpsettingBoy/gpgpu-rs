@@ -1,4 +1,4 @@
-use gpgpu::{primitives::pixels::{Rgba8UintNorm}, ImgOps};
+use gpgpu::{primitives::pixels::Rgba8UintNorm, ImgOps};
 
 // This example upscales some pixel art using 2 different samplers
 fn main() {
@@ -21,8 +21,16 @@ fn main() {
     input_img.write(&rgba).unwrap();
 
     // Create a sampler
-    let linear_sampler = gpgpu::Sampler::new(&fw, gpgpu::SamplerWrapMode::ClampToBorder, gpgpu::SamplerFilterMode::Linear);
-    let nearest_neighbor_sampler = gpgpu::Sampler::new(&fw, gpgpu::SamplerWrapMode::ClampToBorder, gpgpu::SamplerFilterMode::Nearest);
+    let linear_sampler = gpgpu::Sampler::new(
+        &fw,
+        gpgpu::SamplerWrapMode::ClampToBorder,
+        gpgpu::SamplerFilterMode::Linear,
+    );
+    let nearest_neighbor_sampler = gpgpu::Sampler::new(
+        &fw,
+        gpgpu::SamplerWrapMode::ClampToBorder,
+        gpgpu::SamplerFilterMode::Nearest,
+    );
 
     let desc = gpgpu::DescriptorSet::default()
         .bind_const_image(&input_img)
