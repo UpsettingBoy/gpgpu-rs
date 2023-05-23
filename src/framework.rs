@@ -83,4 +83,14 @@ impl Framework {
     pub fn limits(&self) -> wgpu::Limits {
         self.device.limits()
     }
+
+    /// Polls the device in a non-blocking manner.
+    pub fn poll(&self) {
+        self.device.poll(wgpu::Maintain::Poll);
+    }
+
+    /// Polls the device in a blocking manner.
+    pub fn poll_blocking(&self) {
+        self.device.poll(wgpu::Maintain::Wait);
+    }
 }
