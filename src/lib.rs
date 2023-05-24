@@ -165,10 +165,10 @@ pub struct GpuConstImage<'fw, P> {
 /// More information about its shader representation is
 /// under the [`DescriptorSet::bind_sampler`](crate::DescriptorSet::bind_sampler) documentation.
 pub enum SamplerWrapMode {
-    ClampToEdge = 0,
-    Repeat = 1,
-    MirrorRepeat = 2,
-    ClampToBorder = 3,
+    ClampToEdge,
+    Repeat,
+    MirrorRepeat,
+    ClampToBorder,
 }
 
 /// The wrapping mode to use for a sampler.
@@ -178,8 +178,8 @@ pub enum SamplerWrapMode {
 /// More information about its shader representation is
 /// under the [`DescriptorSet::bind_sampler`](crate::DescriptorSet::bind_sampler) documentation.
 pub enum SamplerFilterMode {
-    Nearest = 0,
-    Linear = 1,
+    Nearest,
+    Linear,
 }
 
 /// A sampler object which can be used to sample textures.
