@@ -158,6 +158,41 @@ pub struct GpuConstImage<'fw, P> {
     pixel: PhantomData<P>,
 }
 
+/// The wrapping mode to use for a sampler.
+///
+/// Equivalent to OpenCL's sampler addressing modes.
+///
+/// More information about its shader representation is
+/// under the [`DescriptorSet::bind_sampler`](crate::DescriptorSet::bind_sampler) documentation.
+pub enum SamplerWrapMode {
+    ClampToEdge,
+    Repeat,
+    MirrorRepeat,
+    ClampToBorder,
+}
+
+/// The wrapping mode to use for a sampler.
+///
+/// Equivalent to OpenCL's sampler filter modes.
+///
+/// More information about its shader representation is
+/// under the [`DescriptorSet::bind_sampler`](crate::DescriptorSet::bind_sampler) documentation.
+pub enum SamplerFilterMode {
+    Nearest,
+    Linear,
+}
+
+/// A sampler object which can be used to sample textures.
+///
+/// Equivalent to OpenCL's sampler objects.
+///
+/// More information about its shader representation is
+/// under the [`DescriptorSet::bind_sampler`](crate::DescriptorSet::bind_sampler) documentation.
+pub struct Sampler {
+    sampler: wgpu::Sampler,
+    filter_mode: SamplerFilterMode,
+}
+
 /// Represents a shader.
 ///
 /// It's just a wrapper around [`wgpu::ShaderModule`].

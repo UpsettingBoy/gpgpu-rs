@@ -44,6 +44,9 @@ name = "simple-compute"
 name = "mirror-image"
 
 [[example]]
+name = "samplers"
+
+[[example]]
 name = "image-compatibility"
 required-features = ["integrate-image"]
 

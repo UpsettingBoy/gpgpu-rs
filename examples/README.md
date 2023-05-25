@@ -7,5 +7,6 @@
 | image-compatibility | `mirror-image` example using `image::ImageBuffer`      | integrate-image    | cargo r --example image-compatibility --features="integrate-image"  |
 | webcam (*)          | Webcam shader implemented via compute                  | integrate-image    | cargo r --example webcam --features="integrate-image" --release     |
 | ndarray             | Simple compute example using `ndarray::Array`          | integrate-ndarry   | cargo r --example ndarray --features="integrate-ndarray"            |
+| mirror-image        | Upscales some pixelart using 2 different samplers      | :heavy_minus_sign: | cargo r --example samplers                                          |
 
 (*) Example makes use of release mode for visible performance issues.
