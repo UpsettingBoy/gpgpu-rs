@@ -1,9 +1,9 @@
 use std::marker::PhantomData;
 
 use thiserror::Error;
-use wgpu::{util::DeviceExt, MapMode};
+use wgpu::util::DeviceExt;
 
-use crate::{primitives::buffers, GpuConstImage, GpuImage};
+use crate::{GpuConstImage, GpuImage};
 
 use super::{ImgOps, PixelInfo};
 

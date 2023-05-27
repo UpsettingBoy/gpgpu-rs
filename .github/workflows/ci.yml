@@ -12,7 +12,7 @@ env:
 
 jobs:
   fmt:
-    name: Format check
+    name: Rustfmt + Clippy
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -24,11 +24,20 @@ jobs:
           toolchain: stable
           profile: minimal
           override: true
-          components: rustfmt
+          components: rustfmt, clippy
 
       - name: Check formatting
-        run: |
-          cargo fmt -- --check
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+      - name: Check Clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --no-deps --examples --tests --all-features -- -D warnings
+          
 
   build:
     needs: fmt
@@ -37,30 +46,18 @@ jobs:
       matrix:
         include:
           # Windows
-          - name: Windows 2019 x86_64
-            os: windows-2019
-            target: x86_64-pc-windows-msvc
-
-          - name: Windows 2022 x86_64
-            os: windows-2022
+          - name: Windows x86_64 latest
+            os: windows-latest
             target: x86_64-pc-windows-msvc
 
           # MacOS
-          - name: MacOS 10.15 x86_64
-            os: macos-10.15
+          - name: MacOS x86_64 latest
+            os: macos-latest
             target: x86_64-apple-darwin
-
-          - name: MacOS 11 x86_64
-            os: macos-11
-            target: x86_64-apple-darwin
-
+          
           # Linux
-          - name: Linux Ubuntu 18.04 x86_64
-            os: ubuntu-18.04
-            target: x86_64-unknown-linux-gnu
-
-          - name: Linux Ubuntu 20.04 x86_64
-            os: ubuntu-20.04
+          - name: Linux Ubuntu x86_64 latest
+            os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
 
     name: Check ${{ matrix.name }}
@@ -97,18 +94,14 @@ jobs:
           echo """[profile.dev]
           debug = 1" > .cargo/config.toml
 
-      - name: Check no features
-        run: |
-          cargo clippy --target ${{ matrix.target }}
-
-      - name: Check all features
-        run: |
-          cargo clippy --target ${{ matrix.target }} --examples --tests --all-features
+      - name: Run tests
+        uses: actions-rs/cargo@v1
+        with:
+           command: test
+           args: --target ${{ matrix.target }}
 
       - name: Build docs
-        run: |
-          cargo doc --target ${{ matrix.target }} --no-deps
-
-      - name: Run tests
-        run: |
-          cargo test --target ${{ matrix.target }}
+        uses: actions-rs/cargo@v1
+        with:
+          command: doc
+          args: --target ${{ matrix.target }} --no-deps

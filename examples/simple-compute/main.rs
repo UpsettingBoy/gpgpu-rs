@@ -8,8 +8,8 @@ fn main() {
 
     let size = 10000; // Size of the vectors
 
-    let data_a = (0..size).into_iter().collect::<Vec<u32>>(); // Vector A data. 0, 1, 2, ..., 9999 (size - 1).
-    let data_b = (0..size).into_iter().rev().collect::<Vec<u32>>(); // Vector B data. 9999 (size - 1), 9998, ..., 0.
+    let data_a = (0..size).collect::<Vec<u32>>(); // Vector A data. 0, 1, 2, ..., 9999 (size - 1).
+    let data_b = (0..size).rev().collect::<Vec<u32>>(); // Vector B data. 9999 (size - 1), 9998, ..., 0.
 
     // Allocation of new vectors on the GPU
     let gpu_vec_a = gpgpu::GpuBuffer::from_slice(&fw, &data_a); // Input vector A.
@@ -32,7 +32,7 @@ fn main() {
 
     // Execution of the kernel. It needs 3 dimmensions, x y and z.
     // Since we are using single-dim vectors, only x is required.
-    kernel.enqueue(size as u32, 1, 1);
+    kernel.enqueue(size, 1, 1);
 
     // After the kernel execution, we can read the results from the GPU.
     let gpu_result = gpu_vec_c.read_vec_blocking().unwrap();

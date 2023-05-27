@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use thiserror::Error;
-use wgpu::{util::DeviceExt, MapMode};
+use wgpu::util::DeviceExt;
 
 use crate::{GpuBuffer, GpuUniformBuffer};
 
@@ -104,7 +104,7 @@ where
         wgpu::util::DownloadBuffer::read_buffer(
             &self.fw.device,
             &self.fw.queue,
-            &self.buf.slice(..download_size as u64),
+            &self.buf.slice(..download_size),
             move |result| {
                 tx.send(result)
                     .unwrap_or_else(|_| panic!("Failed to download buffer."));
