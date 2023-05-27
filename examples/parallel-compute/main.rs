@@ -16,7 +16,7 @@ fn main() {
     let threading = 4; // Threading level
     let size = 32000; // Must be multiple of 32
 
-    let cpu_data = (0..size).into_iter().collect::<Vec<u32>>();
+    let cpu_data = (0..size).collect::<Vec<u32>>();
     let shader_input_buffer = Arc::new(gpgpu::GpuBuffer::from_slice(&FW, &cpu_data)); // Data shared across threads shader invocations
 
     let mut handles = Vec::with_capacity(threading);
@@ -27,7 +27,7 @@ fn main() {
         // Threads spawn
         let handle = std::thread::spawn(move || {
             // Current thread GPU objects
-            let local_cpu_data = (0..size).into_iter().collect::<Vec<u32>>();
+            let local_cpu_data = (0..size).collect::<Vec<u32>>();
             let local_input_buffer = gpgpu::GpuBuffer::from_slice(&FW, &local_cpu_data);
             let local_output_buffer = gpgpu::GpuBuffer::<u32>::with_capacity(&FW, size as u64);
 
