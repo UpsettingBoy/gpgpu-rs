@@ -30,7 +30,7 @@ image = { version = "0.24.6", default-features = false, features = [
     "png",
 ] }
 lazy_static = "1.4.0"
-nokhwa = { version = "0.9.4", features = ["input-v4l", "input-msmf"] }
+nokhwa = { version = "0.10.0", features = ["input-v4l", "input-msmf"] }
 minifb = "0.23.0"
 
 [features]
