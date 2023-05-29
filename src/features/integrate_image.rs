@@ -44,13 +44,15 @@ macro_rules! gpgpu_to_image_impl {
 
 gpgpu_to_image_impl! {
     ::image::Rgba<u8>, pixels::Rgba8Uint, pixels::Rgba8UintNorm;
-    ::image::Rgba<i8>, pixels::Rgba8Sint, pixels::Rgba8SintNorm
+    ::image::Rgba<i8>, pixels::Rgba8Sint, pixels::Rgba8SintNorm;
+    ::image::Rgba<f32>, pixels::Rgba32Float
     // ::image::Luma<u8>, pixels::Luma8, pixels::Luma8Norm
 }
 
 image_to_gpgpu_impl! {
     ::image::Rgba<u8>, pixels::Rgba8Uint, pixels::Rgba8UintNorm;
-    ::image::Rgba<i8>, pixels::Rgba8Sint, pixels::Rgba8SintNorm
+    ::image::Rgba<i8>, pixels::Rgba8Sint, pixels::Rgba8SintNorm;
+    ::image::Rgba<f32>, pixels::Rgba32Float, pixels::Rgba32Float
     // ::image::Luma<u8>, pixels::Luma8, pixels::Luma8Norm
 }
 
