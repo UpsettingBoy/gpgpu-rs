@@ -7,9 +7,11 @@ use gpgpu::{
 
 use minifb::{Key, Window, WindowOptions};
 use nokhwa::{
+    pixel_format::RgbAFormat,
+    utils::{
+        CameraFormat, CameraIndex, FrameFormat, RequestedFormat, RequestedFormatType, Resolution,
+    },
     Camera,
-    utils::{CameraFormat, Resolution, RequestedFormat, RequestedFormatType, CameraIndex, FrameFormat},
-    pixel_format::RgbAFormat
 };
 
 const WIDTH: usize = 1280;
@@ -21,7 +23,8 @@ fn main() {
     // Camera initilization. Config may not work if not same cam as the Thinkpad T480 one.
     // Change parameters accordingly
     let mut camera = {
-        let requested = RequestedFormat::new::<RgbAFormat>(RequestedFormatType::AbsoluteHighestFrameRate);
+        let requested =
+            RequestedFormat::new::<RgbAFormat>(RequestedFormatType::AbsoluteHighestFrameRate);
         Camera::new(CameraIndex::Index(0), requested).unwrap()
     };
 
