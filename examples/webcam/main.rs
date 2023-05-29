@@ -8,9 +8,7 @@ use gpgpu::{
 use minifb::{Key, Window, WindowOptions};
 use nokhwa::{
     pixel_format::RgbAFormat,
-    utils::{
-        CameraFormat, CameraIndex, FrameFormat, RequestedFormat, RequestedFormatType, Resolution,
-    },
+    utils::{CameraIndex, RequestedFormat, RequestedFormatType},
     Camera,
 };
 
