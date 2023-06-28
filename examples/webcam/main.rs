@@ -6,7 +6,11 @@ use gpgpu::{
 };
 
 use minifb::{Key, Window, WindowOptions};
-use nokhwa::{Camera, CameraFormat, Resolution};
+use nokhwa::{
+    pixel_format::RgbAFormat,
+    utils::{CameraIndex, RequestedFormat, RequestedFormatType},
+    Camera,
+};
 
 const WIDTH: usize = 1280;
 const HEIGHT: usize = 720;
@@ -17,16 +21,9 @@ fn main() {
     // Camera initilization. Config may not work if not same cam as the Thinkpad T480 one.
     // Change parameters accordingly
     let mut camera = {
-        let camera_format = CameraFormat::new(
-            Resolution {
-                width_x: WIDTH as u32,
-                height_y: HEIGHT as u32,
-            },
-            nokhwa::FrameFormat::MJPEG,
-            30,
-        );
-
-        Camera::new(0, Some(camera_format)).unwrap()
+        let requested =
+            RequestedFormat::new::<RgbAFormat>(RequestedFormatType::AbsoluteHighestFrameRate);
+        Camera::new(CameraIndex::Index(0), requested).unwrap()
     };
 
     // Window initialization
@@ -70,7 +67,7 @@ fn main() {
 
         // Adapted for new (using image 0.24) nokhwa version
         let cam_raw = camera.frame().unwrap();
-        let cam_buf = image::DynamicImage::ImageRgb8(cam_raw).into_rgba8(); // Obtain cam current frame
+        let cam_buf = cam_raw.decode_image::<RgbAFormat>().unwrap(); // Obtain cam current frame
 
         gpu_input.write_image_buffer(&cam_buf).unwrap(); // Upload cam frame into the cam frame texture
         buf_time.write(&[time.elapsed().as_secs_f32()]).unwrap(); // Upload elapsed time into elapsed time buffer
