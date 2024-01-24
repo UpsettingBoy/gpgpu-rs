@@ -352,6 +352,7 @@ impl<'fw> Kernel<'fw> {
         {
             let mut cpass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
                 label: Some("Kernel::enqueue"),
+                timestamp_writes: None,
             });
 
             cpass.set_pipeline(&self.pipeline);

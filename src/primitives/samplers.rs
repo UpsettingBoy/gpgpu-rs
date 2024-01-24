@@ -28,7 +28,7 @@ impl Sampler {
             lod_min_clamp: 0.0,
             lod_max_clamp: std::f32::MAX,
             compare: None,
-            anisotropy_clamp: None,
+            anisotropy_clamp: 1,
             border_color: None,
         });
         Self {

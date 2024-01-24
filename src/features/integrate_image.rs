@@ -115,7 +115,7 @@ where
         GpuConstImage::from_bytes(
             fw,
             bytemuck::cast_slice(img),
-            width * Pixel::GpgpuPixel::byte_size() as u32,
+            width,
             height,
         )
     }

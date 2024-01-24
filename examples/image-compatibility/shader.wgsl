@@ -7,7 +7,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     let pixel = textureLoad(input, coord, 0);
 
     let dims = textureDimensions(input);
-    let mirror_coord = vec2<i32>(dims.x - coord.x, coord.y);
+    let mirror_coord = vec2<i32>(i32(dims.x) - coord.x, coord.y);
 
     textureStore(output, mirror_coord, pixel);
 }
