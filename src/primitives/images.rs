@@ -288,9 +288,7 @@ where
             write_buf,
             wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: Some(
-                    P::byte_size() as u32 * self.size.width,
-                ),
+                bytes_per_row: Some(P::byte_size() as u32 * self.size.width),
                 rows_per_image: None,
             },
             size,
@@ -461,9 +459,7 @@ where
             write_buf,
             wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: Some(
-                    P::byte_size() as u32 * self.size.width,
-                ),
+                bytes_per_row: Some(P::byte_size() as u32 * self.size.width),
                 rows_per_image: None,
             },
             size,

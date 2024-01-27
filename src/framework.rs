@@ -11,10 +11,7 @@ impl Default for Framework {
             ..Default::default()
         });
 
-        log::debug!(
-            "Requesting device with {:#?}",
-            power_preference
-        );
+        log::debug!("Requesting device with {:#?}", power_preference);
 
         futures::executor::block_on(async {
             let adapter = instance

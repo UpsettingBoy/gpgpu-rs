@@ -112,12 +112,7 @@ where
         Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
     {
         let (width, height) = img.dimensions();
-        GpuConstImage::from_bytes(
-            fw,
-            bytemuck::cast_slice(img),
-            width,
-            height,
-        )
+        GpuConstImage::from_bytes(fw, bytemuck::cast_slice(img), width, height)
     }
 
     /// Constructs a new normalised [`GpuConstImage`] from a [`image::ImageBuffer`].
