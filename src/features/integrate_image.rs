@@ -223,7 +223,7 @@ where
     }
 }
 
-pub(self) fn bytes_to_primitive_vec<P>(mut bytes: Vec<u8>) -> Vec<P::Subpixel>
+fn bytes_to_primitive_vec<P>(mut bytes: Vec<u8>) -> Vec<P::Subpixel>
 where
     P: image::Pixel,
     P::Subpixel: bytemuck::Pod,

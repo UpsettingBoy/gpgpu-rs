@@ -56,7 +56,7 @@ where
     }
 
     fn from_slice(fw: &'fw crate::Framework, slice: &[T]) -> Self {
-        let size = (slice.len() * std::mem::size_of::<T>()) as u64;
+        let size = std::mem::size_of_val(slice) as u64;
         let buf = fw
             .device
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -93,7 +93,7 @@ where
 {
     /// Pulls some elements from the [`GpuBuffer`] into `buf`, returning how many elements were read.
     pub async fn read(&self, buf: &mut [T]) -> BufferResult<u64> {
-        let output_size = (buf.len() * std::mem::size_of::<T>()) as u64;
+        let output_size = std::mem::size_of_val(buf) as u64;
         let download_size = if output_size > self.size {
             self.size
         } else {
@@ -141,7 +141,7 @@ where
     /// This function will attempt to write the entire contents of `buf` unless its capacity
     /// exceeds the one of the source buffer, in which case `GpuBuffer::capacity()` elements are written.
     pub fn write(&self, buf: &[T]) -> BufferResult<u64> {
-        let input_size = (buf.len() * std::mem::size_of::<T>()) as u64;
+        let input_size = std::mem::size_of_val(buf) as u64;
         let upload_size = if input_size > self.size {
             self.size
         } else {
@@ -195,7 +195,7 @@ where
     }
 
     fn from_slice(fw: &'fw crate::Framework, slice: &[T]) -> Self {
-        let size = (slice.len() * std::mem::size_of::<T>()) as u64;
+        let size = std::mem::size_of_val(slice) as u64;
         let buf = fw
             .device
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -235,7 +235,7 @@ where
     /// This function will attempt to write the entire contents of `buf` unless its capacity
     /// exceeds the one of the source buffer, in which case `GpuBuffer::capacity()` elements are written.
     pub fn write(&self, buf: &[T]) -> BufferResult<u64> {
-        let input_size = (buf.len() * std::mem::size_of::<T>()) as u64;
+        let input_size = std::mem::size_of_val(buf) as u64;
         let upload_size = if input_size > self.size {
             self.size
         } else {
