@@ -4,16 +4,14 @@ use crate::Framework;
 
 impl Default for Framework {
     fn default() -> Self {
-        let backend = wgpu::util::backend_bits_from_env().unwrap_or(wgpu::Backends::PRIMARY);
         let power_preference = wgpu::util::power_preference_from_env()
             .unwrap_or(wgpu::PowerPreference::HighPerformance);
-        let instance = wgpu::Instance::new(backend);
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+            backends: wgpu::Backends::PRIMARY,
+            ..Default::default()
+        });
 
-        log::debug!(
-            "Requesting device with {:#?} and {:#?}",
-            backend,
-            power_preference
-        );
+        log::debug!("Requesting device with {:#?}", power_preference);
 
         futures::executor::block_on(async {
             let adapter = instance
@@ -38,8 +36,8 @@ impl Framework {
             .request_device(
                 &wgpu::DeviceDescriptor {
                     label: None,
-                    features: adapter.features(), // Change this to allow proper WebGL2 support (in the future™️).
-                    limits: adapter.limits(),     // Bye WebGL2 support :(
+                    required_features: adapter.features(), // Change this to allow proper WebGL2 support (in the future™️).
+                    required_limits: adapter.limits(),     // Bye WebGL2 support :(
                 },
                 None,
             )

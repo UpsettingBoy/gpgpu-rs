@@ -112,12 +112,7 @@ where
         Container: std::ops::Deref<Target = [Pixel::Subpixel]>,
     {
         let (width, height) = img.dimensions();
-        GpuConstImage::from_bytes(
-            fw,
-            bytemuck::cast_slice(img),
-            width * Pixel::GpgpuPixel::byte_size() as u32,
-            height,
-        )
+        GpuConstImage::from_bytes(fw, bytemuck::cast_slice(img), width, height)
     }
 
     /// Constructs a new normalised [`GpuConstImage`] from a [`image::ImageBuffer`].
@@ -228,7 +223,7 @@ where
     }
 }
 
-pub(self) fn bytes_to_primitive_vec<P>(mut bytes: Vec<u8>) -> Vec<P::Subpixel>
+fn bytes_to_primitive_vec<P>(mut bytes: Vec<u8>) -> Vec<P::Subpixel>
 where
     P: image::Pixel,
     P::Subpixel: bytemuck::Pod,
